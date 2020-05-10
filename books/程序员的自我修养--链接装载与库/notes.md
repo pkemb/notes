@@ -139,3 +139,74 @@ ELF文件类型：
 * 便于权限控制，防止指令（只读）被无意或有意修改。
 * 提高程序的局部性，提升CPU的缓存命中率。
 * 指令等只读数据可共享，节省存储空间。
+
+<h3 id=ch_3.3>挖掘SimpleSection.o</h3>
+
+以示例代码[SimpleSection.c](code/SimpleSection.c)编译出来的目标文件作为分析对象，深入挖掘目标文件的每一个字节。
+
+<h4>编译</h4>
+
+```shell
+# 这将会得到SimpleSection.o
+gcc -c SimpleSection.c
+```
+
+<h4>查看目标文件各个段的基本信息</h4>
+
+```shell
+objdump -h SimpleSection.o
+# 查看ELF文件的代码段、数据段和BSS段的长度
+size SimpleSection.o
+```
+
+输出的信息包括：
+1. 段名
+2. 大小
+3. VMA：虚拟地址
+4. LMA：加载地址
+5. 偏移：段在文件中的位置
+6. 对齐：2**2 表示4字节对齐（2^2）
+7. 段属性
+   1. CONTENTS：该段在文件中存在，BSS段无此属性。
+   2. ALLOC：
+   3. LOAD：
+   4. RELOC：
+   5. READONLY：
+   6. CODE：指令
+   7. DATA：数据
+
+<h4>查看目标文件各个段的数据</h4>
+
+```shell
+objdump -s SimpleSection.o
+# -d 选项可以将包含指令的段反汇编。
+```
+
+代码中`初始化的局部静态变量`static_var和`初始化的全局变量`global_init_var存放在`.data`段中。`未初始化的局部静态变量`static_var2和`未初始化的全局变量`global_uninit_var存放在`.bss`段中。
+
+如果显式的给变量赋值为0，有可能会被优化到`.bss`段中。
+
+备注：
+1. 在输出的内容中，最左面一列是偏移量，中间四列是十六进程内容，最右面一列是ASCII码。
+2. 字节序
+
+<h4>将二进制文件作为目标文件的一个段</h4>
+
+```shell
+objcopy -I binary -O elf32-i386 -B i386 image.jpg image.o
+```
+
+[objcopy使用说明](bin.md#objcopy)。
+
+<h4>自定义段</h4>
+
+使用gcc的扩展机制，可将指定的代码或数据放到指定的段中。
+
+```c
+// 将变量放入到FOO段
+__attribute__((section("FOO"))) int global = 42;
+// 将函数放入到BAR段
+__attribute__((section("BAR"))) void foo() {
+
+}
+```
