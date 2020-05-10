@@ -49,3 +49,61 @@
 静态链接的方法：
 * 函数调用：调用目标函数指令的目标地址暂时搁置，待链接器确定目标函数的地址，并修改所有调用目标函数的指令。
 * 变量引用：将变量的地址设置为0，待链接器确定变量的地址，并修改所有引用变量的指令。
+
+
+<h2 id=ch_03>目标文件有什么</h2>
+
+目标文件：源代码经编译后但未进行链接的中间文件
+* Windows:  .o
+* Linux: .obj
+
+<h3 id=ch_3.1>目标文件(可执行文件)的格式</h3>
+
+可执行文件、静态库(.a/.lib)、动态库(.so/.dll)以及目标文件(.o/.obj)都按照可执行文件的格式来存储。
+
+可执行文件格式一览表：
+
+<table>
+    <tr><th>平台</th><th>格式</th><th>缩写</th></tr>
+    <tr>
+        <td>Windows</td>
+        <td>Portable Executable</td>
+        <td>PE</td>
+    </tr>
+    <tr>
+        <td>Linux</td>
+        <td>Executable Linkable Format</td>
+        <td>ELF</td>
+    </tr>
+    <tr>
+        <td>Intel/Microsoft</td>
+        <td>Object Module Format</td>
+        <td>OMF</td>
+    </tr>
+    <tr>
+        <td>Unix System V Release 3</td>
+        <td>Common file format</td>
+        <td>COFF</td>
+    </tr>
+    <tr>
+        <td>Unix</td>
+        <td>a.out</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>MS-DOS</td>
+        <td>.COM</td>
+        <td></td>
+    </tr>
+</table>
+
+ELF文件类型：
+* 可重定位文件，`relocatable` file，例如 .o 文件。
+* 可执行文件，`executable` file。
+* 共享目标文件，`shared object` file，例如 .so 文件。
+* 核心转储文件，core dump file。
+
+可执行文件格式的发展：
+
+![可执行文件格式的发展](pic/exetutable_format.png)
+
