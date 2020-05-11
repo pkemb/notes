@@ -10,6 +10,8 @@
 
 [objcopy](#objcopy)
 
+[readelf](#readelf)
+
 <h2 id=objdump>objdump</h2>
 
 <h3 id=objdump-h>-h</h3>
@@ -75,3 +77,11 @@
 * _binary_objfile_end
 * _binary_objfile_size
 * objfile：文件名
+
+<h2 id=readelf>readelf</h2>
+
+<h3 id=readelf-S>-S</h3>
+
+选项全称：--section-headers 或 -sections
+
+说明：查看ELF文件的段表。
