@@ -210,3 +210,62 @@ __attribute__((section("BAR"))) void foo() {
 
 }
 ```
+
+<h3 id=ch_3.4>ELF文件结构描述</h3>
+
+下图是ELF文件的总体结构。ELF文件主要由以下部分组成：
+* [文件头](#elf_header)
+* [段表](#elf_section_header_table)
+* [重定位表](#elf_relocation_table)
+* [字符串表](#elf_string_table)
+* [符号表](#elf_symbol_table)
+
+![ELF文件总体结构](pic/elf_file_structure.png)
+
+<h4 id=elf_header>文件头</h4>
+
+文件头是最重要的结构之一，上图有指明文件头各个成员的意义。文件头主要包含以下信息：
+* ELF魔数
+* 数据存储方式：大端 or 小端
+* 版本
+* ELF重定位类型
+  * ET_REL 可重定位文件（.o）
+  * ET_EXEC 可执行文件
+  * ET_DYN 共享目标文件（.so）
+* 入口地址
+* *`段表的位置和长度`*
+* 段的数量
+* ...
+
+<h4 id=elf_section_header_table>段表</h4>
+
+段表是除文件头外最重要的结构。段表描述了其余各个段的信息，也就是段表确定了ELF文件的结构。
+
+查看指令：
+* [readelf -S](bin.md#readelf-S) 
+* [objdump -h](bin.md#objdump-h)
+
+段表包含的主要信息：
+* sh_name 段名在[字符串表](#elf_string_table)中的偏移
+* sh_type 段的类型
+  * SHT_NULL 无效段
+  * SHT_PROGBITS 程序段，例如代码段和数据段
+  * SHT_SYMTAB 符号表
+  * SHT_STRTAB 字符串表
+  * SHT_RELA 重定位表，包含重定位信息。
+  * SHT_HASH 哈希表
+  * SHT_DYNAMIC 动态链接信息
+  * SHT_NOBITS 此段无内容，例如 .bss
+  * SHT_REL 该段包含重定位信息
+  * SHT_SHLIB 保留
+  * SHT_DNYSYM 动态链接的符号表
+* sh_flags 段的标志位（可同时有多个标志）
+  * SHF_WRITE 该段在进程中可写
+  * SHF_ALLOC 该段在进程空间中要分配空间
+  * SHF_EXECINSTR 该段在进程空间中可被执行
+* sh_addr 段虚拟地址
+* sh_offset 如果段存在，则表示在文件中的偏移。
+* sh_size 段的长度
+* sh_link sh_info 段的链接信息
+* sh_addralign 段地址对齐，2的指数倍。
+* sh_entsize （固定大小）项的长度
