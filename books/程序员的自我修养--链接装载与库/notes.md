@@ -234,6 +234,7 @@ __attribute__((section("BAR"))) void foo() {
   * ET_DYN 共享目标文件（.so）
 * 入口地址
 * *`段表的位置和长度`*
+* [e_shstrndx](#Elf32_Ehr-e_shstrndx) 段表字符串表在段表中的下标
 * 段的数量
 * ...
 
@@ -269,3 +270,23 @@ __attribute__((section("BAR"))) void foo() {
 * sh_link sh_info 段的链接信息
 * sh_addralign 段地址对齐，2的指数倍。
 * sh_entsize （固定大小）项的长度
+
+<h4 id=elf_relocation_table>重定位表</h4>
+
+段类型为 SHT_REL 的段称为`重定位表`，包含了重定位信息。每个需要重定位的代码段或数据段，都有一个对应的重定位表。例如 .data 段的重定位表是 .rel.data。
+
+sh_link表示符号表的下标。sh_info表示作用于哪一个段，例如.rel.text作用于.text段，而.text在段表的下标（索引）是1，则sh_info=1。
+
+<h4 id=elf_string_table>字符串表</h4>
+
+字符串的保存方式：将所有的字符串收集起来并存放在一个段中，使用字符串在表中的偏移来引用字符串。
+
+常见的段名：
+* .strtab，字符串表，保存普通的字符串，比如符号的名字。
+* .shstrtab，段表字符串表，保存段表中用到的字符串，例如段名。
+
+<p id=Elf32_Ehr-e_shstrndx></p> 
+
+e_shstrndx 是`Section header string table index`的缩写，表示`段表字符串表`在段表中的下标。
+
+不难得出，只要分析了[ELF文件头](#elf_header)，就可以得到段表和段表字符串表的位置，从而解析整个ELF文件。
