@@ -6,11 +6,11 @@
 
 <h2 id=toc>目录</h2>
 
-[objdump](#objdump)
-
-[objcopy](#objcopy)
-
-[readelf](#readelf)
+1. [objdump](#objdump)
+2. [objcopy](#objcopy)
+3. [readelf](#readelf)
+4. [nm](#nm)
+5. [strip](#strip)
 
 <h2 id=objdump>objdump</h2>
 
@@ -85,3 +85,20 @@
 选项全称：--section-headers 或 -sections
 
 说明：查看ELF文件的段表。
+
+<h2 id=nm>nm</h2>
+
+list symbols from object files
+
+usage: nm [object file]
+
+类似的功能：
+1. [readelf -S](#readelf-S)
+2. [objdump -t](objdump-t)
+
+<h2 id=strip>strip</h2>
+
+删除ELF文件中的符号。用法：
+```shell
+strip elf_file
+```
