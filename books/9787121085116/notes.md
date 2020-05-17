@@ -308,12 +308,19 @@ e_shstrndx 是`Section header string table index`的缩写，表示`段表字符
 4. 局部符号，只在编译单元内部可见。对链接没有作用。
 5. 行号信息，即目标文件指令与源代码中代码行的对应关系。
 
+主要内容：
+* [ELF符号表结构](#elf_symbol_table)
+* [特殊符号](#special_symbol)
+* [名称修饰和函数签名](#name_decoration_and_function_signature)
+* [extern "C"](#extern_c)
+* [弱符号和强符号](#weak_and_strong_symbol)
+
+<h4 id=elf_symbol_table>ELF符号表结构</h4>
+
 查看符号表的指令：
 * nm object_file
 * readelf -s object_file
 * objdump -t object_file
-
-<h4 id=elf_symbol_table>ELF符号表结构</h4>
 
 ELF文件中的符号表往往是一个段，段名一般叫`.symtab`。符号表是一个`Elf32_sym`结构数组，下表为0的元素为无效的未定义符号。
 
@@ -401,3 +408,23 @@ extern "C" {
 }
 #endif
 ```
+
+<h4 id=weak_and_strong_symbol>弱符号和强符号</h4>
+
+`弱符号`和`强符号`是针对定义来说，默认情况下，函数和初始化的全局变量为强符号，未初始化的全局变量为弱符号。可通过gcc的`__ttribute__((weak))`来定义一个强符号为弱符号。
+
+规则：
+1. 不允许强符号被多次定义，否则链接报错。
+2. 若符号同时存在强符号和弱符号，则选择弱符号。
+3. 如果都是弱符号，则选择占用空间最大的。
+
+强引用和弱引用：
+* 强引用：链接时，没有找到符号的定义，则报未定义错误。
+* 弱引用：链接时，没有找到符号的定义，则不会报错，链接器默认其为0，或一个特殊值。
+
+可以使用`__attribute__((weakref))`来声明一个引用为弱引用。
+
+应用场景：
+* 库中定义的`弱符号`可以被用户定义的`强符号`所覆盖，从而使得程序可以使用自定义版本的库函数。
+* 对某些模块的引用定义为`弱引用`。与模块一起链接的时候，模块可以正常使用。去掉模块之后，也可以正常链接，只是没有对应的功能。
+
