@@ -290,3 +290,57 @@ sh_link表示符号表的下标。sh_info表示作用于哪一个段，例如.re
 e_shstrndx 是`Section header string table index`的缩写，表示`段表字符串表`在段表中的下标。
 
 不难得出，只要分析了[ELF文件头](#elf_header)，就可以得到段表和段表字符串表的位置，从而解析整个ELF文件。
+
+<p id=elf_symbol_table></p>
+
+<h3 id=ch_3.5>链接的接口——符号</h3>
+
+有关符号的一些基本概念：
+* 符号：函数或变量。
+* 符号名：函数名或变量名。
+* 符号值：函数地址，或变量的取值。
+* 符号表：记录了目标文件中所`用到`的所有符号。
+
+符号的类型：
+1. 定义在本目标文件的全局符号，可以被其他目标文件引用。
+2. 在本目标文件中引用的全局符号，但没有定义在本目标文件。
+3. 段名
+4. 局部符号，只在编译单元内部可见。对链接没有作用。
+5. 行号信息，即目标文件指令与源代码中代码行的对应关系。
+
+查看符号表的指令：
+* nm object_file
+* readelf -s object_file
+* objdump -t object_file
+
+<h4 id=elf_symbol_table>ELF符号表结构</h4>
+
+ELF文件中的符号表往往是一个段，段名一般叫`.symtab`。符号表是一个`Elf32_sym`结构数组，下表为0的元素为无效的未定义符号。
+
+Elf32_sym成员：
+* st_name：符号名，字符串表的下标。
+* st_size：符号大小。
+* st_shndx：符号所在的段。
+  * 符号所在的段在段表中的下标。
+  * SHN_ABS：该符号包含了一个绝对的值，例如文件名的符号。
+  * SHN_COMMON：该符号是一个“COMMON块”类型的符号，例如未初始化的全局符号定义。
+  * SHN_UNDEF：符号未定义，该符号在本文件中被引用，但是定义在其他文件。
+* st_info：符号类型和绑定信息
+  * 高28位表示符号绑定信息（Symbol Binding）
+    * STB_LOCAL：局部符号，对目标文件的外部不可见。
+    * STB_GLOBAL：全局符号，外部可见。
+    * STB_WEAK：若引用。
+  * 低4位表示符号的类型（Symbol Type）
+    * STT_NOTYPE：未知类型符号
+    * STT_OBJECT：该符号是一个数据对象，比如变量、数组。
+    * STT_FUNC：该符号是函数或其他可执行代码。
+    * STT_SECTION：该符号是一个段，一定是STB_LOCAL。
+    * STT_FILE：目标文件对应的源文件名，一定是STB_LOCAL，st_shndx一定是SHN_ABS。
+* st_value：符号值
+  * 目标文件
+    * SHN_ABS / SHN_UNDEF：st_value没有用。
+    * SHN_COMMON：表示该符号的对齐属性。
+    * 段的下标：st_value表示该符号在段中的偏移位置。
+  * 可执行文件
+    * st_value表示符号的虚拟地址。
+
