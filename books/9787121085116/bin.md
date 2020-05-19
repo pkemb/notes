@@ -92,6 +92,10 @@
 
 说明：查看ELF文件的段表。
 
+<h3 id=readelf-s>-s</h3>
+
+说明：查看ELF文件的符号表。
+
 <h2 id=nm>nm</h2>
 
 list symbols from object files
