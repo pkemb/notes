@@ -46,6 +46,12 @@
 
 说明：打印符号表。
 
+<h3 id=objdump-r>-r</h3>
+
+选项全称：--reloc
+
+说明：打印文件的重定位表。
+
 <h2 id=objcopy>objcopy</h2>
 
 <h3 id=objcopy-I>-I</h3>
