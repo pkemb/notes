@@ -11,6 +11,7 @@
 3. [readelf](#readelf)
 4. [nm](#nm)
 5. [strip](#strip)
+6. [ar](#ar)
 
 <h2 id=objdump>objdump</h2>
 
@@ -112,3 +113,19 @@ usage: nm [object file]
 ```shell
 strip elf_file
 ```
+
+<h2 id=ar>ar</h2>
+
+创建、修改和解压静态库。
+
+<h3 id=ar-t>-t</h3>
+
+说明：列出静态库包含的文件列表。
+
+usage：ar -t libxx.a
+
+<h3 id=ar-x>-x</h3>
+
+说明：解压静态库。
+
+usage: ar -x libxx.a
