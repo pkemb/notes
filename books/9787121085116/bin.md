@@ -97,6 +97,12 @@
 
 说明：查看ELF文件的符号表。
 
+<h3 id=readelf-l>-l</h3>
+
+说明：查看可执行文件的程序头。
+
+程序头：描述Segment的结构，描述了ELF文件该如何被操作系统映射到进程的虚拟空间。
+
 <h2 id=nm>nm</h2>
 
 list symbols from object files
