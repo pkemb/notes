@@ -687,3 +687,28 @@ BFD库，Binary File Descriptor library，是binutils项目的子项目，目标
 <h2 id=ch5>Windows PE/COFF</h2>
 
 *待填坑*
+
+<h2 id=ch6>可执行文件的转载与进程</h2>
+
+<h3 id=process_virtual_address_space>进程虚拟地址空间</h3>
+
+程序和进程的区别：
+* 程序（可执行文件）：静态的概念，一个文件，包含指令和数据。
+* 进程：动态的概念，程序运行的一个过程。
+
+进程虚拟地址空间的大小由CPU的位数决定
+* 32位：0x00000000 ~ 0xFFFFFFFF 总共4GB
+* 64位：0x0000000000000000 ~ 0xFFFFFFFFFFFFFFFF 总共 17179869184GB
+
+以32位平台为例，在Linux系统下，最高的1GB被OS占用，进程只能使用低3GB的虚拟空间。Windows默认预留给操作系统的是2GB，不过可以修改启动配置文件Boot.ini，加上`/3G`参数，就可以和Linux的分布一样。
+
+进程只能使用操作系统分配的地址空间，如果访问了未经允许的地址空间，会被操作系统强制杀死，并报错“Secmentation fault”（Windows：进程因非法操作需要关闭）。
+
+![Linux虚拟地址空间分布](pic/process_virtual_address_space_distribution.png)
+
+在32位CPU下，可以通过PAE（Physical Address Extension）来访问大于4GB的物理内存空间（注意：不是虚拟地址空间）。自从Intel将地址总线扩展为36位之后，修改了页映射方式，新的映射方法可以访问到更多的物理内存。
+
+一种常见的实现方法：OS提供一个窗口映射的方法，应用程序在不同的时间，映射不同的物理内存到此窗口，从而实现访问大于4GB的物理内存空间。Linux一般通过mmap()系统调用实现。
+
+解决内存不够用的根本方法：使用64位的CPU和操作系统。
+
