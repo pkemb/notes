@@ -827,3 +827,36 @@ Segemnt和Section是从不同的角度对ELF文件进行了划分。从Section�
 </table>
 
 Tips：对于load类型的segment来说，p_memsz不能小于p_filesz，但是可以大于p_filesz。多余的部分填充为0，留给BSS段使用。这也是数据段和BSS段的唯一区别：数据段从文件初始化内容，而BSS段的内容全部初始化为0。
+
+<h4 id=heap_and_stack>堆和栈</h4>
+
+Linux也通过VMA来管理进程的堆和栈（实际上所有的内存空间都是通过VMA来管理的）。通过查看文件`/proc/[pid]/maps`，来查看进程的VMA。
+
+下列是树莓派上的一个实例。第一列是VMA的地址范围。第二列是权限（p表示私有，Copy on Write；S表示共享）。第三列是VMA对于的Segment在文件中的偏移，第四列是文件所在设备的主设备号和次设备号。第五列是文件的文件节点号。第六列是文件的路径。
+
+```
+[root@pi3b upload]# cat /proc/21027/maps
+00010000-00c4c000 r-xp 00000000 b3:04 14376      /usr/bin/rclone
+00c50000-01a84000 r--p 00c40000 b3:04 14376      /usr/bin/rclone
+01a90000-01b00000 rw-p 01a80000 b3:04 14376      /usr/bin/rclone
+01b00000-01b16000 rw-p 00000000 00:00 0 
+03000000-13000000 rw-p 00000000 00:00 0 
+13000000-23400000 ---p 00000000 00:00 0 
+a6adf000-a7cf1000 rw-p 00000000 00:00 0 
+a7cf1000-b6eef000 ---p 00000000 00:00 0 
+b6eef000-b6f2f000 rw-p 00000000 00:00 0 
+bed6c000-bed8d000 rw-p 00000000 00:00 0          [stack]
+beef1000-beef2000 r-xp 00000000 00:00 0          [sigpage]
+ffff0000-ffff1000 r-xp 00000000 00:00 0          [vectors]
+[root@pi3b upload]# 
+```
+
+VMA与Segment不完全对应，一个VMA可以映射到某个文件的一个区域，也可以没有映射到任何一个文件。即以上的stack、sigpage、vertors（为啥没有heap？还有一些没有名字），也叫做匿名虚拟内存（Anonymous Virtual Memeory Area）。
+
+现代的操作系统为了安全起见，用了随机地址空间分布的技术，即栈和堆的首地址会有一个小的随机偏移量。
+
+注意，vectors已经处于内核空间了，这是为啥呢？
+
+当通过malloc分配内存时，是从堆中分配的。进程总共的虚拟地址空间是4GB，那么从堆中最多可以分配多少内存呢？书中有给出一个小程序[max_heap.c](code/max_heap.c)。64位WLS1 Ubuntu的运行结果是113G，64位CentOS7.7虚拟机的结果是10G。
+
+书中的程序在64位下运行有一个小问题，具体可以看[这里](layout_err.md#P168)。
