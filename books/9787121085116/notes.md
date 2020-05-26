@@ -761,3 +761,69 @@ BFD库，Binary File Descriptor library，是binutils项目的子项目，目标
 3. 在物理内存中分配一个页面，将进程中该虚拟页与物理页建立映射关系。
 4. 控制权还回给进程，在也错误的位置继续执行。
 
+<h3 id=ch_6.4>进程虚存空间分布</h3>
+
+<h4 id=ch_linking_view_and_execute_view>ELF文件链接视图和执行视图</h4>
+
+ELF将一个或多个属性类似的`Section`，划分到同一个`Segment`。装载可执行文件时，一个`Segment`对应一个VMA，这样可以减少VMA的数量，减少页面内部碎片，从而节省内存空间。
+
+划分的依据一般有以下三种：
+* 以代码段为代表的权限为`可读可执行`的Section。
+* 以数据段和BSS段为代表的权限为`可读可写`的Section。
+* 以只读数据段为代表的权限为`只读`的Section。
+
+链接器在链接目标文件的时候，也会把权限属性相同的段尽可能的分配在同一空间。
+
+Segemnt和Section是从不同的角度对ELF文件进行了划分。从Section的角度看，就是ELF的链接视图，从Segment的角度看就是执行视图。所以谈ELF装载时，`段`指Segment，其他情况指Section。
+
+描述Segment的结构叫程序头，它描述了ELF文件该如何被操作系统映射到进程的虚拟地址空间。可以使用指令[readelf -l](bin.md#readelf-l)查看可执行文件的程序头表。
+
+由于目标文件不需要转载，所以没有此结构。
+
+程序头表是结构体`Elf32_Phdr`数组，此结构体各个成员的含义如下表所示：
+
+<table>
+  <tr><th>类型</th><th>成员</th><th>含义</th></tr>
+  <tr>
+    <td>Elf32_Word</td>
+    <td>p_type</td>
+    <td>Segment的类型，常见的有LOAD、DYNAMIC、INTERP。</td>
+  </tr>
+  <tr>
+    <td>Elf32_Off</td>
+    <td>p_offset</td>
+    <td>Segment在文件中的偏移。</td>
+  </tr>
+  <tr>
+    <td>Elf32_Addr</td>
+    <td>p_vaddr</td>
+    <td>Segment的第一个字节在进程虚拟地址空间的起始位置，程序头表所有LOAD类型的元素，按照p_vaddr从小到大排列。</td>
+  </tr>
+  <tr>
+    <td>Elf32_Addr</td>
+    <td>p_paddr</td>
+    <td>Segment的物理装载地址，即LMA（Load Memory Address）。一般情况下与p_vaddr相等。</td>
+  </tr>
+  <tr>
+    <td>Elf32_Word</td>
+    <td>p_filesz</td>
+    <td>Segment在ELF文件中所占空间的长度，可能为0。</td>
+  </tr>
+  <tr>
+    <td>Elf32_Word</td>
+    <td>p_memse</td>
+    <td>Segment在进程虚拟地址中所占用的长度，也可能是0。</td>
+  </tr>
+  <tr>
+    <td>Elf32_Word</td>
+    <td>p_flags</td>
+    <td>Segment的权限，比如R 可读，W 可写，X 可执行。</td>
+  </tr>
+  <tr>
+    <td>Elf32_Word</td>
+    <td>p_align</td>
+    <td>Segment的对齐属性，实际对齐字节等于2的p_align次方。</td>
+  </tr>
+</table>
+
+Tips：对于load类型的segment来说，p_memsz不能小于p_filesz，但是可以大于p_filesz。多余的部分填充为0，留给BSS段使用。这也是数据段和BSS段的唯一区别：数据段从文件初始化内容，而BSS段的内容全部初始化为0。
