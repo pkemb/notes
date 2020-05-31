@@ -870,3 +870,24 @@ VMA与Segment不完全对应，一个VMA可以映射到某个文件的一个区�
 从图中可以看出，为了保证两次映射不冲突，0x08049000~0x08049FA0的地址没有被使用。
 
 ![](pic/segment_address_alignment.png)
+
+<h3 id=ch_6.5>Linux内核装载ELF过程简介</h3>
+
+用户层面：调用fork()创建一个新进程，新进程调用exec函数族执行指定的elf文件。exec函数族最终会调用内核的sys_execve()。
+
+sys_execve()：此函数先查找文件是否存在，如果存在，则读取文件的前128个字节，然后调用search_binary_handle()去搜索和匹配合适的可执行文件装载处理过程。elf文件的装载处理过程是`load_elf_binary()`，脚本文件的装载处理过程是load_script()。
+
+load_elf_binary()
+1. 检查elf文件的有效性
+2. 寻找动态链接的.interp段，设置动态链接器路径
+3. 根据ELF文件的程序头表，对ELF文件进行装载。
+4. 初始化ELF进程环境。
+5. 将系统调用的返回地址修改成ELF可执行文件的入口点。
+   1. 静态ELF可执行文件：文件头e_entry所指的地址。
+   2. 动态ELF可执行文件：动态链接器。
+
+当sys_execve()系统调用从内核态返回用户态时，EIP寄存器直接跳转到了ELF程序的入口地址，于是新的程序开始执行，ELF文件装载完毕。
+
+<h3 id=ch_6.6>Windows PE的装载</h3>
+
+*待填坑*
