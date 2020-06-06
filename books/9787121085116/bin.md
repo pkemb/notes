@@ -51,7 +51,13 @@
 
 选项全称：--reloc
 
-说明：打印文件的重定位表。
+说明：打印文件的重定位表。一般适用于可重定位文件。
+
+<h3 id=objdump-R>-R</h3>
+
+选项全称：--dynamic-reloc
+
+说明：print the dynamic relocation entries of the file. 一般适用于可执行文件、共享对象文件。
 
 <h2 id=objcopy>objcopy</h2>
 
