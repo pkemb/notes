@@ -109,6 +109,10 @@
 
 程序头：描述Segment的结构，描述了ELF文件该如何被操作系统映射到进程的虚拟空间。
 
+<h3 id=readelf-d>-d</h3>
+
+说明：查看共享目标文件或可执行文件的.dynamic段。
+
 <h2 id=nm>nm</h2>
 
 list symbols from object files
@@ -141,3 +145,7 @@ usage：ar -t libxx.a
 说明：解压静态库。
 
 usage: ar -x libxx.a
+
+<h2 id=ldd>ldd</h2>
+
+说明：输出依赖的共享库。
