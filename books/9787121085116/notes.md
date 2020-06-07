@@ -1042,3 +1042,59 @@ int foo()
 第二次调用时，由于`bar@GOT`已经指向了真实的地址，所以无需重定位，直接完成了函数调用。
 
 ![](pic/plt.png)
+
+<h3 id=ch_7.5>动态链接相关结构</h3>
+
+在动态链接情况下，可执行文件转载完毕之后，操作系统会继续装载一个叫做`动态链接器`的文件，并将控制权转交给动态链接器。动态链接器会装载所有依赖的共享对象文件。当所有的动态链接工作完成之后，动态链接器会将控制权转交给可执行文件，程序开始正式执行。
+
+<h4 id=ch_7.5.1>.interp段</h4>
+
+存储了可执行文件需要的动态链接器的路径。注意：只有可执行文件才有这个段。
+
+查询指令：[readelf -l elf_file | grep interpreter](bin.md#readelf-l)
+
+<h4 id=ch_7.5.2>.dynamic段</h4>
+
+保存了动态链接所需要的基本信息，这个段是结构体`Elf32_Dyn`数组，此结构体由一个类型值加上一个附加的数值或指针，对于不同的类型，后面附加的数值或者指针有者不同的含义。
+
+```c
+typedef struct {
+  Elf32_Sword d_tag;
+  union {
+    Elf32_Word d_val;
+    Elf32_Addr d_ptr;
+  } d_un;
+} Elf32_Dyn;
+```
+
+常见的类型值及其含义：
+
+<table>
+  <tr><th>d_tag类型</th><th>d_un的含义</th></tr>
+  <tr><td>DT_SYMTAB</td>
+      <td>动态符号表的地址，d_ptr表示 .dynsym 的地址。</td></tr>
+  <tr><td>DT_STRTAB</td>
+      <td>动态符号字符串表，d_ptt表示 .dynstr 的地址。</td></tr>
+  <tr><td>DT_STRSZ</td>
+      <td>动态符号字符串表大小，d_val表示大小。</td></tr>
+  <tr><td>DT_HASH</td>
+      <td>动态链接哈希表地址，d_ptr 表示 .hash 的地址。</td></tr>
+  <tr><td>DT_SONAME</td>
+      <td>本共享对象的SO-NAME。</td></tr>
+  <tr><td>DT_RPATH</td>
+      <td>动态链接共享对象搜索路径。</td></tr>
+  <tr><td>DT_INIT</td>
+      <td>初始化代码地址。</td></tr>
+  <tr><td>DT_FINIT</td>
+      <td>结束代码地址。</td></tr>
+  <tr><td>DT_NEED</td>
+      <td>依赖的共享对象文件，d_ptr表示所依赖的共享对象文件名。</td></tr>
+  <tr><td>DT_REL<br>DT_RELA</td>
+      <td>动态链接重定位表地址。</td></tr>
+  <tr><td>DT_RELENT<br>DT_RELAENT</td>
+      <td>动态重读位表入口地址。</td></tr>
+</table>
+
+查看.dynamic段的指令：[readelf -d](bin.md#readelf-d)
+
+查看共享库或可执行文件依赖的共享库：[ldd](bin.md#ldd)
