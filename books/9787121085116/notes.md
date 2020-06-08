@@ -1072,7 +1072,7 @@ typedef struct {
 <table>
   <tr><th>d_tag类型</th><th>d_un的含义</th></tr>
   <tr><td>DT_SYMTAB</td>
-      <td>动态符号表的地址，d_ptr表示 .dynsym 的地址。</td></tr>
+      <td><a href=#ch_7.5.3>动态符号表</a>的地址，d_ptr表示 .dynsym 的地址。</td></tr>
   <tr><td>DT_STRTAB</td>
       <td>动态符号字符串表，d_ptt表示 .dynstr 的地址。</td></tr>
   <tr><td>DT_STRSZ</td>
@@ -1098,3 +1098,17 @@ typedef struct {
 查看.dynamic段的指令：[readelf -d](bin.md#readelf-d)
 
 查看共享库或可执行文件依赖的共享库：[ldd](bin.md#ldd)
+
+<h4 id=ch_7.5.3>动态符号表</h4>
+
+动态链接最关键的还是所依赖的符号和相关文件信息。
+
+动态符号表`.dynsym`保存了模块之间的符号导入导出关系，动态符号表与[符号表.symtab](#ch_3.5)非常的类似。
+* 导入：对其他模块符号的引用。
+* 导出：定义在本模块的符号。
+
+查看动态符号表的指令：[readelf -s](bin.md#readelf-s)
+
+其他辅助的表：
+* 保存符号名的表：动态符号字符串表 .dynstr，Dynamic String Table。
+* hash表，用于加快符号的查找速度。
