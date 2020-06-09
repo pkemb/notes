@@ -1131,3 +1131,56 @@ static int *p = &a;
 ```
 
 需要注意的是，如果不以PIC的方法来编译，那么导入函数的重定位入口可能出现在`.rel.dyn`中。
+
+<h4 id=ch_7.5.5>动态链接时进程堆栈初始化信息</h4>
+
+当操作系统将控制权交给动态链接器的时候，会通过堆栈传递`辅助信息数组（Auxiliary Vectory）`，此数组是`Elf32_auxv结构体数组`。
+
+```c
+typedef struct
+{
+  uint32_t a_type;
+  union
+  {
+    uint32_t a_val;
+  } a_un;
+} Elf32_auxv_t;
+```
+
+常见的类型及含义如下表：
+
+<table>
+  <tr><th>a_type定义</th><th>a_type值</th><th>a_val含义</th></tr>
+  <tr>
+    <td>AT_NULL</td>
+    <td>0</td>
+    <td>表示辅助信息数组结束。</td>
+  </tr><tr>
+    <td>AT_EXEFD</td>
+    <td>2</td>
+    <td>可执行文件的句柄。执行可执行文件时，操作系统会打开此文件。动态链接器可使用操作系统的文件读写操作来访问可执行文件。</td>
+  </tr><tr>
+    <td>AT_PHDR</td>
+    <td>3</td>
+    <td>可执行文件程序头表在进程中的地址。动态链接器也可以直接访问进程的VMA来访问可执行文件。</td>
+  </tr><tr>
+    <td>AT_PHENT</td>
+    <td>4</td>
+    <td>可执行文件中程序头表中每一个入口的大小。</td>
+  </tr><tr>
+    <td>AT_PHNUM</td>
+    <td>5</td>
+    <td>可执行文件中程序头表中入口的数量。</td>
+  </tr><tr>
+    <td>AT_BASE</td>
+    <td>7</td>
+    <td>动态链接器本身的装载地址。</td>
+  </tr><tr>
+    <td>AT_ENTRY</td>
+    <td>9</td>
+    <td>可执行文件入口地址，即启动地址。</td>
+  </tr>
+</table>
+
+示例程序：[print_stack.c](code/print_stack.c)。相比书中的示例，增加了对64位的支持。
+
