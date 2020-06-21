@@ -1507,7 +1507,7 @@ ld在链接共享库时，可以使用`--version-script`选项，指定符号版
 gcc -shared -fPIC lib.c -Xlinker --version-script lib.ver -o lib.so
 ```
 
-<h3 id=ch_8.3>共享库路径</h3>
+<h3 id=ch_8.3>共享库系统路径</h3>
 
 `FHS(File Hierarchy Standard)`标准，规定了一个系统中的系统文件应该如何存放。
 
@@ -1516,3 +1516,15 @@ FHS规定，一个系统中主要有三个存放共享库的位置：
 2. /usr/lib 非系统运行时所需要的关键性的共享库，主要是一些开发时需要用到的共享库。
 3. /usr/local/lib 与操作系统本身并不十分相关的库，主要是一些第三方的应用程序库。
 
+<h3 id=ch_8.4>共享库查找过程</h3>
+
+任何一个动态链接模块所依赖的动态共享库记录在.dynamic段，由DT_NEED类型的项表示。
+
+如果DT_NEED保存的是绝对路径，那么动态链接器就按照这个路径查找。
+
+如果DT_NEED保存的是相对路径，那么动态链接器按照以下顺序查找：
+* 环境变量 LD_LIBRARY_PATH 指定的路径
+* /etc/ld.so.cache 指定的SO-NAME缓存
+* /usrlib /lib
+
+动态链接库本来是查找/etc/ld.so.conf文件里面指定的路径，但是遍历每个目录太慢了。所以ldconfig在安装共享库的时候，会将所有的SO-NAME收集起来，存放在/etc/ld.so.cache。
