@@ -1506,3 +1506,13 @@ ld在链接共享库时，可以使用`--version-script`选项，指定符号版
 ```shell
 gcc -shared -fPIC lib.c -Xlinker --version-script lib.ver -o lib.so
 ```
+
+<h3 id=ch_8.3>共享库路径</h3>
+
+`FHS(File Hierarchy Standard)`标准，规定了一个系统中的系统文件应该如何存放。
+
+FHS规定，一个系统中主要有三个存放共享库的位置：
+1. /lib 系统最关键和基础的共享库。
+2. /usr/lib 非系统运行时所需要的关键性的共享库，主要是一些开发时需要用到的共享库。
+3. /usr/local/lib 与操作系统本身并不十分相关的库，主要是一些第三方的应用程序库。
+
