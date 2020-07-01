@@ -1528,3 +1528,61 @@ FHS规定，一个系统中主要有三个存放共享库的位置：
 * /usrlib /lib
 
 动态链接库本来是查找/etc/ld.so.conf文件里面指定的路径，但是遍历每个目录太慢了。所以ldconfig在安装共享库的时候，会将所有的SO-NAME收集起来，存放在/etc/ld.so.cache。
+
+<h3 id=ch_8.5>环境变量</h3>
+
+* [LD_LIBRARY_PATH](#ENV_LD_LIBRARY_PATH)
+* [LD_PRELOAD](#ENV_LD_PRELOAD)
+* [LD_DEBUG](#ENV_LD_DEBUG)
+
+<h4 id=ENV_LD_LIBRARY_PATH>LD_LIBRARY_PATH</h4>
+
+此环境变量由若干个路径组成，路径之间由冒号隔开。默认为空，如果为进程设置了LD_LIBRARY_PATH，启动进程时，动态链接器首先会在LD_LIBRARY_PATH指定的目录中查找动态库。也会影响gcc编译时查找动态库的路径，相当于`-L`。
+
+用以下指令启动程序，与更改LD_LIBRARY_PATH等效：
+
+```
+/lib/ld-linux.so.2 -library-path /path1:/path2 /path/to/program
+```
+
+注意：LD_LIBRARY_PATH对于共享库的开发和测试来说非常方便，但是不应该被滥用。随意修改LD_LIBRARY_PATH并导出至全局范围，可能会引起其他程序的奔溃。
+
+<h4 id=ENV_LD_PRELOAD>LD_PRELOAD</h4>
+
+LD_PRELOAD会指定一些预先装载的动态库或目标文件。动态链接器在按照固定的规则搜索动态库之前，会装载这些动态库或目标文件，无论可执行文件是否依赖他们。
+
+由于全局符号介入机制的存在，先加载的符号，会覆盖后面加载的同名符号。这样可以很方便的替换标准库中的函数。但是，不能滥用，发布的程序不应该依赖LD_PRELOAD。
+
+/etc/ld.so.preload的作用与LD_PRELOAD一样。
+
+<h4 id=ENV_LD_DEBUG>LD_DEBUG</h4>
+
+LD_DEBUG用来打开动态链接器的调试信息。设置此环境变量之后，动态链接器在运行时会打印各种有用的信息，便于开发和调试共享库。
+
+使用方法：
+
+```shell
+LD_DEBUG=value /path/to/program
+```
+
+`value`有以下可能的取值：
+
+<table>
+  <tr><th>取值</th><th>说明</th></tr>
+  <tr><td>bindings</td>
+      <td>显示动态链接的符号绑定过程。</td></tr>
+  <tr><td>libs</td>
+      <td>显示共享库的查找过程。</td></tr>
+  <tr><td>versions</td>
+      <td>显示符号的版本依赖关系。</td></tr>
+  <tr><td>reloc</td>
+      <td>显示重定位过程。</td></tr>
+  <tr><td>symbols</td>
+      <td>显示符号表查找过程。</td></tr>
+  <tr><td>statistics</td>
+      <td>显示动态链接过程中的各种统计信息。</td></tr>
+  <tr><td>all</td>
+      <td>显示以上所有信息。</td></tr>
+  <tr><td>help</td>
+      <td>显示上面的各种可选值的帮助信息。</td></tr>
+</tanle>
