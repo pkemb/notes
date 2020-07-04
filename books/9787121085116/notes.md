@@ -1645,3 +1645,8 @@ void __attribute__((destructor(m))) finit_function2(void);
 ```
 GROUP( /lib/libc.so.6 /lib/libm.so.2)
 ```
+
+
+<h2 id=ch9>Windows下的动态链接</h2>
+
+**待填坑**
