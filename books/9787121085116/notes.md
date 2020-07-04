@@ -1604,3 +1604,44 @@ gcc的几个关键参数：
 * -Wl,-export-dynamic 将可执行文件的所有全局符号导出到动态符号表，避免共享库反向查找可执行文件的全局符号失败。
 
 一个小问题：清除符号信息后，是如何进行符号查找的？
+
+<h4 id=ch_8.6.3>共享库的安装</h4>
+
+如果有root权限，将共享库放入到某个标准的共享库目录，运行ldconfig程序即可。
+
+如果没有root权限，可以使用以下指令，在共享库的目录，生成SO-NAME软链接。并告诉编译器如何查找共享库。
+```shell
+ldconfig -n shared_library_path
+```
+
+编译时指定共享库查找位置的方法：
+1. -L 和 -l 参数
+2. -rpath 参数
+3. LD_LIBRARY_PATH 环境变量
+
+<h4 id=ch_8.6.4>共享库构造和析构函数</h4>
+
+在函数声明的时候，加上`__attribute__((constructor))`属性，即指定该函数为共享库的构造函数。类似的，`__attribute__((destructor))`指定为析构函数。
+
+```c
+void __attribute__((constructor(n))) init_function1(void);
+void __attribute__((destructor(m))) finit_function2(void);
+```
+
+几点说明：
+1. 构造函数在执行main函数之前，或dlopen()返回之前被执行。
+2. 析构函数在main函数执行完毕之后执行，或调用exit时执行，或dlclose()返回之前被执行。
+3. 这是GCC对C语言语法的扩展，在其他编译器上不适用。
+4. 不能使用 -nostartfiles 和 -nostdlib 选项。
+5. 如果有多个构造或析构函数，其执行顺序是不确定的。可以通过指定优先级来确定。如上述例子中的n和m。
+   1. 对于构造函数来说，数字小的先执行。
+   2. 对于析构函数来说，数字大的先执行。
+
+<h4 id=ch_8.6.5>共享库脚本</h4>
+
+共享库还可以是符合一定格式的链接脚本文件，可以把几个现有的共享库通过一定的方式组合起来。语法与LD链接脚本类似。
+
+例如，`libfoo.so`的内容如下所示：
+```
+GROUP( /lib/libc.so.6 /lib/libm.so.2)
+```
