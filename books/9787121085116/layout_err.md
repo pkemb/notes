@@ -46,3 +46,7 @@
 应该更改为
 
 > 当我们使用“-Wl,-soname,my_soname”
+
+## P286
+
+栈是`FILO`，而不是`FIFO`。
