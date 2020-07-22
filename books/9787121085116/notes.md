@@ -1741,6 +1741,16 @@ Hook技术：在函数的开头插入一些空指令（占位符）。如果需�
     <td>从左至右的顺序压参数入栈</td>
     <td>比较复杂，参考pascal文档。</td>
   </tr>
+  <tr>
+    <td>naked call</td>
+    <td colspan="3">部分编译器提供，不提供任何保护寄存器的代码。</td>
+  </tr>
+  <tr>
+    <td>thiscall</td>
+    <td colspan="3">C++专有的调用惯例，用于类成员函数的调用，不同的编译器有不同的特点。<br>
+                    VC：this指针存放在ecx寄存器，参数从右到左压栈。<br>
+                    gcc：与cdecl一致，this指针看作函数的第一个参数。</td>
+  </tr>
 </table>
 
 注：C++有更为复杂的符号修饰机制。
