@@ -42,6 +42,26 @@ Linux内核可以在运行时动态的装载（insmod）或卸载（rmmod）模�
 
 ### hello world 模块
 
+以下是hello world模块的[完整代码](code/ch02/hello.c)：
+```c
+#include <linux/init.h>
+#include <linux/module.h>
+MODULE_LICENSE("Dual BSD/GPL");
+
+static int hello_init(void)
+{
+    printk(KERN_ALERT "hello world!\n");
+}
+
+static int hello_exit(void)
+{
+    printk(KERN_ALERT "Googbye hello world!\n");
+}
+
+module_init(hello_init);
+module_exit(hello_exit);
+```
+
 最简单的模块包含的内容：
 * MODULE_LICENSE()
 * 模块初始化函数
@@ -50,7 +70,7 @@ Linux内核可以在运行时动态的装载（insmod）或卸载（rmmod）模�
 * 加载模块的指令：insmod
 * 卸载模块的指令：rmmod
 
-关于模块的构造，在后面的章节讲解。
+关于模块的构造，请参考[编译和装载](#编译和装载)。
 
 ### 核心模块与应用程序的对比
 
@@ -93,3 +113,55 @@ Linux内核可以在运行时动态的装载（insmod）或卸载（rmmod）模�
 有两个下划线（__）前缀的函数，通常是比较底层的实现。可以使用，后果自负。
 
 内核不支持浮点运算，也不需要浮点运算。
+
+### 编译和装载
+
+如何编译模块并将其装载到内核。
+
+#### 编译模块
+
+在构造模块之前，需要确保环境准备妥当：
+1. 具备了正确版本的编译器、模块工具和其他必要的工具。具体可以看内核源代码的Documentation/Changes文件。
+2. 文件系统需要有内核树，或者配置并构造内核。
+
+关于构造系统更加详细的内容，可以参考内核源代码Documentation/kbuild目录下的文件。
+
+下面是hello world模块的[makefile](code/ch02/Makefile)，直接执行`make`指令，即可构造hello world模块。此makefile会被读取两次，第一次走else分支，第二次走if分支。
+```makefile
+# 如果已定义 KERNELRELEASE，则说明是从内核构造系统调用的，
+# 因此可利用其内建语句。
+ifneq($(KERNELRELEASE),)
+    obj-m := hello.o
+# 否则，是直接从命令行调用的，
+# 这时要调用内核构造系统。
+else
+    KERNELDIR ?= /lib/modules/$(shell uname -r)/build
+    PWD := $(shell pwd)
+
+default:
+    $(MAKE) -C $(KERNELDIR) M=$(PWD) modules
+endif
+```
+
+#### 装载和卸载模块
+
+insmode：将模块的代码和数据装入内核，用内核的符号表解析未定义的符号。
+
+modprobe：也用户装载模块，如果有未定义符号无法解析，insmode 会直接报错。而modprobe会搜索定义了此符号的模块并装载。
+
+rmmod：从内核中移除模块。如果模块正在使用，或被内核配置未禁止移除，则无法移除模块。
+
+lsmod：列出当前装载到内核的所有模块。有关装载模块的更多信息，可以查看/proc/modules文件和/sys/module目录。
+
+#### 版本依赖
+
+模块可以和内核中的vermagic.o链接，此目标文件包含了大量有关内核的信息。在装载时，可用来检查模块和内核的兼容性。如果不匹配，则拒绝装载模块。
+
+如果要为特定内核版本构造模块，则需要该特定版本对应的构造系统和源代码树。
+
+一些与版本检查相关的弘：
+* UTS_RELEASE   描述内核版本的字符串，例如"2.6.10"。
+* LINUX_VERSION_CODE    内核版本的二进制表示，2.6.10对应的是0x02060a。
+* KERNEL_VERSION(major,minor,release)   利用版本号的三个部分，创建整数版本号。
+
+可以使用条件编译，编写基于特定内核版本的代码。
