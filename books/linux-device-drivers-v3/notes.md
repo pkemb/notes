@@ -36,40 +36,60 @@ Linux内核可以在运行时动态的装载（insmod）或卸载（rmmod）模�
 
 ## 第二章 构造和运行模块
 
-安装Linux 2.6.x 内核
-1. 安装编译内核需要的工具
+### 设置测试系统
 
-build-essential kernel-package libncurses5-dev libqt3-headers
+关于开发环境的搭建，请参考[搭建设备驱动开发环境](development-environment.md)。
 
- build-essential  (基本的编程库（gcc, make等）
- kernel-package   (Debian 系统里生成 kernel-image 的一些配置文件和工具)
- libncurses5-dev  (meke menuconfig要调用的）
- libqt3-headers   (make xconfig要调用的）
- 其他工具在升级过程中可以按提示安装
+### hello world 模块
 
-2. 下载内核源代码。[链接](https://mirrors.edge.kernel.org/pub/linux/kernel/v2.6/linux-2.6.34.tar.gz)
-3. 配置内核
-    将当前内核的配置文件.config拷贝到解压的目录，执行 make menuconfig，并save。
+最简单的模块包含的内容：
+* MODULE_LICENSE()
+* 模块初始化函数
+* 模块退出函数
+* 模块在运行时不能只用C库函数，可以使用kernel提供的函数（例如printk()）
+* 加载模块的指令：insmod
+* 卸载模块的指令：rmmod
 
-    根据第四章的内容，要开启以下选项：
-    * CONFIG_DEBUG_KERNEL
-    * CONFIG_DEBUG_SLAB
-    * CONFIG_DEBUG_PAGEALLOC
-    * CONFIG_DEBUG_SPINLOCK
-    * CONFIG_DEBUG_SPINLOCK_SLEEP
-    * CONFIG_INIT_DEBUG
-    * CONFIG_DEBUG_INFO
-    * CONFIG_MAGIC_SYSRQ
-    * CONFIG_DEBUG_STACKOVERFLOW
-    * CONFIG_DEBUG_STACK_USAGE
-    * CONFIG_KALLSYMS
-    * CONFIG_IKCONFIG
-    * CONFIG_IKCONFIG_PROC
-    * CONFIG_ACPI_DEBUG
-    * CONFIG_DEBUG_DRIVER
-    * CONFIG_SCSI_CONSTANTS
-    * CONFIG_INPUT_EVBUG
-    * CONFIG_PROFILING
-4. 编译并安装新内核
-5. 更新GRUB引导列表
+关于模块的构造，在后面的章节讲解。
 
+### 核心模块与应用程序的对比
+
+从编程模式看，应用程序一般从头到尾执行单个任务。模块的初始化函数执行完毕后就直接退出了，相当于告诉内核，我在这，我能提供某些服务。
+
+应用程序退出时，无需关系资源的释放，因为kernel会帮助完成资源的释放。而模块必须在退出函数，必须仔细的撤销初始化函数做的工作。
+
+模块会与内核链接起来，但不会和任何函数库链接。所以模块无法使用常见的库和头文件，只能使用kernel提供的函数和头文件。
+
+应用程序的错误一般只会对自己照成影响，而模块的错误可能会导致整个系统宕机。
+
+#### 用户空间和内核空间
+
+模块运行在内核空间，而应用程序运行在用户空间。
+
+这两种模式具有不同的特权等级、不同的地址空间。当发生系统调用或中断时，会从用户空间陷入到内核空间。
+
+#### 内核中的并发
+
+应用程序通常是顺序执行的，无需关心其他事情会改变其运行环境。而模块（内核代码）必须时刻牢记：`同一时刻，可能会有很多事情正在发生`。
+
+原因：
+1. Linux通常同时运行多个并发进程，这些进程可能同时在使用驱动程序。
+2. 模块可能被中断处理程序打断。
+3. 内核中存在一些其他的异步运行进程，例如定时器。
+4. 在SMP系统上，可能多个CPU同时在使用模块。
+
+对代码编写的要求：
+1. Linux内核代码（包括驱动程序的代码）必须是可重入的，必须同时运行在多个上下文。
+2. 处理并发问题的同时，还要避免竞态。
+
+#### 当前进程
+
+内核代码可以通过全局项`current`来获取当前进程，此全局指针定义在`<asm/current.h>`中。
+
+#### 其他一些细节
+
+内核栈非常小，而且自己的函数和整个内核空间调用链共享栈。对于比较大的数据结构，建议动态分配。
+
+有两个下划线（__）前缀的函数，通常是比较底层的实现。可以使用，后果自负。
+
+内核不支持浮点运算，也不需要浮点运算。
