@@ -165,3 +165,130 @@ lsmod：列出当前装载到内核的所有模块。有关装载模块的更多
 * KERNEL_VERSION(major,minor,release)   利用版本号的三个部分，创建整数版本号。
 
 可以使用条件编译，编写基于特定内核版本的代码。
+
+#### 平台依赖
+
+内核和模块可以针对特定的CPU平台进行特殊的优化，充分利用目标平台的特性。这需要针对目标平台定制编译后才能达到。利用vermagic.o，在装载模块时，内核会检查处理器的相关配置选项以确保匹配运行中的内核。如果不符合，则会拒绝装载。
+
+如果打算编写一个通用的驱动程序，最好考虑一下，如何支持可能的不同CPU平台。
+
+### 内核符号表
+
+装载模块时，insmod会使用公共内核符号表解析未定义的符号。同时，模块也可以导出自己的符号到内核符号表，供其他的模块使用。
+
+新模块可以使用已插入模块的符号，这种技术称为叠层技术。通过叠层技术，可以将模块划分为多个层，通过简化每个层可以缩短开发时间。
+
+使用下列宏，可以方便的将符号导出，可以有效的避免名字空间污染。符号必须在模块的全局部分导出，该符号也必须是全局的。
+```c
+EXPORT_SYMBOL(name);
+EXPORT_SYMBOL_GPL(name);    // 只能被GPL许可证下的模块使用
+```
+
+### 预备知识
+
+每个可装载模块都必须包含下面两行代码：
+```c
+#include <linux/module.h>   // 含有可装载模块需要的大量符号和函数的定义
+#include <linux/init.h>     // 指定初始化和清除函数
+```
+
+模块应该指定代码所使用的许可证：
+```c
+MODULE_LICENSE("GPL");
+```
+内核能够识别的许可证有：
+<table>
+    <tr><th>许可证</th><th>描述</th></tr>
+    <tr><td>GPL</td><td>任一版本的GNU通用公共许可证</td></tr>
+    <tr><td>GPL v2</td><td>GPL版本2</td></tr>
+    <tr><td>GPL and additional rights</td><td>GPL及附加权力</td></tr>
+    <tr><td>Dual BSD/GPL</td><td>BSD/GPL双重许可证</td></tr>
+    <tr><td>Dual MPL/GPL</td><td>MPL/GPL双重许可证</td></tr>
+    <tr><td>Proprietary</td><td>专有</td></tr>
+</table>
+
+可在模块中包含的其他描述性定义：
+```c
+MODULE_AUTHOR(描述模块作者);
+MODULE_DESCRIPTION(用来说明模块用途的简短描述);
+MODULE_VERSION(代码修订号); // 有关版本字符串的创建惯例，请参考 <linux/module.h> 中的注释
+MODULE_ALIAS(模块的别名);
+MODULE_DEVICE_TABLE(用来告诉用户空间模块所支持的设备);
+```
+
+上述`MODULE_`声明，需要放置在全局区，习惯上放在文件的最后。
+
+### 初始化和关闭
+
+模块初始化函数负责注册模块所提供的任何`设施`。对于每种设施，对应有具体的内核函数用来完成注册。
+
+初始化函数的典型定义如下：
+```c
+static int __init initialization_function(void)
+{
+    // 这是初始化代码
+}
+module_init(initialization_function); // 必须使用 moudle_init() 注册初始化函数
+```
+
+`__init`标记用来告诉内核，此函数仅在初始化期间使用。模块初始化完毕之后，此函数会被丢弃，释放内存空间。类似的标记还有`__initdata`、`__devinit`、`__devinitdata`。如果一个函数在初始化完毕之后还想使用，则不能使用`__init`标记。
+
+#### 清除函数
+
+清除函数负责在模块被移除前注销接口，并向系统返回所有资源。典型定义如下：
+```c
+static void __exit cleanup_function(void)
+{
+    // 这是清除代码
+}
+module_exit(cleanup_function);
+```
+
+`__exit`标记表示函数仅用于卸载。如果模块直接内嵌到内核，或禁止卸载，此函数会被丢弃。如果模块没有注册清除函数，则禁止卸载。
+
+#### 初始化过程中的错误处理
+
+向内核注册任何设施时，都有可能会失败，所以必须要检查返回值。
+
+如果注册设施失败，模块应尽可能的向前初始化，通过降低功能来继续运转。如果遇到致命错误，初始化函数需要将已注册的设施释放，并返回一个错误码。
+
+#### 模块装载竞争
+
+初始化函数还在运行的时候，刚刚注册好的设施可能会被其他模块调用。也就是说，在用来支持某个设施的所有内部初始化完成之前，不要注册任何设施。
+
+注册某个设施失败的时候，之前注册好的设施可能真正使用。如果要初始化失败，需要小心处理内核其他部分正在进行的操作，并等待这些操作完成。
+
+### 模块参数
+
+模块可以使用`module_param()`来声明参数。module_param()必须放在任何函数之外，通常在源文件的头部。下面是示例代码，声明了一个整型参数，和一个字符串参数。参数必须要有一个默认值，如果没有指定参数，则使用默认值。
+```c
+#include <moduleparam.h>
+static char *whom = "world";
+static int  howmany = 1;
+module_param(howmany, int, S_IRUGO);
+module_param(whom, charp, S_IRUGP);
+```
+
+可以使用以下命令更改参数：
+```shell
+insmod modname howmany=10 whom="Mom"
+```
+
+module_param()的第一个参数是变量名称，第二个参数是变量类型，第三个参数是sysfs入口项的访问许可掩码。
+
+内核支持的模块参数类型
+<table>
+    <tr><th>参数类型</th><th>说明</th></tr>
+    <tr><td>bool</td><td>布尔值，取true或false。</td></tr>
+    <tr><td>invbool</td><td>反转bool值，true变false，false变true。</td></tr>
+    <tr><td>charp</td><td>字符指针值。内核会为用户提供的字符串分配内存，并相应设置指针。</td></tr>
+    <tr><td>int<br>long<br>short<br>
+            uint<br>ulong<br>ushort</td>
+            <td>具有不同长度的基本整数值，u开头的用于无符号值。</td></tr>
+</table>
+
+可以使用`module_param_array(name,type,num,perm)`声明数组参数。name是数组名，type是数组元素的类型，num是用户提供的值的个数。
+
+### 在用户空间编写驱动程序
+
+编写一个用户进程作为驱动程序，有很多好处，但是也有很多限制，具体参考书籍。通常，用户空间驱动程序被实现为一个服务器进程，替代内核作为硬件控制的唯一代理。
