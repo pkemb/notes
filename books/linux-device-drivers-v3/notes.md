@@ -292,3 +292,48 @@ module_param()的第一个参数是变量名称，第二个参数是变量类型
 ### 在用户空间编写驱动程序
 
 编写一个用户进程作为驱动程序，有很多好处，但是也有很多限制，具体参考书籍。通常，用户空间驱动程序被实现为一个服务器进程，替代内核作为硬件控制的唯一代理。
+
+## 第三章 字符设备驱动程序
+
+本章的目的是编写一个完整的字符设备驱动程序scull，Simple Character Utility for Loading Localities，区域装载的简单字符工具。
+
+### scull 的设计
+
+编写驱动程序的第一步就是定义驱动程序为用户程序提供的能力（机制）。
+
+scull实现了以下类型的设备：
+* scull0 ~ scull3
+* scullpipe0 ~ scullpipe3
+* scullsingle
+* scullpriv
+* sculluid
+* scullwuid
+
+### 主设备号和次设备号
+
+对字符设备的访问是通过文件系统内的设备名称进行的，简单来说是文件系统树的节点，通常位于/dev目录。可通过`ls -l`的第一个字符`c`，来识别字符设备。
+
+每个设备都有一个主设备号和次设备号。主设备号标识设备对应的驱动程序，次设备号由内核使用，用于正确确定设备文件所指的设备。
+
+#### 设备号的内部表达
+
+在内核中，`dev_t`类型用来保存设备号，包括主设备号和次设备号。
+```c
+#include <linux/types.h>
+MAJOR(dev_t dev);   // 获取主设备号
+MINOR(dev_t dev);   // 获取次设备号
+MKDEV(int major, int minor);  // 构造 dev_t
+```
+
+#### 分配和释放设备编号
+
+```c
+#include <linux/fs.h>
+int register_chrdev_region(dev_t first, unsigned int count, char *name);
+int alloc_chrdev_region(dev_t *dev, unsigned int firstminor, unsigned int count, char *name);
+void unregister_chrdev_region(dev_t first, unsigned int count);
+```
+
+推荐动态分配主设备号。Documentation/devices.txt列出了静态分配的设备号。如果需要静态分配设备号，应该要避免已经分配的设备号。
+
+动态分配的缺点：无法预先创建设备节点。不过可以通过读取文件`/proc/devices`来获取设备号，然后再创建设备节点。
