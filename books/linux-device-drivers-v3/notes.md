@@ -337,3 +337,31 @@ void unregister_chrdev_region(dev_t first, unsigned int count);
 推荐动态分配主设备号。Documentation/devices.txt列出了静态分配的设备号。如果需要静态分配设备号，应该要避免已经分配的设备号。
 
 动态分配的缺点：无法预先创建设备节点。不过可以通过读取文件`/proc/devices`来获取设备号，然后再创建设备节点。
+
+### 一些重要的数据结构
+
+* 文件操作：`struct file_operations`
+* file 结构：`struct file`
+* inoe 结构：`struct inode`
+
+### 字符设备的注册
+
+```c
+struct cdev * cdev_alloc(void);
+void cdev_init(struct cdev *cdev, struct file_operations *fops);
+int cdev_add(struct cdev *cdev, dev_t num, unsigned int count);
+void cdev_del(struct cdev *cdev);
+```
+
+早期注册字符设备的方法：
+```c
+int register_chrdev(unsigned int major, const char *name, struct file_operations *fops);
+int unregister_chrdev(unsigned int major, const char *name);
+```
+
+### open 和 release
+
+### scull的内存使用
+
+### read 和 write
+
