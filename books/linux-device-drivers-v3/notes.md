@@ -365,3 +365,31 @@ int unregister_chrdev(unsigned int major, const char *name);
 
 ### read 和 write
 
+## 第四章 调试技术
+
+### 内核中的调试支持
+
+一些用于调试的内核选项。
+
+### 通过打印调试
+
+#### printk
+
+### 使用 proc 文件系统
+
+### 通过监视调试
+
+strace 指令。
+
+### 调试系统故障
+
+主要是oops消息的解读。
+
+### 调试器和相关工具
+
+* gdb
+* kdb内核调试器
+* 用户模式的Linux虚拟机
+* Linux跟踪工具包LTT
+* 动态探测 Dprobes
+
