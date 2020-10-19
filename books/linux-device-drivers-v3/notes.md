@@ -393,3 +393,136 @@ strace 指令。
 * Linux跟踪工具包LTT
 * 动态探测 Dprobes
 
+## 第五章 并发和竞态
+
+对共享数据的并发访问会导致竞态。
+
+### 并发及其管理
+
+并发的来源：
+* SMP，内核代码是可抢占的
+* 设备中断
+* workqueue
+* tasklet
+* timer
+
+为避免驱动程序产生竞态，需要遵循以下规则：
+* 尽量避免资源的共享。
+* 必须显式的管理对共享资源的访问，必须确保一次只有一个执行线程可以操作共享资源。
+* 共享资源被其他组件引用时，必须确保自己可用。
+
+### 信号量和互斥体
+
+信号量用于建立临界区。当代码进入临界区时，减少信号量。如果信号量为0，则进程休眠，直到其他进程释放信号量。当代码退出临界区时，增加信号量。
+
+初始值为1的信号量，又被称为互斥体。在任意给定时刻，只能被单个线程拥有。
+
+#### Linux信号量接口
+
+头文件和数据类型：
+```c
+#include <asm/semaphore.h>
+struct semaphore
+```
+
+声明和初始化：
+```c
+// 按指定值初始化信号量
+void sema_init(struct semaphore *sem, int val);
+// 声明和初始化互斥体
+DECLARE_MUTEX(name);
+DECLARE_MUTEX_LOCKED(name);
+// 动态分配互斥体
+void init_MUTEX(struct semaphore *sem);
+void init_MUTEX_LOCKED(struct semaphore *sem);
+```
+
+减少信号量的值（获取信号量）：
+```c
+// 减少信号量，并在必要时一直等待，不可中断。用于建立不可杀进程。
+void down(struct semaphore *sem);
+// down()的中断版本。被中断时，返回非0值，并且没有获取到信号量。
+int down_interruptible(struct semaphore *sem);
+// 尝试减少信号量，如果不可获得，则立即返回非0值。
+int down_trylock(struct semaphore *sed);
+```
+
+增加信号量的值（释放信号量）：
+```c
+void up(struct semaphore *sem);
+```
+
+特别注意：如果在拥有一个信号量时发生错误，必须在将错误状态返回给调用者之前释放信号量。
+
+在等待信号量时被中断，先撤销用户可见的任何修改，然后返回`-ERESTARTSYS`。如果无法撤销，则返回`-EINTR`。
+
+#### 读取者写入者信号量
+
+对共享数据的访问分为只读和写入。我们可以接收并发读取。
+
+头文件和数据类型：
+```c
+#include<linux/rwsem.h>
+struct rw_semaphore
+```
+
+初始化接口：
+```c
+void init_rwsem(struct rw_semaphore *sem);
+```
+
+只读访问的接口：
+```c
+void down_read(struct rw_semaphore *sem);
+// 获取信号量返回非0，其他情况返回0
+int down_read_trylock(struct rw_semaphore *sem);
+void up_read(struct rw_semaphore *sem);
+```
+
+写入者接口：
+```c
+void down_write(struct rw_semaphore *sem);
+int down_write_trylock(struct rw_semaphore *sem);
+void up_write(struct rw_semaphore *sem)l
+// 将写入访问转换为只读访问
+void downgrade_write(struct rw_semaphore *sem);
+```
+
+rwsem的特点：
+* 允许一个写入者，或无数个读取者拥有
+* 写入者具有更高的优先级
+* 适用于很少需要写访问，且写入者只会短期拥有。
+
+#### completion
+
+驱动编程的一个常见模型：在当前线程之外初始化一个活动，然后等待该活动结束。信号量可以完成此项工作，但是不是最适合的。
+
+completion是一种轻量级的进制，允许一个线程告诉另外一个线程某个工作已经完成。
+
+头文件和数据类型：
+```c
+#include<linux/completion.h>
+struct completion
+```
+
+初始化和声明接口：
+```c
+void init_completion(struct completion *c);
+DECLARE_COMPLETION(my_completion);
+```
+
+等待completion：
+```c
+// 非中断等待，可能会照成不可杀的进程
+void wait_for_completion(struct completion *c);
+```
+
+触发completion事件：
+```c
+void complete(struct completion *c);      // 唤醒一个等待线程
+void complete_all(struct completion *c);  // 唤醒所有等待线程
+```
+
+completion通常是一个单次设备，使用一次后被丢弃。小心处理，也可以被重复使用。
+
+问题：对一个completion连续两次调用complete()会发生什么？
