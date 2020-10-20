@@ -526,3 +526,64 @@ void complete_all(struct completion *c);  // 唤醒所有等待线程
 completion通常是一个单次设备，使用一次后被丢弃。小心处理，也可以被重复使用。
 
 问题：对一个completion连续两次调用complete()会发生什么？
+
+### 自旋锁
+
+自旋锁只有两个状态，锁定和解锁。如果锁定成功，则代码进入临界区。如果锁定失败，则代码不断的检测并尝试锁定，直到锁可用。测试并锁定的操作必须以原子方式完成。对于不同的处理器架构，自旋锁的实现是不同的。核心概念是一样的：自旋锁在等待时，处理器不能做任何有用的工作。
+
+自旋锁通常用于不能休眠的代码。
+
+#### 自旋锁API
+
+```c
+// 头文件
+#include <linux/spinlock.h>
+// 静态初始化
+spinlock_t my_lock = SPIN_LOCK_UNLOCKED;
+// 动态初始化
+void spin_lock_init(spinklock_t *lock);
+// 锁定。等待时，处理器无法做其他事情
+void spin_lock(spinlock_t *lock);
+// 解锁。
+void spin_unlock(spinlock_t *lock);
+```
+
+#### 自旋和原子上下文
+
+在使用自旋锁时，要注意以下规则，避免系统响应时间过长，或进入死锁。
+1. 任何拥有自旋锁的代码都必须是原子的，不能休眠。
+2. 在拥有自旋锁时需要禁止中断（仅本地CPU）
+3. 自旋锁必须在可能的最短时间内拥有。
+
+#### 自旋锁函数
+
+```c
+// 不关闭任何中断
+void spin_lock(spinlock_t *lock);
+// 禁止硬件中断和软件中断，中断状态保存在flags中
+void spin_lock_irqsave(spinlock_t *lock, unsigned long flags);
+// 禁止硬件中断和软件中断，不保存中断状态
+void spin_lock_irq(spinlock_t *lock);
+// 只禁止软件中断
+void spin_lock_bh(spinlock_t *lock);
+// 非阻塞获取，成功时返回非0
+int spin_trylock(spinlock_t *lock);
+int spin_trylock_bh(spinlock_t *lock);
+```
+
+当自旋锁能被运行在中断上下文的代码获得时，必须使用某个关闭中断的版本（在哪种中断上下文被获取，就要关闭哪种中断），避免系统死锁。如果只在软中断被获取，可以使用spin_lock_bh()，还能服务硬件中断。
+
+释放自旋锁的函数严格对应于获取自旋锁的函数。
+
+```c
+void spin_unlock(spinlock_t *lock);
+void spin_unlock_irqrestore(spinklock_t *lock, unsigned long flags);
+void spin_unlock_irq(spinklock_t *lock);
+void spin_unlock_bh(spinlock_t *lock);
+```
+
+#### 读取者/写入者自旋锁
+
+类似于读取者写入者信号量。
+
+相关API：略。
