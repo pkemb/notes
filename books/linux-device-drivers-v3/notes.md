@@ -603,3 +603,104 @@ void spin_unlock_bh(spinlock_t *lock);
   * 在初期应该使用粗粒度的锁，抑制自己过早考虑优化的欲望。
   * [lockmeter](http://oss.sgi.com/projects/lockmeter) 可度量内核花费在锁上的时间。
 
+### 除了锁之外的办法
+
+#### 免锁算法
+
+重构算法，从根本上避免使用锁。
+
+例如生产者-消费者问题，可以使用环形缓冲区。当只有一个生产者写入，只有一个消费者读取时，可以保证数据一致性。要小心处理缓冲区满和缓冲区空的情况。
+
+Linux在2.6.10，有一个通用的缓冲区实现`linux/kfifo.h`。
+
+#### 原子变量
+
+当共享变量是一个简单的整数类型时，可以使用内核提供的`atomic_t`数据类型。特点如下：
+* 保持的是一个int类型的值。
+* 最大表示24位的整数
+* 对该类型的操作，保证是原子的，而且速度很快。
+
+原子变量API：
+```c
+void atomic_set(atomic_t *v, int i);
+atomic_t v = ATOMIC_INIT(i);
+int atomic_read(atomic_t *v);
+void atomic_add(int i, atomic_t *v);
+void atomic_sub(int i, atomic_t *v);
+void atomic_inc(atomic_t *v);
+void atomic_dec(atomic_t *v);
+int atomic_inc_and_test(atomic_t *v);
+int atomic_dec_and_test(atomic_t *v);
+int atomic_sub_and_test(int i, atomic_t *v);
+....
+```
+
+注意：需要多个atomic_t变量的操作，任然需要某种类型的锁。
+
+#### 位操作
+
+原子地修改和测试单个bit的函数。这些函数使用的数据类型依赖于具体架构。
+
+```c
+void set_bit(nr, void *addr); // 设置addr指向的数据项的第nr位为1
+void clear_bit(nr, void *addr);
+test_bit(nr, void *addr); // 返回第nr位，非原子方式实现
+
+// 返回nr位之前的值，并设置相应的位
+int test_and_set_bit(nr, void *addr);
+int test_and_clear_bit(nr, void *addr);
+int test_and_change_bit(nr, void *addr);
+```
+
+#### seqlock
+
+用于保护很小、很简单、会频繁读取、写入很少且快速的资源。本质上，seqlock允许读者对资源的自由访问，但需要读者检查是否和写入者发生冲突。当冲突发生时，需要重试对资源的访问。
+
+初始化代码：
+```c
+// 静态初始化
+seqlock_t lock1 = SEQLOCK_UNLOCKED;
+// 动态初始化
+seqlock_t lock2;
+seqlock_init(&lock);
+```
+
+读者在进入临界区之前，需要获取一个整数顺序值，在退出临界区时会和当前的顺序值比较。如果不相等，则必须重新读取。不能保护含有指针的数据结构。示例代码：
+```c
+#include <linux/seqlock.h>
+unsigned int seq;
+do {
+    seq = read_seqbegin(&lock);
+    // 完成读取工作
+} while (read_seqretry(&lock, seq));
+// 在中断上下文中，需要使用IRQ安全版本
+unsigned int read_seqbegin_irqsave(seqlock_t *lock, unsigned long flags);
+int read_seqretry_irqrestore(seqlock_t *lock, unsigned int seq, unsigned long flags);
+```
+
+写入者需要获取seqlock的自旋锁，所以自旋锁常见的限制也适用于seqlock。以下是写入者需要使用的API：
+```c
+// 获取
+void write_seqlock(seqlock_t *lock);
+void write_seqlock_irqsave(seqlock_t *lock, unsigned long flags);
+void write_seqlock_irq(seqlock_t *lock);
+void write_seqlock_bh(seqlock_t *lock);
+
+// 释放
+void write_sequnlock(seqlock_t *lock);
+void write_sequnlock_irqrestore(seqlock_t *lock, unsigned long flags);
+void write_sequnlock_irq(seqlock_t *lock);
+void write_sequnlock_bh(seqlock_t *lock);
+```
+
+#### 读取-复制-更新
+
+RCU, read-copy-update。RCU发明者的[白皮书](http://www.rdrop.com/users/paulmck/rclock/intro/rclock_intro.html)。
+
+RCU保护包含以下限定的资源：
+* 经常发生读取而很少写入
+* 被保护的资源通过指针访问
+
+RCU的原理：在需要修改数据时，写入线程首先复制，然后修改副本，然后用新版本替代相关指针。当内核确认老版本没有引用时，即可释放。
+
+RCU相关API和使用示例：略。
