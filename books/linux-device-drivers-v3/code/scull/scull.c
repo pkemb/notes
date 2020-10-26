@@ -39,6 +39,17 @@ static int __init scull_init(void)
 		dev = MKDEV(scull_major, scull_minor);
 		result = register_chrdev_region(dev, scull_nr_devs, "scull");
 	}
+	else
+	{
+		result = alloc_chrdev_region(&dev, scull_minor, scull_nr_devs, "scull");
+		scull_major = MAJOR(dev);
+	}
+
+	if (result < 0)
+	{
+		printk(KERN_WARNING "scull: can't get major %d\n", scull_major);
+		reutrn result;
+	}
 	printk("scull init\n");
 	return 0;
 }
@@ -46,6 +57,8 @@ module_init(scull_init);
 
 static void __exit scull_exit(void)
 {
+	dev_t dev = MKDEV(scull_major, scull_minor);
+	unregister_chrdev_region(dev, scull_nr_devs);
 	printk("scull exit\n");
 }
 module_exit(scull_exit);
