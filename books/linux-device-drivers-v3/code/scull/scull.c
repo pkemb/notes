@@ -9,8 +9,8 @@ struct file_opetations scull_fops =
 {
 	.owner   = THIS_MODULE;
 	//.llseek  = scull_llseek;
-	.read    = sucll_read;
-	.write   = sucll_write;
+	.read    = scull_read;
+	.write   = scull_write;
 	//.ioctl   = scull_ioctl;
 	.open    = scull_open;
 	.release = scull_release;
