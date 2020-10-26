@@ -165,5 +165,70 @@ out:
 	return retval;
 }
 
+/*
+ * 从用户空间拷贝数据到设备上
+ */
+ssize_t scull_write(struct file *filp, const char __user *buff, size_t count, loff_t *f_pos)
+{
+	struct  scull_dev  *dev = filp->private_data;
+	struct  scull_qset *dptr;
+	int     quantum  = dev->quantum;
+	int     qset     = dev->qset;
+	int     itemsize = quantum * qset;
+	int     item;
+	int     s_pos;
+	int     q_pos;
+	int     rest;
+	ssize_t retval = -ENOMEM;
+
+	if (down_interruptible(&dev->sem))
+		return -ERESTARTSYS;
+
+	// 在量子集中寻找链表项、qset索引以及偏移量
+	item  = (long)*f_pos / itemsize;
+	rest  = (long)*f_pos % itemsize;
+	s_pos = rest / quantum;
+	q_pos = rest % quantum;
+
+	// 沿链表前行，直到真确的位置
+	dptr = scull_follow(dev, item);
+	if (dptr == NULL)
+		goto out;
+	if (!dptr->data)
+	{
+		dptr->data = kmalloc(qset * sizeof(char *), GFP_KERNEL);
+		if (!dptr->data)
+			goto out;
+		memset(dptr->data, 0, qset * sizeof(char *));
+	}
+
+	if (!dptr->data[s_pos])
+	{
+		dptr->data[s_Pos] = kmalloc(quantum, GFP_KERNEL);
+		if (!dptr->data[s_pos])
+			goto out;
+	}
+
+	// 将数据写入该量子，直到结尾
+	if (count > quantum - q_pos)
+		count = quantum - q_pos;
+
+	if (copy_from_user(dptr->data[s_pos] + q_pos, buf, count))
+	{
+		retval = -EFAULT;
+		goto out;
+	}
+
+	*f_pos += count;
+	retval = count;
+
+	// 更新文件大小
+	if (dev->size < *f_pos)
+		dev->szie = *f_pos;
+out:
+	up(&dev->sem);
+	return retval;
+}
+
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("pk");
