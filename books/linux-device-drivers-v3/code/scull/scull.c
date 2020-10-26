@@ -5,7 +5,7 @@
 static int scull_major = SCULL_MAJOR;
 static int scull_minor = SCULL_MINOR;
 
-struct file_opetations scull_fops = 
+struct file_opetations scull_fops =
 {
 	.owner   = THIS_MODULE;
 	//.llseek  = scull_llseek;
@@ -110,6 +110,59 @@ int scull_open(struct inode *inode, struct file *filp)
 int scull_release(struct inode *inode, struct file *filp)
 {
 	return 0;
+}
+
+/*
+ * 从设备拷贝数据到用户空间
+ */
+ssize_t scull_read(struct file *filp, char __user *buff, size_t count, loff_t *f_pos)
+{
+	struct scull_dev *dev = filp->private_data;
+	struct scull_qset *dptr;					// 第一个链表项
+	int    quantum  = dev->quantum;
+	int    qset     = dev->qset;
+	int    itemsize = quantum * qset;
+	int    item;
+	int    s_pos;
+	int    q_pos;
+	int    rest;
+	ssize_t retval = 0;
+
+	if (down_interruptible(&dev->sem))
+		return -ERESTARTSYS;
+
+	if (*f_pos >= dev->size)
+		goto out;
+	if (*f_pos + count > dev->size)
+		count = dev->size - *f_pos;
+
+	// 在量子集中寻找链表项、qset索引以及偏移量
+	item  = (long)*f_pos / itemsize;
+	rest  = (long)*f_pos % itemsize;
+	s_pos = rest / quantum;
+	q_pos = rest % quantum;
+
+	// 沿链表前行，直到正确的位置
+	dptr = scull_follow(dev, item);
+
+	if (dptr == NULL || !dptr->data || !dptr->data[s_pos])
+		goto out;
+
+	// 读取量子的数据直到结尾
+	if (count > quantum - q_pos)
+		count = quantum - q_pos;
+
+	if (copy_to_user(buff, dptr->data[s_pos] + q_pos, count))
+	{
+		retval = -EFAULT;
+		goto out;
+	}
+	*f_pos += count;
+	retval = count;
+
+out:
+	up(&dev->sem);
+	return retval;
 }
 
 MODULE_LICENSE("GPL");
