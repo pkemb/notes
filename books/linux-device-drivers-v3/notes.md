@@ -344,12 +344,32 @@ void unregister_chrdev_region(dev_t first, unsigned int count);
 * file 结构：`struct file`
 * inoe 结构：`struct inode`
 
+当向系统添加字符设备时，需要提供一个`struct file_opetations`实例，里面包含了操作字符设备的系统调用的实现。这些系统调用，一般有这两个参数：`struct file *filp`和`struct inode *inode`。
+
+filp表示了一个打开的文件。filp的`private_data`可用来跨系统调用保存信息。
+
+inode用来表示一个文件。与filp不同，多个打开的filp，可能对应同一个inode。inode包含了大量有关文件的信息。对于字符设备来说，以下两个字段非常有用：
+```c
+dev_t i_rdev;           // 对表示设备文件的inode结构，该字段包含了真正的设备编号
+struct cdev *i_cdev;    // inode 指向一个字符设备文件时，包含了指向 struct cdev 结构的指针
+```
+
+注：对于i_rdev来说，由于类型有发生变化，不建议直接操作，建议使用以下两个宏：
+```c
+unsigned int imajor(struct inode *inode);
+unsigned int imonor(struct inode *inode);
+```
+
 ### 字符设备的注册
 
 ```c
+// 动态分配 cdev 结构
 struct cdev * cdev_alloc(void);
+// 初始化已分配到的结构
 void cdev_init(struct cdev *cdev, struct file_operations *fops);
+// 将设备添加到系统。该调用返回之后，设备即可使用。
 int cdev_add(struct cdev *cdev, dev_t num, unsigned int count);
+// 移除一个字符设备
 void cdev_del(struct cdev *cdev);
 ```
 
@@ -360,6 +380,28 @@ int unregister_chrdev(unsigned int major, const char *name);
 ```
 
 ### open 和 release
+
+open方法提供给驱动程序以初始化的能力，主要完成以下工作：
+* 检查设备特定的错误
+* 如果时首次打开，则对其初始化
+* 如有必要，更新 f_op 指针
+* 分配并填写 filp->private_data
+
+open方法的原型：
+```c
+int (*open)(struct inode *inode, struct file *filp);
+```
+
+inode参数的i_cdev字段，包含了先前设置的cdev结构。
+
+release方法与open方法正好相反。不是所有的close调用都会调用release方法，只有真正释放设备数据结构的close调用才会调用这个方法。主要完成以下工作：
+* 释放由open分配的、保存在filp->private_data中的所有内容
+* 在最后一次关闭操作时关闭设备
+
+release方法的原型：
+```c
+int (*release)(struct inode *inode, struct file *filp);
+```
 
 ### scull的内存使用
 
