@@ -407,6 +407,33 @@ int (*release)(struct inode *inode, struct file *filp);
 
 ### read 和 write
 
+read用于拷贝数据到用户空间，write用于从用户空间拷贝数据。函数原型如下：
+```c
+ssize_t read(struct file *filp, char __user *buff, size_t count, loff_t *offp);
+ssize_t write(struct file *filp, const char __user *buff, size_t count, loff_t *offp);
+```
+
+filp是文件指针，count是请求传输的数据长度，buff是指向用户空间的缓冲区，offp指明用户在文件中进行存取操作的位置。
+
+buff是用户空间的指针，基于以下原因，不能直接操作：
+* 在内核模式中，用户空间指针可能无效。
+* 用户空间是分页的，buff指向的页可能不在内存中。直接引用可能导致页错误。
+* 应用程序可能是个恶意程序，直接引用可能导致系统出现后门。
+
+为了安全的访问用户空间，必须使用专用的函数：
+```c
+// 拷贝数据到用户空间
+unsigned long copy_to_user(void __user *to, const void *from, unsigned long count);
+// 从用户空间拷贝数据
+unsigned long copy_from_user(void *to, const void __user *from, unsigned long count);
+```
+
+如果指针无效，会拒绝拷贝。返回值是还需要拷贝的内存数量。被寻址的内存空间可能不在内存中，会导致当前进程被转入睡眠状态。这就要求访问用户空间的任何函数都必须是可重入的，必须能和其他驱动程序函数并发执行。
+
+无论传输了多少数据，都应该更新offp所表示的文件位置。
+
+read方法和write方法的返回值：略。
+
 ## 第四章 调试技术
 
 ### 内核中的调试支持
