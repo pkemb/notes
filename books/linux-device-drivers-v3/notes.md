@@ -785,6 +785,32 @@ RCU相关API和使用示例：略。
 
 ### ioctl
 
+设备驱动程序通常会通过ioctl执行各种类型的硬件控制。
+
+用户空间的ioctl系统调用具有如下原型。最后的三个点不代表可变数目的参数表，表示一个可选参数，通常定义为`char *argp`。使用指针可以向ioctl传递任意数据，也可以访问任意数据。也可以不使用第三个参数，取决于命令。
+```c
+int ioctl(int fd, unsigned long cmd, ...);
+```
+
+驱动程序的ioctl原型如下。inode和filp与open方法的参数一样。cmd由用户层不经修改的传给驱动程序。arg是可选参数，无论用户层是指针还是整型，这里都是long。如果用户层没有传递第三个参数，则arg处于未定义状态。
+```c
+int (*ioctl)(struct inode *inode, struct file *filp, unsigned int cmd, unsigned long arg);
+```
+
+#### 选择ioctl命令
+
+#### ioctl返回值
+
+#### 预定义命令
+
+#### 使用ioctl参数
+
+#### 权能与受限访问
+
+#### ioctl命令的实现
+
+#### 非ioctl的设备控制
+
 ### 阻塞型IO
 
 ### poll和select
