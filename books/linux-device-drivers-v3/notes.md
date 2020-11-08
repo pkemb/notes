@@ -799,6 +799,32 @@ int (*ioctl)(struct inode *inode, struct file *filp, unsigned int cmd, unsigned 
 
 #### 选择ioctl命令
 
+ioctl的命令分为4个字段，分别是：
+| 字段 | 说明 | 长度 |
+| - | - | - |
+| type | 选择一个号码，并在整个驱动程序使用 | 8bit，_IOC_TYPEBITS |
+| number | 序号，顺序编号 | 8bit，_IOC_NRBITS |
+| direction | 从应用程序看，数据的传输方向。可能的取值有 _IOC_NONE、_IOC_READ、_IOC_WRITE |
+| size | 所涉及的用户数据大小，但内核不强制使用此字段。 | 与体系结构有关，13bit或14bit，_IOC_SIZEBITS |
+
+ioctl命令要求在系统范围内唯一，为了方便构造命令，内核提供了以下宏：
+```c
+// type 和 number 字段通过参数传入
+// size 字段通过对 datatype 参数取sizeof获得
+_IO(type, nr);                  // 构造无参数的命令编号
+_IOR(type, nr, datatype);       // 从驱动程序读取数据
+_IOW(type, nr, datatype);       // 写入数据到驱动程序
+_IOWR(type, nr, datatype);      // 双向传输
+
+// 解开字段的宏
+_IOC_TYPE(cmd);     // type 字段
+_IOC_NR(cmd);       // number 字段
+_IOC_DIR(cmd);      // direction 字段
+_IOC_SIZE(cmd);     // size 字段
+```
+
+除了少量预定义命令之后，内核并未使用ioctl的cmd参数的值。
+
 #### ioctl返回值
 
 #### 预定义命令
