@@ -827,6 +827,8 @@ _IOC_SIZE(cmd);     // size 字段
 
 #### ioctl返回值
 
+当命令号不能匹配任何合法操作时，默认的返回值一般是`-ENVAL`（非法参数）。POSIX规定返回`-ENOTTY`，不合适的ioctl设备。返回`-ENVAL`是普遍做法。
+
 #### 预定义命令
 
 #### 使用ioctl参数
