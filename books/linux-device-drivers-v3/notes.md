@@ -882,6 +882,25 @@ init_waitqueue_head(&my_queue);
 
 #### 简单休眠
 
+wait_event系列宏，可使进程进入休眠状态，直到condition变为真。在进入和退出休眠的时候，都会对condition求值（会被多次求值），所以表达式最好不要有副作用。
+```c
+// 非中断休眠，不会被信号打断
+wait_event(queue, condition);
+// 中断休眠
+wait_event_interruptible(queue, condition);
+wait_event_timeout(queue, condition, timeout);
+wait_event_timeout_interruptible(queue, condition, timeout);
+```
+
+wake_up系列函数可用于唤醒指定queue上的所有进程。进程唤醒后会对condition再次求值，如果依旧为假，进程会再次休眠。
+```c
+void wake_up(wait_queue_head_t *queue);
+void wake_up_interruptible(wait_queue_head_t *queue);
+```
+
+书中151页给出的示例程序存在竞态，应该如何解决？
+1. 使用后文介绍的独占等待。
+
 #### 阻塞和非阻塞型操作
 
 #### 一个阻塞IO示例
