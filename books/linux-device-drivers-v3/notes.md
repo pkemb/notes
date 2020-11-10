@@ -915,6 +915,12 @@ O_NONBLOCK标志也可用于open方法。如果打开设备需要很长的时间
 
 #### 一个阻塞IO示例
 
+建议下载源码包，同时阅读scull_p_read()和scull_p_write()。
+
+主要注意以下要点：
+1. 进入休眠时，即调用wait_event_interruptible()宏时，不要处于原子上下文。
+2. read()将进程放入inq队列，但是最后唤醒outq队列。
+
 #### 高级休眠
 
 ### poll和select
