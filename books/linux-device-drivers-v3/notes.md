@@ -903,6 +903,16 @@ void wake_up_interruptible(wait_queue_head_t *queue);
 
 #### 阻塞和非阻塞型操作
 
+* 阻塞操作：当操作不能继续下去时，让进程进入休眠状态，等待可以继续操作。
+* 非阻塞操作：当操作不能继续下去时，直接返回错误。
+
+如果应用程序指定了O_NONBLOCK 或 O_NDELAY 标志，read没有数据，或write没有空间时，应该立即返回-EAGAIN。
+> 使用stdio处理非阻塞IO时，要时刻检查errno。否则会将错误返回当作EOF。
+
+O_NONBLOCK标志也可用于open方法。如果打开设备需要很长的时间，可以考虑支持O_NONBLOCK标志。
+
+*只有write read open受O_NONBLOCK标志影响。*
+
 #### 一个阻塞IO示例
 
 #### 高级休眠
