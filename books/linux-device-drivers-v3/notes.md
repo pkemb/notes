@@ -923,6 +923,84 @@ O_NONBLOCK标志也可用于open方法。如果打开设备需要很长的时间
 
 #### 高级休眠
 
+在特殊的情况，可能需要使用底层的函数接口来实现休眠操作。
+
+##### 进程如何休眠
+
+进程进入休眠的步骤：
+1. 分配并初始化一个`wait_queue_t`结构，并加入到对应的等待队列。
+2. 设置进程的状态为`TASK_INTERRUPTIBLE`或`TASK_UNINTERRUPTIBLE`。这两种状态均可表示休眠。可用函数`set_current_state()`设置进程状态。
+3. 调用`schedule()`放弃CPU。注意，在放弃CPU前，务必再次检查休眠条件。将进程放入等待队列之前，唤醒条件可能已经发生了。如果不检查，可能会丢失此唤醒条件。
+
+几个需要注意的点：
+1. `schedule()`调用并返回之后，进程无法得知过了多久，这段时间内发生了什么。
+2. `schedule()`返回之后，需要手动的将进程从等待队列移除。
+3. 如果跳过了对`schedule()`的调用，需要将进程状态设置为`TASK_RUNNING`，并从等待队列中移除。
+
+##### 手工休眠
+
+可以手工处理进程进入休眠的步骤，但是很容易出错。内核提供了一些函数，可以简化这些操作。
+
+* 建立并初始化一个等待队列入口
+```c
+// 静态
+DEFINE_WAIT(my_wait);
+// 动态
+wait_queue_t my_wait;
+init_wait(&my_wait);
+```
+* 加入等待队列并设置进程的状态
+```c
+void prepare_to_wait(
+    wait_queue_head_t *queue,  // 等待队列
+    wait_queue_t       *wait,  // 等待队列入口
+    int state)                 // 进程的新状态
+                               // TASK_INTERRUPTIBLE   可中断休眠
+                               // TASK_UNINTERRUPTIBLE 不可中断休眠
+```
+* 调用`schedule()`。调用之前，务必再次检查休眠条件。
+* `schedule()`返回之后，开始清理。
+```c
+void finish_to_wait(
+    wait_queue_head_t *queue,
+    wait_queue_t      *wait)
+)
+```
+* 再次测试休眠条件，判断是否需要再次进入休眠。
+
+##### 独占等待
+
+调用`wake_up()`时，会唤醒等待队列中的所有进程。如果资源只允许被一个进程获取，那么其余的进程会再次进入休眠，极大的浪费了系统的资源。独占等待可以解决此问题。
+
+加入独占等待选项的休眠，与普通休眠，有以下不同：
+1. 等待队列入口设置了WQ_FLAG_EXCLUSIVE标志时，会被加入到等待队列的尾部。
+2. wake_up唤醒某个队列上的进程时，遇到了具有WQ_FLAG_EXCLUSIVE标志的进程后，停止唤醒其他进程。
+
+注意：在遇到WQ_FLAG_EXCLUSIVE标志之前，依旧会唤醒所有的非独占进程。
+
+设置独占等待标志的最简单方法是调用`prepare_to_wait_exclusive()`。wake_event()及其变种无法设置独占等待。
+```c
+void prepare_to_wait_exclusive(
+    wait_queue_head_t *head,
+    wait_queue_t *wait,
+    int state);
+```
+
+##### 唤醒的相关细节
+
+当一个进程被唤醒时，实际的结果由等待队列入口中的一个函数控制。默认的唤醒函数将进程设置为可运行状态。
+
+wake_up的所有变种：略。
+
+##### 旧的历史：sleep_on
+
+`sleep_on()`没有提供对竞态的任何保护。调用sleep_on()和进程真正进入休眠之间，有一段窗口期。窗口期内的唤醒将会丢失。所以不建议使用，以后会删除这两个接口。
+
+```c
+void sleep_on(wait_queue_head_t *queue);  // 当前进程无条件的休眠在给定的队列上
+void interruptible_sleep_on(wait_queue_head_t *queue);
+```
+
 ### poll和select
 
 ### 异步通知
