@@ -1003,6 +1003,51 @@ void interruptible_sleep_on(wait_queue_head_t *queue);
 
 ### poll和select
 
+select / poll / epoll 用于那些要使用多个输入或输出流而又不会阻塞其中任何一个流的应用程序中。这三个系统调用均需要设备驱动程序`poll()`方法的支持。
+
+`poll()`方法的原型如下：
+```c
+unsigned int (*poll)(struct file *filp, poll_table *wait);
+```
+
+`poll()`方法的处理步骤：
+1. 在一个或多个可指示poll状态变化的等待队列上调用 poll_wait。
+    ```c
+    // 向 poll_table 结构添加一个等待队列
+    void poll_wait(struct file *filp, wait_queue_head_t *head, poll_table *wait);
+    ```
+2. 返回一个用来描述操作是否可立即无阻塞执行的位掩码。
+    * POLLIN
+    * POLLRDNORM
+    * POLLRDBAND
+    * POLLPRI
+    * POLLHUP
+    * POLLERR
+    * POLLOUT
+    * POLLWRNORM
+    * POLLWRBAND
+
+##### poll 方法在驱动程序的实现
+
+##### 与read和write的交互
+
+为了使应用程序正常工作，正确实现 read / write / poll 方法非常重要。
+
+* read的语义：
+* write的语义：
+  * 永远不要让write调用在返回前等待数据的传输结束。
+
+`fsync()`用于确保数据已经传送到设备上，此方法只有在输出缓冲区为空时才会返回。
+```c
+int (*fsync)(struct file *, struct dentry *, int datasync);
+```
+
+##### 底层的数据结构
+
+当用户程序调用了poll/select/epoll函数时，内核会调用由该系统调用引用的全部文件的poll方法，并向它们传递同一个poll_table。
+
+poll_table的结构：略。
+
 ### 异步通知
 
 ### 定位设备
