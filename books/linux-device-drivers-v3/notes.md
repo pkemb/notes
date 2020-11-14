@@ -1084,4 +1084,13 @@ fasync(-1, filp, 0);
 
 ### 定位设备
 
+`llseek()`方法实现了lseek和llseek系统调用。如果设备没有实现`llseek()`方法，内核默认通过修改filp->f_pos来实现定位。
+
+`llseek()`原型如下，实现请参考书。
+```c
+loff_t (*llseek)(struct file *filp, loff_t off, int whence);
+```
+
+如果设备不支持定位（例如串口），可以在`open()`方法中调用`nonseekable_open()`，明确告诉内核不支持`llseek()`。同时将file_operations结构中的llseek设置为特殊的辅助函数no_llseek。
+
 ### 设备文件的访问控制
