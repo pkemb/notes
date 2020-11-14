@@ -1050,6 +1050,38 @@ poll_table的结构：略。
 
 ### 异步通知
 
+通过异步通知，应用程序可以在数据可用时收到SIGIO信号，而不需要不停地使用轮询来关注数据。示例代码如下：
+
+```c
+signal(SIGIO, &input_handler);  // 设置信号处理程序
+fcntl(STDIN_FILENO, F_SETOWN, getpid());  // 设置属主进程，告诉内核通知那个进程
+                                          // 属主存储在 filp->f_owner
+oflags = fcntl(STDIN_FILENO, F_GETFL);
+fcntl(STDIN_FILENO, F_SETFL, oflags | FASYNC);  // 设置FASYNC标志，开启异步通知
+```
+
+#### 从驱动程序的角度考虑
+
+驱动程序实现异步通知的步骤：
+1. F_SETOWN被调用时对 filp->f_owner赋值
+2. F_SETFL设置FASYNC标志时，调用驱动程序的fasync方法。
+3. 当数据到达时，给所有注册异步通知的进程发送SIGIO信号。
+
+内核为第2、3步提供了一个通用的实现，包含一个数据结构，两个函数。
+```c
+struct fasync_struct;
+int fasync_helper(int fd, struct file *filp, int mode, struct fasync_struct **fa);
+void kill_fasync(struct fasync_struct **fa, int sig, int band);
+```
+
+`fasync()`方法中调用`fasync_helper()`方法，`write()`方法中调用`kill_fasync()`方法。具体实现参考书籍。
+
+当文件关闭时，需要从活动的异步读取进程列表中删除该文件。没有设置FASYNC标识时也可以调用。
+```c
+/* 从异步通知列表中删除该 filp */
+fasync(-1, filp, 0);
+```
+
 ### 定位设备
 
 ### 设备文件的访问控制
