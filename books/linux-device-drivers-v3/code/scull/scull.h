@@ -4,6 +4,10 @@
 #define SCULL_MAJOR 0
 #define SCULL_MINOR 0
 
+#ifndef SUPPORT_LLSEEK
+#define SUPPORT_LLSEEK 1
+#endif
+
 struct scull_qset
 {
     void **data;
