@@ -8,7 +8,11 @@ static int scull_minor = SCULL_MINOR;
 struct file_opetations scull_fops =
 {
     .owner   = THIS_MODULE;
-    //.llseek  = scull_llseek;
+#if SUPPORT_LLSEEK
+    .llseek  = scull_llseek;
+#else
+    .llseek  = no_llseek;
+#endif
     .read    = scull_read;
     .write   = scull_write;
     //.ioctl   = scull_ioctl;
@@ -112,6 +116,11 @@ int scull_open(struct inode *inode, struct file *filp)
     {
         scull_trim(dev);
     }
+
+#if !SUPPORT_LLSEEK
+    nonseekable_open(inode, filp);
+#endif
+
     return 0;
 }
 
@@ -242,6 +251,34 @@ out:
     up(&dev->sem);
     return retval;
 }
+
+#if SUPPORT_LLSEEK
+loff_t scull_llseek(struct file *filp, loff_t off, int whence)
+{
+    struct scull_dev *dev = filp->private_data;
+    loff_t newpos;
+
+    switch (whence)
+    {
+        case SEEK_SET:
+            newpos = off;
+            break;
+        case SEEK_CUR:
+            newpos = filp->f_pos + off;
+            break;
+        case SEEK_END:
+            // 如果位置超过了尾部，下次写入的时候，write方法会分配空间
+            newpos = dev->size + off;
+            break;
+        default:
+            return -EINVAL;
+    }
+
+    if (newpos < 0) return -EINVAL;
+    filp->f_pos = newpos;
+    return newpos;
+}
+#endif
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("pk");
