@@ -1137,6 +1137,57 @@ loff_t (*llseek)(struct file *filp, loff_t off, int whence);
 
 ### 度量时间差
 
+内核通过定时器中断来跟踪时间。其频率是常数`HZ`，默认值一般是50~1200。
+
+定时器中断会增加时钟滴答数`jiffies_64`，通常会使用`jiffies`变量，要么和`jiffies_64`相同，要么是`jiffies_64`的低32位。不建议直接访问`jiffies_64`，因为不能保证在所有架构上都是原子的。
+
+#### 使用jiffies计数器
+
+`jiffies`和`jiffies_64`都应该看作只读变量。
+
+计算未来时间戳：
+```c
+#include <linux/jiffies.h>
+unsigned long j, stamp_1, stamp_half, stamp_n;
+j       = jiffies;  // 读取当前值
+stamp_1 = j + HZ;   // 未来的 1 秒
+stamp_half = j + HZ/2;  // 半秒
+stamp_n    = j + n * HZ / 1000;  // n 毫秒
+```
+
+比较jiffies时间戳：
+```c
+#include <linux/jiffies.h>
+int time_after(unsigned long a, unsigned long b);   // a 代码的时间比 b 靠后，返回true
+int time_before(unsigned long a, unsigned long b);  //
+int time_after_eq(unsigned long a, unsigned long b);
+int time_before_eq(unsigned long a, unsigned long b);
+```
+
+将jiffies转换为用户空间的时间表述方法：
+```c
+#include <linux/time.h>
+unsigned long timespec_to_jiffies(struct timespec *value);
+void jiffies_to_timespec(unsigned long jiffies, struct timespec *value);
+unsigned long timeval_to_jiffies(struct timeval *value);
+void jiffies_to_timeval(unsigned long jiffies, struct timeval *value);
+```
+
+读取64位计数器：
+```c
+u64 get_jiffies_64(void);
+```
+
+#### 处理器特定的寄存器
+
+绝大多数现代处理器都包含一个随时钟周期不断递增的计数寄存器，通过此寄存器可以完成高分辨率计时。在x86的平台，是TSC寄存器（timestamp count，时间戳计数器）。
+
+Linux提供了一个平台无关的函数，用于读取时钟周期计数寄存器。如果平台没有此寄存器，则一直返回0。
+```c
+#include <linux/timex.h>
+cycles_t get_cycles(void);
+```
+
 ### 获取当前时间
 
 ### 延迟执行
