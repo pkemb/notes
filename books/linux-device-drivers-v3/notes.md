@@ -961,7 +961,7 @@ void prepare_to_wait(
 * 调用`schedule()`。调用之前，务必再次检查休眠条件。
 * `schedule()`返回之后，开始清理。
 ```c
-void finish_to_wait(
+void finish_wait(
     wait_queue_head_t *queue,
     wait_queue_t      *wait)
 )
