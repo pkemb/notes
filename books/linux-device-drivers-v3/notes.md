@@ -1359,6 +1359,75 @@ tasklet的特点：
 
 ### 工作队列
 
+工作队列（workqueue）类似于tasklet，都允许内核代码请求某个函数在将来的时间别调用。主要区别如下：
+* tasklet运行在软件中断上下文，workqueue运行在一个特殊的内核进程上下文，
+  * tasklet以原子模式运行，workqueue不必原子化。
+* 工作队列函数可以休眠
+* tasklet始终运行在提交的同一CPU，而这是workqueue的默认方式。
+
+创建工作队列：
+```c
+// 在每个处理器上为该工作队列创建专用的线程
+struct workqueue_struct *create_workqueue(const char *name);
+// 只在一个处理器上创建专用的线程
+struct workqueue_struct *create_singlethread_workqueue(const char *name);
+```
+
+向工作队列提交一个任务，需要填充`work_struct`结构，可通过下列宏完成：
+```c
+// 编译时构造
+DECLARE_WORK(name void (*function)(void *), void *data);
+// 运行时构造
+// 如果 work_struct 没有被提交到工作队列，使用 INIT_WORK
+INIT_WORK(struct work_struct *work, void (*function)(void *), void *data);
+// 如果 work_struct 已经提交到工作队列，使用 PREPARE_WORK
+PREPARE_WORK(struct work_struct *work, void (*function)(void *), void *data);
+```
+
+将工作提交到工作队列：
+```c
+// 立即添加到工作队列
+int queue_work(struct workqueue_struct *queue, struct work_struct *work);
+// 至少经过指定的jiffies（由delay指定）之后才会被执行
+int queue_delayed_work(struct workqueue_struct *queue,
+                       struct work_struct *work,
+                       unsigned long delay);
+```
+
+`data`将会作为参数传递给`function()`。如有必要，工作函数可以休眠，但要考虑会不会影响同一工作队列的其他工作。工作函数不能访问用户空间。
+
+```c
+// 取消某个挂起的工作队列入口项
+// 返回非零表示在工作函数运行之前取消
+// 返回零表示工作函数正在某个处理器上运行
+int cancel_delayed_work(struct work_struct *work);
+// 确保提交的工作函数不会在系统任何地方运行
+void flush_workqueue(struct workqueue_struct *queue);
+
+// 注意以上两个函数操作的对象是不同的
+
+// 销毁工作队列
+void destroy_workqueue(struct workqueue_struct *queue);
+```
+
+#### 共享队列
+
+有时只需偶尔向队列提交工作，而创建工作队列会消耗很多资源，所以可以使用内核提供的共享的默认工作队列。
+
+向共享队列提交工作：
+```c
+int schedule_work(struct work_struct *work);
+// 延迟提交
+int schedule_delayed_work(struct work_struct *work);
+// 如果想取消提交到共享队列中的工作，可以用 cancel_delayed_work()。
+```
+
+```c
+// 确保系统中任何地方都不会运行共享队列中的入口项
+// 无法直到其他进程是否在使用共享队列，所以不知道此函数返回需要多长时间
+void flush_shceduled_work(void);
+```
+
 ## 第八章 分配内存
 
 ### kmalloc函数的内幕
