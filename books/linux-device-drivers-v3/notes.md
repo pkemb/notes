@@ -1327,4 +1327,34 @@ int  timer_pending(const struct timer_list *timer); // 返回定时器是否在�
 
 ### tasklet
 
+tasklet与内核定时器类似，只有一点不同：不能要求tasklet在某个给定的时间执行。调度一个tasklet，表明希望内核选择某个其后的时间来执行给定的函数。
+
+tasklet以数据结构的形式存在，使用前必须初始化。
+```c
+#include <linux/interrupt.h>
+struct tasklet_struct {
+    /* 外部不可访问的成员 */
+    void (*func)(unsigned long);
+    unsigned long data;
+};
+
+void tasklet_init(struct tasklet_struct *t, void (*func)(unsigned long), unsigned long data);
+DECLARE_TASKLET(name, func, data);
+DECLARE_TASKLET_DISABLE(name, func, data);
+// 以下API的详细语义，可以看书P203
+void tasklet_disable(struct tasklet_struct *t);  // 禁用tasklet，死等直到tasklet退出运行
+void tasklet_disable_nosync(struct tasklet_struct *t); // 异步禁用tasklet，不会等待tasklet退出运行
+void tasklet_enable(struct tasklet_struct *t);  // 启用tasklet
+void tasklet_schedule(struct tasklet_struct *t); // 调度执行 tasklet
+void tasklet_hi_schedule(struct tasklet_struct *t); // 高优先级调度执行 tasklet
+void tasklet_kill(struct tasklet_struct *t); // 确保tasklet不会被再次调度执行
+```
+
+tasklet的特点：
+* tasklet可以在稍后被禁止或重新启用。
+* tasklet可以注册自己本身。
+* tasklet可以在通常的优先级或高优先级执行。
+* tasklet始终会在调度自己的CPU上运行。
+* 如果系统负荷不重，tasklet会立即执行。最迟不晚于下一个时钟滴答。
+
 ### 工作队列
