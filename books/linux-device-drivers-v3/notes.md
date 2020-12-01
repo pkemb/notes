@@ -1284,6 +1284,47 @@ void ssleep(unsigned int seconds); // 秒级延迟
 
 ### 内核定时器
 
+内核定时器是一种数据结构，告诉内核在指定的时间，使用指定的参数，执行指定的函数。
+
+定时器将会在中断上下文中运行，而不是注册定时器的进程上下文。在中断上下文中有以下限制：
+* 不能访问用户空间。
+* current指针没有意义。
+* 不能执行休眠（wait_event）或调度（schedule）。
+
+`in_interrupt()`在中断上下文中返回非零值，`in_atomic()`在调度不被允许的时候返回非零值。调度不被允许的情况包括硬件和软件中断上下文以及拥有自旋锁的任何时间点。
+
+定时器的一些特点：
+* 任务可以将自己注册以在稍后的时间重新运行。
+* 在SMP系统中，定时器会在注册它的CPU上执行。
+* 定时器是竞态的来源，即使是单处理器系统。
+
+#### 定时器API
+
+```c
+#include <linux/timer.h>
+struct timer_list {
+    /* 外部不可访问的成员 */
+    unsigned long expires;  // 期望定时器执行的 jiffies 值。
+                            // 到达该值时，将执行function，并传递data作为参数
+    void (*function)(unsigned long);
+    unsigned long data;
+};
+
+void init_timer(struct timer_list *timer);  // 动态初始化 struct timer_list
+struct timer_list TIMER_INITIALIZER(_function, _expires, _data);  // 静态初始化
+
+void add_timer(struct timer_list *timer);
+int  del_timer(struct timer_list *timer);
+
+int  mode_timer(struct timer_lisr *timer, unsigned long expires); // 更新定时器的到期时间
+int  del_timer_sync(struct timer_list *timer); // 确保返回时没有任何CPU在运行定时器函数，可在SMP系统上避免竞态。
+int  timer_pending(const struct timer_list *timer); // 返回定时器是否在被调度运行。
+```
+
+#### 内核定时器的实现
+
+根据到期时间的长短，将定时器散列到不同的链表。
+
 ### tasklet
 
 ### 工作队列
