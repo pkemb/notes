@@ -1190,6 +1190,25 @@ cycles_t get_cycles(void);
 
 ### 获取当前时间
 
+将墙上时间转换为jiffies值：
+```c
+#include <linux/time.h>
+unsigned long mktime(
+    unsigned int year,
+    unsigned int mon,
+    unsigned int day,
+    unsigned int hour,
+    unsigned int min,
+    unsigned int sec);
+```
+
+获取墙上时间：
+```c
+#include <linux/time.h>
+void do_gettimeofday(struct timeval *tv);
+struct timespec current_kernel_time(void);
+```
+
 ### 延迟执行
 
 ### 内核定时器
