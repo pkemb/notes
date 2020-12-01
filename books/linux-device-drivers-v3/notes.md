@@ -1211,6 +1211,77 @@ struct timespec current_kernel_time(void);
 
 ### 延迟执行
 
+将特定代码延迟一段时间后执行。根据时间的长短，可以分为：
+* [长延迟](#长延迟)：长于一个时钟滴答
+* [短延迟](#短延迟)：一般少于一个时钟滴答
+
+#### 长延迟
+
+##### 忙等待
+
+实现忙等待最简单的方法是监视jiffies计数器。例如以下代码：
+```c
+while (time_before(jiffies, j1))
+    cpu_relax();
+```
+
+不建议使用这种方法，这会严重降低系统的性能。如果在进入循环之前关闭了中断，那么jiffies的值将永远不会得到更新。
+
+##### 让出处理器
+
+在不需要CPU时主动释放CPU：
+```c
+while (time_before(jiffies, t1))
+    schedule();
+```
+
+让出CPU后，当前进程还在运行队列中。如果系统只有一个可运行的进程，那么此进程会不断的让出CPU-调度-让出CPU....。
+
+同时不能确定下次调度此进程的时间，相比目标时间点，有可能已经过去很久了。
+
+##### 超时
+
+利用超时等待队列来延迟。进程会在指定的队列上休眠，超时到期时返回。时间使用jiffies表示，是相对时间而不是绝对时间。
+```c
+long wait_event_timeout(wait_queue_head_t q, condition, long timeout);
+long wait_event_interruptible(wait_queue_head_t q, condition, long timeout);
+```
+
+利用内核提供的`schedule_timeout()`函数，可以避免使用和声明多余的等待队列头。
+```c
+#include <linux/sched.h>
+signed long schedule_timeout(signed long timeout);
+```
+
+`schedule_timeout()`要求调用者在调用之前，设置进程的状态，典型代码如下：
+```c
+set_current_state(TASK_INTERRUPTIBLE);
+schedule_timeout(delay);
+```
+
+#### 短延迟
+
+显然，短延迟不能依赖于时钟滴答。使用以下内核函数，可以很好的实现短延迟。
+```c
+#include <linux/delay.h>
+void ndelay(unsigned long nsecs); // 延迟纳秒
+void udelay(unsigned long usecs); // 延迟微妙
+void mdelay(unsigned long msecs); // 延迟毫秒
+```
+
+注意：
+1. 参数不要传入太大的值，延迟时间与API要匹配。
+2. 这三个函数均是忙等待函数。
+
+实现毫秒级延迟还有其他的方法，同时不涉及忙等待：
+```c
+void msleep(unsigned int millisecs); // 不可中断的睡眠指定时间
+unsigned long msleep_interruptible(unsigned int millisecs);
+void ssleep(unsigned int seconds); // 秒级延迟
+```
+
+注意：所有的延迟方法，实际的延迟时间比指定的时间都要长。
+
 ### 内核定时器
 
 ### tasklet
