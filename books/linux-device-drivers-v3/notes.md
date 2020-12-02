@@ -1487,6 +1487,66 @@ Linux把内核分为三个区段：可用于DMA的内存，常规内存，以及
 
 ### 后备高速缓存
 
+后备高速缓存适用于相同大小，并且会反复分配的内存块。Linux的高速缓存有时又称为slab分配器，其类型是`kmem_cache_t`，通过下面的函数创建。
+```c
+kmem_cache_t *kmem_cache_create(
+    const char *name,
+    size_t size,
+    size_t offset,
+    unsigned long flags,
+    void (*constructor)(void *, kmem_cache_t *, unsigned long flags),
+    void (*destructor)(void *, kmem_cache_t *, unsigned long flags)
+);
+```
+该函数创建一个高速缓存对象，其中可以容纳任意数目的内存区域，每个区域的大小都是`size`。`offect`参数是页面中第一个对象的偏移量，一般取零。
+
+`flags`控制如何完成分配，是一个位掩码，可取的值如下：
+| flags | 说明 |
+| -- | -- |
+| SLAB_NO_REAP | 保护高速缓存寻找内存的时候不会被减少。不建议使用。 |
+| SLAB_HWCACHE_ALIGN | 要求所有数据对象跟高速缓存行对齐。对齐的填白可能浪费大量内存。 |
+| SLAB_CACHE_DMA | 每个数据对象都从可用于DMA的内存区段获取。 |
+
+`constructor()`用于初始化新分配的对象，`destructor()`用于内存空间释放给系统之前清除对象。这两个参数是可选的。在分配多个对象时，`constructor()`会被调用多次。但是`constructor()`和`destructor()`不是被立即调用，而是未来的某个时间点调用。
+
+```c
+// 从高速缓存分配内存对象，flags参数和传递给kmem_cache_create()的相同
+void *kmem_cache_alloc(kmem_cache_t *cache, int flags);
+// 释放一个内存对象
+void kmem_cache_free(kmem_cache_t *cache, const void *obj);
+// 释放高速缓存。如果失败，表明模板中发生了内存泄漏。
+int kmem_cache_destroy(kmem_cache_t *cache);
+```
+
+可以从文件`/proc/slabinfo`查看高速缓存的使用情况。
+
+#### 内存池
+
+内存池就是某种形式的后备高速缓存，试图始终保持空间的内存，以便在紧急状态下使用，适用于不允许内存分配失败的情况。内存池会分配一些空闲且不会真正得到使用的内存块，所以内存池会浪费大量的内存。不推荐使用内存池。
+
+内存池对象的类型是`mempool_t`，相关API如下：
+```c
+// 创建内存池对象
+mempool_t *mempool_create(
+    int min_nr,  // 始终保持已分配对象的最少数目
+    mempool_alloc_t *alloc_fn,
+    mempool_free_t  *free_fn,
+    void *pool_data
+);
+// alloc_fn 的原型
+typedef void *(mempool_alloc_t)(int gfp_mask, void *pool_data);
+// free_fn 的原型
+typedef void (mempool_free_t)(void *element, void *pool_data);
+// 分配对象
+void *mempool_alloc(mempool_t *pool, int gfp_mask);
+// 释放对象
+void mempool_free(void *element, mempool_t *pool);
+// 调整 mempool的大小
+int mempool_resize(mempool_t *pool, int new_min_nr, int gfp_mask);
+// 销毁内存池
+void mempool_destroy(mempool_t *pool);
+```
+
 ### get_free_page和相关函数
 
 ### vmalloc及其辅助函数
