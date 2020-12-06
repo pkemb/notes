@@ -1549,6 +1549,47 @@ void mempool_destroy(mempool_t *pool);
 
 ### get_free_page和相关函数
 
+如果模块需要分配大块的内存，使用面向页的分配技术会更好些。
+
+分配函数：
+```c
+get_zeroed_page(unsigned int flags);  // 返回指向新页面的指针并将页面清零
+__get_free_page(unsigned int flags);  // 不清零页面
+// 分配若干物理连续的页面，返回指向该区域第一个字节的指针
+__get_free_pages(unsigned int flags, unsigned int order);
+// flags参数和kmalloc()函数一样
+// order，阶数，实际分配的页面数是 2^order
+// order 太大可能会导致失败。order最大值取10或11
+// 查看 /proc/boddyinfo 可以得知系统每个内存区段上每个阶数下可获得的数据块数目。
+
+// 释放页面
+// 释放数目和分配数目务必要相等，否则内存映射关系会被破坏，系统会出错。
+void free_page(unsigned long addr);
+void free_pages(unsigned long addr, unsigned long order);
+```
+
+__get_free_page()函数的优点：
+* 更有效地使用了内存。kmalloc因分配粒度的原因浪费一定数量的内存。
+* 分配的页面完全属于自己。
+
+#### alloc_pages接口
+
+Linux页分配器。
+```c
+// nid是NUMA节点的ID号，flags是通常的GFP_标志，order是分配内存的大小
+struct page *alloc_pages_node(int nid, unsigned int flags, unsigned int order);
+// 在当前NUMA节点上分配内存
+struct page *alloc_pages(unsigned int flags, unsigned int order);
+struct page *alloc_page(unsigned int flags);
+
+// 释放页面
+void __free_page(struct page *page);
+void __free_pages(struct page *page, unsigned int order);
+// 帮助内存分配器优化内存的使用
+void free_hot_page(struct page *page);
+void free_cold_page(struct page *page);
+```
+
 ### vmalloc及其辅助函数
 
 ### per-CPU变量
