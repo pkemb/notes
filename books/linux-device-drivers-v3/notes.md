@@ -1592,6 +1592,23 @@ void free_cold_page(struct page *page);
 
 ### vmalloc及其辅助函数
 
+`vmalloc()`用于分配连续的虚拟地址空间，物理地址空间上可能是不连续的。`vmalloc()`是Linux内存分配机制的基础。在大多数情况下不建议使用`vmalloc()`函数，因为获取的内存使用起来效率不高。
+
+相关函数原型如下：
+```c
+#include <linux/vmalloc.h>
+void *vmalloc(unsigned long size);
+void vfree(void *addr);
+void *ioremap(unsigned long phys_addr, unsigned long size);
+void iounmap(void *addr);
+```
+
+需要注意的是，`kmalloc()`和`__get_free_pages()`返回的地址是部分虚拟，地址范围和物理地址是一一对应的，可能会有基于一个常量的偏移。而`vmalloc()`和`ioremap()`使用的地址范围是完全虚拟的，每次分配都要通过对页表的适当设置来建立（虚拟）内存区域。
+
+`vmalloc()`分配的地址在VMALLOC_START和VMALLOC_END的范围。其地址不能再微处理器之外使用，只能在处理器的内存管理单元上才有意义。使用`vmalloc()`函数的正确使用场合是在分配一大块连续的、只在软件中存在的、用于缓冲的内存区域。`vmalloc()`不能在原子上下文中使用，内部调用了kmalloc(GFP_KERNEL)。
+
+`ioremap()`也建立新的页表，但不实际分配内存。`ioremap()`的返回值是一个特殊的虚拟地址，可以用来访问指定的物理内存区域。为了保证可移植性，不应把返回的地址当作指向内存的指针而直接访问，应该使用`readb()`或其他IO函数。`ioremap()`更多用于映射（物理的）PCI缓冲区地址到（虚拟的）内核空间。
+
 ### per-CPU变量
 
 ### 获取大的缓冲区
