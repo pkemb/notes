@@ -1611,4 +1611,56 @@ void iounmap(void *addr);
 
 ### per-CPU变量
 
+当建立一个per-CPU变量时，系统中的每个处理器都会拥有该变量的特有副本。由于per-CPU变量可使用的地址空间是受限制的，所以应该保持per-CPU变量较小。优点：
+* 对per-CPU变量的访问几乎不需要锁定，每个处理器在其自己的副本上工作。
+* per-CPU变量可以保存在对应处理器的高速缓存中。频繁更新时有很好的性能。
+
+编译时创建per-CPU变量及其相关的操作函数：
+```c
+#include <linux/percpu.h>
+// 编译期间创建一个per-CPU变量。如果变量是一个数组，需要在type包含数组的维数。
+DEFINE_PER_CPU(type, name);
+```
+
+当访问per-CPU变量的时候，应该避免进程被切换到另一个处理器上运行。所以应该显式地调用get_cpu_var宏访问某给定变量地当前处理器副本，结束后调用put_cpu_var。
+```c
+get_cpu_var(name)++; // 示例操作。get_cpu_var返回地是左值。
+put_cpu_var(name);
+```
+
+如果要访问其他处理器的变量副本，可以使用`per_cpu()`宏。这时需要采用某种锁定机制来确保安全。
+```c
+per_cpu(variable, int cpu_id);
+```
+
+动态分配per-CPU变量：
+```c
+void *alloc_percpu(type);
+void *__alloc_percpu(size_t size, size_t align); // 特定的对齐
+void free_percpu(void *per_cpu); // 释放 per-CPU 变量
+```
+
+对动态分配的per-CPU变量通过per_cpu_ptr完成。
+```c
+// 返回给定cpu_id的per_cpu_var的指针
+per_cpu_ptr(void *per_cpu_var, int cpu_id);
+```
+
+如果打算该变量的其他CPU版本，则可以引用该指针并进行相关操作。如果真正操作当前处理器版本，需要确保进程不会切换到其他进程运行。示例代码：
+```c
+int cpu = get_cpu();  // 获取对当前处理器的引用（阻塞抢占）并返回处理器ID
+ptr = per_cpu_ptr(per_cpu_var, cpu);
+// 使用 ptr
+put_cpu();  // 返回对当前处理器的引用
+```
+
+per-CPU变量导出/导入：
+```c
+// 导出per-CPU变量给模块
+EXPORT_PER_CPU_SYMBOL(per_cpu_var);
+EXPORT_PER_CPU_SYMBOL_GPL(per_cpu_var);
+// 模块导入per-CPU变量
+DECLARE_PER_CPU(type, name);
+```
+
 ### 获取大的缓冲区
