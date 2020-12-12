@@ -1717,4 +1717,77 @@ void smp_mb(void);
 
 ### 使用IO端口
 
+本节讲解了使用IO端口的不同函数。
+
+#### IO端口分配
+
+```c
+#include <linux/ioport.h>
+// 分配从first开始的n个端口，name是设备的名称
+// 所有的端口分配可从 /proc/ioports 文件得到
+struct resource *request_region(unsigned long first, unsigned long n, const char *name);
+// 释放IO端口
+void release_region(unsigned long start, unsigned long n);
+// 检查给定端口集是否可用
+// 不建议使用，因为检查和其后的分配并不是原子的操作
+int check_region(unsigned long first, unsigned long n);
+```
+
+#### 操作IO端口
+
+读取或写入这些端口。注意，大多数硬件都会把8位、16位和32位端口区分开来，因此C语言程序必须调用不同的函数来访问大小不同的端口。
+
+```c
+#include <asm/io.h>
+unsigned inb(unsigned port); // 从端口读取一个字节
+void outb(unsigned char byte, unsigned port); // 输出一个字节到端口
+
+unsigned inw(unsigned port);
+void outw(unsigned short word, unsigned port);
+
+unsigned inl(unsigned port);
+void outl(unsigned long word, unsigned port);
+```
+
+注意：没有定义64位的IO操作。即使在64位的体系架构上，端口地址空间也只使用最大32位的数据通路。
+
+#### 在用户空间访问IO端口
+
+GNU的C库`<sys/io.h>`中定义了这些函数，如果要使用，需要满足以下条件：
+* 编译程序时必须带有 -O 选项来强制展开内联函数。
+* 用ioperm或iopl系统调用来获取对端口进行IO操作的权限。
+  * ioperm获取对单个端口的操作权限。
+  * iopl获取对整个IO空间的操作权限。
+* 必须以root身份运行该程序才能调用ioperm或iopl。或者进程的祖先已经获取对端口的访问。
+
+如果平台没有ioperm和iopl系统调用，可以使用/dev/port设备文件访问端口。注意，该设备文件的含义与平台密切相关，并且除PC平台以外，几乎没有什么用处。
+
+#### 串操作
+
+有些处理器上实现了一次传输一个数据序列的特殊指令，序列中的数据单位可以是字节、字或双字。而且速度比一个C语言编写的循环语句快得多。
+
+```c
+// 从内存地址 addr 开始连续读/写count数目的字节，只对单一port操作
+void insb(unsigned port, void *addr, unsigned long count);
+void outsb(unsigned port, void *addr, unsigned long count);
+
+void insw(unsigned port, void *addr, unsigned long count);
+void outsw(unsigned port, void *addr, unsigned long count);
+
+void insl(unsigned port, void *addr, unsigned long count);
+void outsl(unsigned port, void *addr, unsigned long count);
+```
+
+串IO操作函数是直接将字节流从端口中读取或写入。所以，当端口与主机系统具有不同的字节序时，将导致不可预期的结果。需要在必要时交换字节。
+
+#### 暂停式IO
+
+#### 平台相关性
+
+大部分与IO端口有关的源代码都是平台相关。平台相关性主要来自于：
+* 数据类型
+* 处理器基本结构上的差异。
+
+具体差异细节：略。
+
 ### 使用IO内存
