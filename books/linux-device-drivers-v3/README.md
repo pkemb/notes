@@ -1791,3 +1791,85 @@ void outsl(unsigned port, void *addr, unsigned long count);
 具体差异细节：略。
 
 ### 使用IO内存
+
+IO内存，映射到内存的寄存器或设备内存。如果使用IO内存来实现类似IO端口的设备寄存器，读写也有边际效应（side effect）。访问IO内存的方法和计算机体系结构、总线以及正在使用的设备有关。
+
+根据计算机平台和总线的不同，访问IO内存：
+* 通过页表：内核必须首先安排物理地址对设备驱动程序可见，即IO之前必须先调用ioremap()。
+* 不通过页表：类似于IO端口，可以使用适当形式的函数读写。
+
+强烈不建议直接使用指向IO内存的指针，而是使用包装函数访问IO内存。这些函数是安全的，而且经过优化。
+
+#### IO内存分配和映射
+
+在使用之前，必须首先分配IO内存区域。
+
+```c
+// 分配内存区域，所有IO内存分配情况可从/proc/iomem获得
+// 从 start 开始分配 len 字节长的区域。
+struct resource *request_mem_region(
+       unsigned long start,
+       unsigned long len,
+       char *name);
+// 释放IO内存区域
+void release_mem_region(unsigned long start, unsigned long len);
+// 检查给定的IO区域是否可用，不推荐使用。
+int check_mem_region(unsigned long start, unsigned long len);
+```
+
+确保内核可以访问IO内存，即建立映射，为IO内存区域分配虚拟地址。
+
+```c
+#include <asm/io.h>
+// 专门为IO内存区域分配虚拟地址
+void *ioremap(unsigned long phys_addr, unsigned long size);
+// 非缓存版本，绝大多数平台与ioremap()的实现一样。
+void *ioremap_nocache(unsigned long phys_addr, unsigned long size);
+void iounmap(void *addr);
+```
+
+#### 访问IO内存
+
+```c
+#include <asm/io.h>
+// addr是从ioremap()获得的地址
+// 从IO内存中读取
+unsigned int ioread8(void *addr);
+unsigned int ioread16(void *addr);
+unsigned int ioread32(void *addr);
+
+// 写入IO内存
+void iowrite8(u8 value, void *addr);
+void iowrite16(u16 value, void *addr);
+void iowrite32(u32 value, void *addr);
+
+// 在给定地址上读写一系列的值
+void ioread8(void *addr, void *buff, unsigned long count);
+void iowrite8(void *addr, void *buff, unsigned long count);
+// 其余略
+
+//在一块IO内存上执行操作
+void memset_io(void *addr, u8 value, unsigned int count);
+void memcpy_fromio(void *dest, void *source, unsigned int count);
+void memcpy_toio(void *dest, void *source, unsigned int count);
+```
+
+老的IO内存函数，不执行类型检查，所以不推荐使用。
+```c
+unsigned readb(address);
+unsigned readw(address);
+unsigned readl(address);
+void writeb(address);
+void writew(address);
+void writel(address);
+```
+
+#### 像IO内存一样使用端口
+
+```c
+// 重映射count个IO端口，使其看起来像IO内存
+// 可在该函数的返回地址上使用ioread8及其同类函数
+void *ioport_map(unsigned long port, unsigned int count);
+// 取消重隐射
+void ioport_unmap(void *addr);
+```
