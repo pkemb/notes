@@ -1873,3 +1873,16 @@ void *ioport_map(unsigned long port, unsigned int count);
 // 取消重隐射
 void ioport_unmap(void *addr);
 ```
+
+## 第十章 中断处理
+
+### 安装中断处理例程
+
+### 实现中断处理例程
+
+### 顶半部和低半部
+
+### 中断共享
+
+### 中断驱动的IO
+
