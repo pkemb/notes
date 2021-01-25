@@ -2106,9 +2106,45 @@ int pci_bus_write_config_dword(struct pci_bus *bus, unsigned int devfn, int wher
 
 每个PCI设备可以实现多达6个IO区域，每个区域可以是内存也可以是IO。大多数设备在内存区域实现IO寄存器。
 
+设备通过配置寄存器报告每个区域的大小和当前位置，不推荐直接读取配置寄存器，而是使用以下函数接口：
+```c
+// 返回6个PCI IO区域之一的首地址（内存地址或IO端口编号），bar = 0, 1, 2, 3, 4, 5
+unsigned long pci_resource_start(struct pci_dev *dev, int bar);
+// 返回第 bar 个IO区域的尾地址，最后一个可用的地址。
+unsigned long pci_resource_end(struct pci_dev *dev, int bar);
+// 返回和该资源的标志
+unsigned long pci_resource_flags(struct pci_dev *dev, int bar);
+```
+
+与IO区域相关的资源标志如下：
+* IORESOURCE_IO
+* IORESOURCE_MEM
+  * 如果相关的IO区域存在，将设置这些标志之一
+* IORESOURCE_PREFETCH
+* IORESOURCE_READONLY
+  * 表明内存区域是否可预取或是写保护的。
+
 #### PCI中断
 
+在计算机的引导阶段，固件就为PCI设备分配了中断号。借助以下两个寄存器，可以很容易的处理PCI中断。
+* 60，PCI_INTERRUPT_LINE，中断号
+* 61，PCI_INTERRUPT_PIN，中断引脚，0表示设备不支持中断。
+
+书上还有一些关于PCI中断的扩展内容，略。
+
 #### 硬件抽象
+
+用于实现硬件抽象的机制，就是包含方法的普通结构（结构体就 + 函数指针）。
+
+在PCI管理中，唯一依赖于硬件的操作是读取和写入配置寄存器，其他的工作都是通过直接读取和写入IO及内存地址来完成的，这些工作是由CPU直接控制的。所以，用于配置寄存器访问的相关结构仅包含两个字段：
+```c
+struct pci_ops {
+    int (*read)(struct pci_bus *bus, unsigned int devfn, int where, int size);
+    int (*write)(struct pci_bus *bus, unsigned int devfn, int where, int size);
+};
+```
+
+系统中的各种PCI总线在系统引导阶段得到检测，即`struct pci_bus`项被创建并与其功能关联起来，其中包括ops字段。
 
 ### ISA回顾
 
