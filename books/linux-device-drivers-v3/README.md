@@ -2164,3 +2164,15 @@ struct pci_ops {
 ### NuBus
 
 ### 外部总线
+
+## 第十三章 USB驱动程序
+
+### USB设备基础
+
+### USB和Sysfs
+
+### USB urb
+
+### 编写USB驱动程序
+
+### 不使用urb的USB传输
