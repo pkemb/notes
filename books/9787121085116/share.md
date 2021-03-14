@@ -13,32 +13,27 @@
 
 ## 程序生命周期
 
-先来看看程序的生命周期，往后会按顺序依次介绍各个知识点。所以此图务必牢记。
+先来看看程序的生命周期，之后会按照图示的顺序依次介绍。
 
 ![](pic/程序生命周期.png)
 
 ## 编译
 
-* 词法分析
-* 语法分析
-* 中间代码生成
-* 中间代码优化
-* 目标代码生成
+编译的过程大致可以分为5步，更详细的内容可以参考龙书。
 
-[](pic/compilation.png)
+1. 词法分析
+2. 语法分析
+3. 中间代码生成
+4. 中间代码优化
+5. 目标代码生成
+
+![](pic/compilation.png)
 
 ## ELF文件格式
 
 介绍可重定位文件和共享目标文件常见的段及其含义，以及如何用命令查看。最好有一个例子。最后引出符号的概念。
 
-### 目标文件包含的内容
-* 头信息
-* 目标代码
-* 重定位信息
-* 符号
-* 调试信息
-
-### 目标文件格式类别
+在正式介绍链接、库、加载之前，首先来看看ELF文件的格式，这是后面内容的基础。ELF格式是在`UNIX System V`中引入的，用来支持`C++`和动态链接。现在ELF被广泛用于Linux、BSD等类UNIX系统。以下是常见的目标文件格式，有关这些格式的说明，可以参考《链接器和加载器》第3章。
 * 空目标文件格式：MS-DOS的COM文件
 * 代码区段：UNIX的a.out文件
 * 重定位：MS-DOS的EXE文件
@@ -48,9 +43,9 @@
 * 微软PE格式
 * Intel/Microsoft的OMF文件格式
 
-### ELF 文件格式
+### ELF 文件类型
 
-ELF将文件分为4类。
+ELF将文件分为4类，下表对比了不同类型之间的差异。
 
 | 类型 | 链接 | 加载 | 说明 |
 | - | - | - | - | - |
@@ -59,50 +54,131 @@ ELF将文件分为4类。
 | 共享目标文件 | Y | Y | 即包括链接器需要的符号信息，也包括运行时可以直接执行的代码。 |
 | 核心转储文件 | - | - | - |
 
+编译器、汇编器和链接器将ELF文件看作是`Section header table`描述的一系列逻辑区段（`section`）的集合；加载器将ELF文件看作是`Program header table`描述的一系列段（`segment`）的集合。一个段通常由多个区段组合。可重定位文件有`Section header table`，可执行文件有`Program header table`，共享目标文件两者都有。
+
 ![](pic/ELF的链接和执行视图.png)
 
-#### ELF 文件头
+### ELF 文件头
 
-readelf -h objfile.o
+ELF文件都以ELF文件头开始，在32位机器上通过结构体`Elf32_Ehdr`来描述。重点关注`e_shoff`和`e_phoff`，通过这两个字段可以寻找到区段头部表和程序头部表，从而可以定位到其余所有的区段和段。
 
-| 字段      | 说明 |
-| --------- | ---- |
-| e_ident   |      |
-| e_type    |      |
-| e_machine |      |
-| e_version |      |
-| e_entry   |      |
-| e_phoff   |      |
-| e_shoff   |      |
-|  e_flags ||
-| e_ehsize ||
-|  ||
-|  ||
-|  ||
-|  ||
-|  ||
-|  ||
+readelf -h elffile
 
-#### 可重定位文件
+![](pic/elf_header.png)
 
-可重定位文件可以看作是一系列在区段头部表（Section header table）中被定义的区段的集合。
+### ELF可重定位文件
+
+可重定位文件可以看作是一系列在区段头部表（Section header table）中被定义的区段的集合。区段头部表是一个以`Elf32_Shdr`结构体为元素的数组，数组中的每一个元素对应一个段。
 
 readelf -S objfile.o
 
-* 区段头部表字段
-* 常见区段类型
-* 常见区段
+| 字段 | 说明 |
+| - | - |
+| sh_name | 区段名，区段`.shstrtab`的偏移。 |
+| sh_type | [区段类型](#区段类型) |
+| sh_flags | [区段标志位](#区段标志位) |
+| sh_addr | 可加载区段在进程地址空间中的虚拟地址，不可加载区段为0。|
+| sh_offset | 区段在文件中的偏移。区段不在文件中则为0。 |
+| sh_size | 区段的长度。 |
+| sh_link | 段链接信息，存储的是相关信息的区段号。|
+| sh_info | 区段更多的信息。|
+| sh_addralign | 段地址对齐，2的指数倍。|
+| sh_entsize | 区段为一个表时，表项的大小。|
 
-#### ELF可执行文件
+#### 区段类型
 
-程序头部定义了要被映射的段。
+区段常见的类型有：
+
+| 类型 | 说明 |
+| - | - |
+| SHT_PROGBITS | 程序内容，包括代码、数据和调试器信息。|
+| SHT_NOBITS | 在文件中没有分配空间，在程序加载时分配空间，例如.bss区段。|
+| SHT_SYMTAB / SHT_DNYSYM | [符号表](#符号表)。SHT_SYMBAT包含所有的符号，SHT_DNYSYM包含动态链接的符号，会被加载到内存。<br> readelf -s <br> objdump -t |
+| SHT_STRTAB | 字符串表。 |
+| SHT_REL / SHT_RELA | 重定位表，包含重定位信息。<br> objdump -r <br> objdump -R |
+| SHT_DYNAMIC | 动态链接信息。<br> readelf -d |
+| SHT_HASH | 哈希表。 |
+
+#### 区段标志位
+
+区段标志位表示该区段在进程虚拟地址空间中的属性。
+
+| 标志 | 说明 |
+| SHF_WRITE | 在进程空间中可写。 |
+| SHF_ALLOC | 在进程空间中要分配空间。|
+| SHF_EXECINSTR | 在进程空间中可以被执行。|
+
+可重定位文件一般有如下区段：
+* .text，正文段，具有ALLOC+EXECINSTR属性的PROGBITS类型区段。
+* .data，数据段，具有ALLOC+WRITE属性的PROGBITS类型区段。
+* .rodata，只读数据段，具有ALLOC属性的PROGBITS类型区段。
+* .bss，具有ALLOC+WRITE属性的NOBITS类型区段。
+* .rel.text, .rel.data, .rel.rodata，REL或RELA类型区段，包含对应区段的重定位信息。
+* .init和.finit，具有ALLOC+EXECINSTR属性的PROGBITS类型区段，对C++来说时必须的。
+* .symtab，符号表，SYMTAB类型的区段。
+* .dnysym，动态链接符号表，具有ALLOC属性的DNYSYM类型区段。
+* .strtab，字符串表，STRTAB类型的区段，通常保存符号的字符串。
+* .shstrtab，段表字符串表，通常存储段名字符串。
+* .dnystr，ALLOC属性的STRTAB类型区段，通常保存动态链接符号的字符串。
+* .got
+* .plt
+* .line
+* .comment
+* .interp
+
+### ELF可执行文件
+
+程序头部表是一个以`Elf32_Phdr`结构体为元素的数组，定义了要被映射的段。可执行文件通常只有少数几种段，例如可读可执行的代码段，可读可写的数据段，只读的只读数据段。将可加载的区段合并到合适的段，可以加快映射的速度。
 
 readelf -l execfile
 
-* 程序头部表字段
-* 常见的段类型
+| 字段 | 说明 |
+| p_type | 段的类型。LOAD、DYNAMIC、INTERP等。 |
+| p_offset | 段在文件中的偏移。 |
+| p_vaddr | 段在进程虚拟地址空间的起始地址。|
+| p_paddr | 物理装载地址。|
+| p_filesz | 段在文件中所占空间的大小。|
+| p_memsz | 段在虚拟地址空间中所占用的长度。|
+| p_flags | 段的权限，RWX。|
+| p_align | 对齐，2的指数幂。|
 
+### ELF共享目标文件
 
+ELF第三种文件类型是共享目标文件，它包含了可重定位文件和可执行文件的所有东西。也就是说，共享目标文件既可以参与链接，也可以被加载到内容中执行。
+
+### 符号表
+
+符号表是`Elf32_Sym`结构体数组，段名一般叫`.symtab`，每个表项定义了一个符号。
+
+readelf -s \
+objdump -t \
+objdump -T
+
+* st_name：符号名，字符串表的下标。
+* st_size：符号大小。
+* st_shndx：符号所在的段。
+  * 符号所在的段在段表中的下标。
+  * SHN_ABS：该符号包含了一个绝对的值，例如文件名的符号。
+  * SHN_COMMON：该符号是一个“COMMON块”类型的符号，例如未初始化的全局符号定义。
+  * SHN_UNDEF：符号未定义，该符号在本文件中被引用，但是定义在其他文件。
+* st_info：符号类型和绑定信息
+  * 高28位表示符号绑定信息（Symbol Binding）
+    * STB_LOCAL：局部符号，对目标文件的外部不可见。
+    * STB_GLOBAL：全局符号，外部可见。
+    * STB_WEAK：若引用。
+  * 低4位表示符号的类型（Symbol Type）
+    * STT_NOTYPE：未知类型符号
+    * STT_OBJECT：该符号是一个数据对象，比如变量、数组。
+    * STT_FUNC：该符号是函数或其他可执行代码。
+    * STT_SECTION：该符号是一个段，一定是STB_LOCAL。
+    * STT_FILE：目标文件对应的源文件名，一定是STB_LOCAL，st_shndx一定是SHN_ABS。
+* st_value：符号值
+  * 目标文件
+    * SHN_UNDEF：st_value没有用。
+    * SHN_COMMON：表示该符号的对齐属性。
+    * 段的下标：st_value表示该符号在段中的偏移位置。
+  * 可执行文件
+    * st_value表示符号的虚拟地址。
 
 ## (静态)链接和重定位
 
