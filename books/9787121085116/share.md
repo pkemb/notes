@@ -331,9 +331,113 @@ Section Headers:
 
 ### 延迟绑定
 
-PLT
+动态链接的程序需要在运行时完成链接，并完成GOT的定位，这导致程序的运行速度必定会减慢。考虑到很多函数在程序执行完毕时都不会被用到，对这些函数进行链接就是一种浪费。ELF使用延迟绑定来解决这个问题，其基本思想是函数第一次被用到时才进行绑定，如果没有用到则不进行绑定。
+
+下面是延迟绑定的示意图。左边是三个代码块，右边是`.got.plt`存储的数据。当调用`bar()`函数时，实际调用的是`bar@plt`。
+
+![](pic/plt_386.png)
 
 ### 动态链接的数据结构
+
+#### .interp
+
+`.interp`段存储了动态链接器的路径。动态链接器负责装载动态库，并完成动态库的重定位。
+
+```
+$ readelf -l /bin/ls | grep interpreter
+  [Requesting program interpreter: /lib64/ld-linux-x86-64.so.2]
+```
+
+#### .dynamic
+
+`.dynamic`段存储了动态链接器所需要的基本信息，它是结构体`Elf32_Dyn`数组，结构体定义如下。由一个类型值加上一个附加的数值或指针。
+
+```c
+typedef struct {
+  Elf32_Sword d_tag;
+  union {
+    Elf32_Word d_val;
+    Elf32_Addr d_ptr;
+  } d_un;
+} Elf32_Dyn;
+```
+
+```
+readelf -d lib.so
+```
+
+常见的类型值如下：
+
+| d_tag类型 | d_un的含义 |
+| - | - |
+| DT_SYMTAB | 动态链接符号表的地址`.dynsym`的地址。 |
+| DT_STRTAB | 动态链接字符串表`.dynstr`的地址。 |
+| DT_STRSZ | 动态链接字符串表的大小，d_val表示大小。 |
+| DT_HASH | 动态链接哈希表的地址。 |
+| DT_SONAME | 本共享对象的SO-NAME。 |
+| DT_RPATH | 动态链接共享对象搜索路径。 |
+| DT_INIT | 初始化代码地址。 |
+| DT_FINIT | 结束代码地址。 |
+| DT_NEED | 依赖的共享对象文件，`d_ptr`表示所依赖的共享对象文件名。 |
+| DT_REL<br>DT_RELA | 动态链接重定位表地址。 |
+| DT_RELENT<br>DT_RELAENT | 动态重读位表入口地址。 |
+
+#### 动态符号表
+
+动态符号表`.dynsym`存储了动态链接所需要的符号信息，而普通的符号表`.symtab`包含了所有的符号信息。`.dynsym`的符号名存储在表`.dynstr`。
+
+```
+readelf -d lib.so
+```
+
+#### 动态链接重定位表
+
+```
+readelf -r lib.so
+```
+
+动态链接需要在运行时修正`GOT`表和数据段的绝对引用，`.rel.dyn`修正`.got`和数据段，`.rel.plt`修正`.got.plt`。下面是`.rel.dyn`和`.got`的一个示例。`GLOB_DAT`是一种比较简单的重定位类型，直接填上对应符号的地址即可。
+
+```
+Relocation section '.rel.dyn' at offset 0x2c0 contains 5 entries:
+ Offset     Info    Type            Sym.Value  Sym. Name
+000015d0  00000106 R_386_GLOB_DAT    00000000   __gmon_start__
+000015d4  00000206 R_386_GLOB_DAT    00000000   _Jv_RegisterClasses
+000015d8  00000306 R_386_GLOB_DAT    00000000   b
+000015dc  00000506 R_386_GLOB_DAT    00000000   __cxa_finalize
+
+Contents of section .got:
+ 15d0 00000000 00000000 00000000 00000000  ................
+```
+
+<h4 id=ch_7.5.5>动态链接时进程堆栈初始化信息</h4>
+
+当操作系统将控制权交给动态链接器的时候，会通过堆栈传递`辅助信息数组（Auxiliary Vectory）`，此数组是`Elf32_auxv结构体数组`。
+
+```c
+typedef struct
+{
+  uint32_t a_type;
+  union
+  {
+    uint32_t a_val;
+  } a_un;
+} Elf32_auxv_t;
+```
+
+常见的类型及含义如下表：
+
+| a_type定义 | a_type值 | a_val含义 |
+| - | -| - |
+| AT_NULL | 0 | 表示辅助信息数组结束。 |
+| AT_EXEFD | 2 | 可执行文件的句柄。执行可执行文件时，操作系统会打开此文件。动态链接器可使用操作系统的文件读写操作来访问可执行文件。 |
+| AT_PHDR | 3 | 程序头表在进程中的地址。动态链接器也可以直接访问进程的VMA来访问可执行文件。 |
+| AT_PHENT | 4 | 程序头表每个表项的大小。 |
+| AT_PHNUM | 5 | 程序头表表项的数量。 |
+| AT_BASE | 7 | 动态链接器本身的装载地址。 |
+| AT_ENTRY | 9 | 可执行文件入口地址。 |
+
+示例程序：[print_stack.c](code/print_stack.c)。相比书中的示例，增加了对64位的支持。
 
 ### 动态链接的步骤
 
@@ -346,3 +450,7 @@ PLT
 * 动态共享库
 
 ## 加载
+
+## 学习资料
+
+https://paper.seebug.org/papers/Archive/refs/elf/
