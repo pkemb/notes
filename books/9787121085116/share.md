@@ -514,11 +514,26 @@ char *dlerror();
 int dlcose(void *handle);
 ```
 
-## 库
+## Linux共享库的组织
 
-* 静态库
-* 静态共享库
-* 动态共享库
+### 共享库命名及版本
+
+* 命名格式
+* 版本说明
+* SO-NAME
+
+### 符号版本
+
+### 共享库系统路径
+
+### 共享库查找过程
+
+### 环境变量
+
+* LD_LIBRARY_PATH
+* LD_PRELOAD
+* LD_DEBUG
+
 
 ## 加载
 
