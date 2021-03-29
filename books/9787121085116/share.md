@@ -494,6 +494,26 @@ typedef struct
 
 ### 显示动态链接
 
+让程序自己在运行时控制加载指定的模块，并且可以在不需要该模块时将其卸载。
+
+运行时链接的优点：
+1. 使得程序的模块组织变得很灵活。
+2. 减少程序的启动时间和内存使用。
+3. 无需重启即可实现模块的增加删除更新。
+
+动态链接器提供的API实现在/lib/libdl.so.2，声明和相关变量被定义在<dlfcn.h>。
+
+```c
+// 打开动态库并加载到进程的地址空间
+void *dlopen(const char *filename, int flag);
+// 查找符号并返回其地址
+void *dlsym(void *handle, char *symbol);
+// 判断上一次调用是否成功
+char *dlerror();
+// 关闭动态库
+int dlcose(void *handle);
+```
+
 ## 库
 
 * 静态库
