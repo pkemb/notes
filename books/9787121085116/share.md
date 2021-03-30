@@ -518,9 +518,32 @@ int dlcose(void *handle);
 
 ### 共享库命名及版本
 
-* 命名格式
-* 版本说明
-* SO-NAME
+Linux规定共享库的文件命名规则必须如下：
+```
+libname.so.x.y.z
+```
+
+解释如下：
+* *lib*：固定前缀
+* *name*：共享库的名字
+* *so*：固定后缀
+* *x*：主版本号，重大升级，不同主版本号的库之间是不兼容的。程序需要更改相应的部分，并重新编译。或者保留旧的版本库。
+* *y*：次版本号，增量升级，增加一些新的符号接口，且保持原来的符号不变。高的次版本号兼容低的次版本号，程序无需修改即可在高次版本号正常运行。
+* *z*：发布版本号，库的错误修正、性能改进等，不添加新的接口，也不对接口进行更改。
+
+注意，还是有一部分的库没有遵守这个规定，比如Glibc，使用 libc-x.y.z.so的命名方式。
+
+参考资料：[Library Interface Versioning in Solaris and Linux](http://www.usenix.org/publications/library/proceedings/als00/2000papers/papers/full_papers/browndavid/browndavid_html/)
+
+*SO-NAME*
+
+SO-NAME：共享库的名字去掉次版本号和发布版本号，只保留主版本号。例如libfoo.so.2.6.1的SO-NAME是libfoo.so.2。在共享库的同目录下，会创建一个名为SO-NAME的软链接，指向主版本号相同，次版本号和发布版本号最新的共享库。当程序编译、链接、运行时，不使用动态库的详细名字，而使用SO-NAME。库的次版本号和发布版本号变动，不会影响SO-NAME。只需更改软链接，即可指向最新的版本，无需重新编译程序。
+
+如果库的主版本号发生变化，会导致系统中存在多个SO-NAME，并不会影响原有程序的正常运行。
+
+Linux提供了一个工具`ldconfig`，会遍历所有默认的库目录，更新所有的软链接，指向最新版本的共享库。
+
+libXXX.so.x.y.z中的`XXX`称为共享库的`链接名`。在编译时，使用`-lXXX`的选项，编译器会在系统中查找最新版本的`libXXX.so.x`，并记录到程序中。
 
 ### 符号版本
 
