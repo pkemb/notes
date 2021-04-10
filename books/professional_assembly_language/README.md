@@ -105,3 +105,17 @@ Streaming SIMD extension，SSE。
 ## IA-32处理器系列
 
 主要有Intel系列和AMD系列。
+
+# 第二章（补充） ARMv8 平台
+
+ARMv8引入的AArch64架构，以及后续的ARMv9。
+
+## 参考资料
+* [Introducing the Arm architecture](https://developer.arm.com/documentation/102404/latest)
+* [AArch64 Exception model](https://developer.arm.com/documentation/102412/latest)
+* [AArch64 Instruction Set Architecture](https://developer.arm.com/documentation/102374/latest/)
+* [AArch64 memory management](https://developer.arm.com/documentation/101811/latest)
+* [AArch64 memory model](https://developer.arm.com/documentation/102376/latest/)
+* [Understanding the Armv8.x and Armv9.x extensions](https://developer.arm.com/documentation/102378/latest)
+* [AArch64 self-hosted debug](https://developer.arm.com/documentation/102120/0100)
+* [AArch64 external debug](https://developer.arm.com/documentation/102196/latest)
