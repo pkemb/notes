@@ -235,3 +235,72 @@ gprof，用于分析程序的执行。
 ## 完整的汇编开发系统
 
 推荐使用Linux操作系统，并安装上述的工具。安装过程略。
+
+# 第4章 汇编语言程序范例
+
+学习GNU汇编器的基本汇编语言程序模板。
+
+## 程序的组成
+
+汇编语言程序由不同的段组成，每个段都有不同的目的。最常见的三个段是：
+* 数据段 .data
+* bss段 .bss
+* 文本段 .text
+
+文本段必须要有，数据段和bss段是可选的。数据段声明带有初始值的数据元素，bss段声明使用0初始化的数据元素。
+
+### 定义段
+
+GNU汇编器使用`.section`命令声明段，只使用一个参数，即段的类型。一般情况下，按照.data、.bss、.text的顺序依次定义。
+
+### 定义起始点
+
+默认情况下，`ld`链接器使用符号`_start`作为程序的起点。也可以使用`-e`参数指定新的起始点。程序入口点需要被外部的程序引用，这使用`.global`命令完成。
+
+汇编语言程序的模板如下：
+```asm
+.section .data
+# initialized data here
+
+.section .bss
+# uninitialized data here
+
+.section .text
+.global _start  # 声明外部程序可以访问的程序标签
+_start:
+# instrction code goes here
+```
+
+## 创建简单程序
+
+### cpuid 指令
+
+请参考[Intel® 64 and IA-32 Architectures Software Developer’s Manual Volume 2](https://www.intel.com/content/dam/www/public/us/en/documents/manuals/64-ia-32-architectures-software-developer-instruction-set-reference-manual-325383.pdf)第290页。
+
+### 范例程序
+
+[code/ch4/cpuid.s](code/ch4/cpuid.s)
+
+说明：
+* 默认使用`main`作为入口点
+* 在`WSL`上使用`gcc`编译失败，需要加上`-no-pie`选项，即`gcc -o cpuid cpuid.s -no-pid`。
+* [code/ch4/Makefile](code/ch4/Makefile)默认使用`as`，`make USEGCC=1`则使用`gcc`。
+
+## 调试程序
+
+实操环节，主要掌握以下基本技能：
+* 设置断点，break指令
+* 运行程序，run和cont指令
+* 单步运行指令，next和step指令
+* 数据查看指令，info、print和x指令
+
+## 在汇编语言中使用C库函数
+
+程序示例：[code/ch4/cpuid2_x86.s](code/ch4/cpuid2_x86.s)
+
+注意：
+* 第5行是`.asciz`指令，会在字符串的最后加上0。
+* 第16行，%edi的括号一定要加
+* 这段代码只能在32位系统上运行
+* 通过栈向C库函数传递参数，从右到左依次压栈
+* 注意传递给链接器的`-lc`和`-dynamic-linker /lib/ld-linux.so.2`选项
