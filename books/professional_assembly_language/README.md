@@ -119,3 +119,119 @@ ARMv8引入的AArch64架构，以及后续的ARMv9。
 * [Understanding the Armv8.x and Armv9.x extensions](https://developer.arm.com/documentation/102378/latest)
 * [AArch64 self-hosted debug](https://developer.arm.com/documentation/102120/0100)
 * [AArch64 external debug](https://developer.arm.com/documentation/102196/latest)
+
+# 第三章 相关的工具
+
+介绍创建汇编语言程序所必需的软件工具。
+
+## 开发工具
+
+* 汇编器：把汇编语言源代码转换为处理器的指令码。
+* 链接器
+* 调试器
+* 编译器
+* 目标代码反汇编器
+* 简档器：确定函数的执行时间
+
+## GNU汇编器
+
+主要使用GNU工具链中的汇编器。
+
+### 安装汇编器
+
+GNU汇编器不在单独的包中发布，和GNU binutils包中的其他开发软件捆绑在一起。
+
+安装方法：
+* RedHat系列：yum -y install binutils
+* Debian系列：apt install -y binutils
+* 编译安装，源代码链接：[binutils](https://ftp.gnu.org/gnu/binutils/)。安装方法略。
+
+### 使用汇编器
+
+* [2.14 pdf](http://www.zap.org.au/elec2041-cdrom/gnutools/doc/gnu-assembler.pdf)
+* [2.30 pdf](https://doc.ecoscentric.com/gnutools/doc/as.pdf)
+* [2.36 html](https://sourceware.org/binutils/docs-2.36/as/index.html)
+
+### 关于操作码语法
+
+| | AT&T | Intel |
+| - | - | - |
+| 立即数 | $4 | 4 |
+| 寄存器 | %eax | eax |
+| 操作数顺序 | mnemonic	source, destination | mnemonic	destination, source |
+| 数据长度 | movl $test, %eax | mov eax, dword ptr test |
+| 长调用和跳转 | ljmp $section, $offset | jmp section:offset |
+
+参考资料：
+* https://csiflabs.cs.ucdavis.edu/~ssdavis/50/att-syntax.htm
+* http://web.mit.edu/rhel-doc/3/rhel-as-en-3/i386-syntax.html
+
+## GNU链接器
+
+GNU链接器ld用于把目标代码文件链接位可执行程序文件或库文件。
+
+使用手册：
+* [2.30 pdf](https://doc.ecoscentric.com/gnutools/doc/ld.pdf)
+* [2.36 html](https://sourceware.org/binutils/docs-2.36/ld/index.html)
+
+## GNU编译器
+
+GNU Compiler Collection，gcc。
+
+### 下载和安装gcc
+
+### 使用gcc
+
+官方手册：https://gcc.gnu.org/onlinedocs/
+
+常用选项：
+* -c 只编译或汇编，不链接
+* -S 只编译，不汇编
+* -E 只预处理，不编译
+* -o 指定输出文件名，默认输出文件名为a.out
+* -g 生成调试信息
+* -pg 生成gprof需要的额外代码
+* -O 指定优化等级0/1/2
+* -W 设置警告消息级别
+* -I 指定include目录
+* -L 指定库文件目录
+* -l 链接指定库
+
+## GNU调试器程序
+
+gdb。
+
+### 下载和按转GDB
+
+### 使用GDB
+
+官方手册：https://sourceware.org/gdb/current/onlinedocs/gdb.pdf
+
+常用的交互指令：
+* break 设置断点
+* watch 设置监视点
+* info 查看寄存器、堆栈或内存
+* x 检查内存位置
+* print 显示变量值
+* run 开始允许程序
+* list 列出指定的函数或行
+* next 执行下一条指令，不会进入子函数内部
+* step 执行下一条指令，进入子函数内部
+* cont 从停止的位置继续执行程序
+* until 运行程序，直到到达指定的行
+
+## GNU objdump 程序
+
+参考《程序员的自我修养——链接装载与库》。
+
+官方手册：https://sourceware.org/binutils/docs-2.36/binutils/objdump.html
+
+## GNU简档器程序
+
+gprof，用于分析程序的执行。
+
+官方手册：https://sourceware.org/binutils/docs-2.36/gprof/index.html
+
+## 完整的汇编开发系统
+
+推荐使用Linux操作系统，并安装上述的工具。安装过程略。
