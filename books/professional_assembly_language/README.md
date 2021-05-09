@@ -1,5 +1,9 @@
 # 汇编语言程序设计
 
+书籍简介：
+
+书籍主页（代码下载）：[Professional Assembly Language](https://www.wiley.com/en-us/Professional+Assembly+Language-p-9780764579011)
+
 # 第一章 什么是汇编语言
 
 ## 处理器指令
