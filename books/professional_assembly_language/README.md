@@ -479,3 +479,54 @@ movl %ebx, (%edi)
 movl %ebx, 4(%edi)
 movl %ebx, -4(%edi)
 ```
+
+## 条件传送指令
+
+`CMOV`指令仅在特定的条件下传送数据。相比于`JMP`指令，对程序优化可能起到一定的作用。`CMOV`指令的格式如下：
+
+```asm
+cmovx source, destination
+```
+
+其中`x`是一个或两个字母的代码，表示触发传送操作的条件。条件取决于`EFLAGS`寄存器的当前值。
+
+| ELFAGS位 | 名称 | 描述 |
+| - | - | - |
+| CF | 进位（Carry）标志 | 数学表达式产生了进位或者借位 |
+| OF | 溢出（Overflow）标志 | 整数值过大或者过小 |
+| PF | 奇偶校验（Parity）标志 | 寄存器包含数学操作照成的错误数据 |
+| SF | 符号（Sign）标志 | 指出结果为正还是负 |
+| ZF | 零（Zero）标志 | 数学操作的结果为零 |
+
+| 无符号条件传送指令 | 描述 | EFLAGS标志 |
+| - | - | - |
+| CMOVA / CMOVNBE | 大于 / 不小于或等于 | （CF或ZF) = 0 ，无进位或借位，结果不为0 |
+| CMOVAE / CMOVNB | 大于或者等于 / 不小于 | | CF = 0，无进位或借位 |
+| CMOVNC | 无进位 | CF = 0 |
+| CMOVB / CMOVNAE | 小于 / 不大于或等于 | CF = 1 |
+| CMOVC | 进位 | CF = 1 |
+| CMOVBE / CMOVNA | 小于或者等于 / 不大于 | (CF或ZF) = 1 |
+| CMOVE / CMOVZ | 等于 / 零 | ZF = 1 |
+| CMOVNE / CMOVNZ | 不等于 / 不为零 | ZF = 0 |
+| CMOVP / CMOVPE | 奇偶校验 / 偶校验 | PF = 1 |
+| CMOVNP / CMOVPO | 非奇偶校验 / 奇校验 | PF = 0 |
+
+| 符号条件传送指令 | 描述 | EFLAGS标志 |
+| - | - | - |
+| CMOVGE / CMOVNL | 大于或者等于 / 不小于 | (SF xor OF) = 0 |
+| CMOVL / CMOVNGE | 小于 / 不大于或者等于 | (SF xor OF) = 1 |
+| CMOVO | 溢出 | OF = 1 |
+| CMOVNO | 未溢出 | OF = 0 |
+| CMOVS | 带符号（负） | SF = 1 |
+| CMOVNS | 无符号（非负） | SF = 0 |
+
+示例代码：如果ECX寄存器的值大于EBX，则将ECX的值传送到EBX寄存器。
+
+```asm
+movl value, %ecx
+cmp %ebx, %ecx
+cmova %ecx, %ebc
+```
+
+> `CMP`指令从第二个寄存器减去第一个寄存器并设置`EFLAGS`寄存器。注意，这个顺序和Intel手册的顺序相反。
+
