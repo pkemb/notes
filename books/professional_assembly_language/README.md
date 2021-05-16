@@ -530,3 +530,16 @@ cmova %ecx, %ebc
 
 > `CMP`指令从第二个寄存器减去第一个寄存器并设置`EFLAGS`寄存器。注意，这个顺序和Intel手册的顺序相反。
 
+## 交换指令
+
+交换指令用于交换数据元素的位置。如果使用`MOV`指令，则需要三条指令和一个中间寄存器，交换指令可以一步完成。
+
+| 指令 | 指令格式 | 描述 |
+| - | - | - |
+| XCHG | xchg operand1, operand2 | 在两个寄存器或者寄存器和内存位置之间交换值 |
+| BSWAP | bswap operand1 | 反转一个32位寄存器中的字节顺序 |
+| XADD | xadd source, destination | 交换两个寄存器或者内存位置和寄存器的值，把两个值相加的结果存储在目标操作数。源操作数只能是寄存器，目标操作数可以是寄存器或内存位置。 |
+| CMPXCHG | cmpxchg source, destination | if(source == eax) destination = source else eax = destination。没看懂这个指令的应用场景。|
+| CMBXCHG8B | | |
+
+交换指令的典型应用场景是排序算法，[bubble.s](code/ch05/bubble.s)是冒泡排序的实现。
