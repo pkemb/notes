@@ -800,3 +800,84 @@ subl $4, %eax           # eax = eax - 4，进位标志置位
 | CLC | 清空进位标志（设置为0） |
 | CMS | 对进位标志求反 |
 | STC | 设置进位标志（设置为1） |
+
+## 循环
+
+循环操作重复地执行，直到满足特定条件。
+
+### 循环指令
+
+循环指令使用`ECX`寄存器作为计数器并且随着循环指令的指令自动递减`ECX`的值。递减到0时，不会设置`EFLAGS`寄存器。
+
+| 指令 | 描述 |
+| - | - |
+| LOOP | 循环直到ECX寄存器为0 |
+| LOOPE / LOOPZ | 循环直到ECX寄存器为0，或者没有设置ZF标志（相等/为零时循环） |
+| LOOPNE / LOOPNZ | 循环直到ECX寄存器为0，或者设置ZF标志（不相等/不为零时循环） |
+
+循环指令的格式如下。循环指令只支持8位偏移，只能进行短跳转。
+
+```asm
+loop address
+```
+
+循环开始之前，必须在`ECX`寄存器设置迭代次数。
+
+```asm
+    movl $100, %ecx
+loop1:
+    # some code here
+    loop loop1
+```
+
+### 循环范例
+
+```asm
+# 循环指令示例
+.section .data
+output:
+    .asciz "The value is: %d\n"
+.section .text
+.global main
+main:
+    movl $100, %ecx   # 初始化循环计数器
+    movl $0, %eax
+loop1:
+    addl %ecx, %eax   # 将ECX的值累加到EAX
+    loop loop1        # 先将ECX减1，再判断是否为0。不为0则跳转到loop1
+    pushl %eax
+    pushl $output
+    call printf
+    addl $8, %esp
+    movl $1, %eax
+    movl $0, %ebx
+    int $0x80
+```
+
+### 防止loop灾难
+
+`loop`指令先递减`ECX`寄存器，再检查`ECX`寄存器的值。如果`ECX`寄存器为0时执行`loop`指令，那么循环会在寄存器溢出时退出。所以，在执行`loop`指令之前，需要检查`ECX`是否为0，可以使用指令`jcxz`来完成。
+
+```asm
+# 循环指令示例
+.section .data
+output:
+    .asciz "The value is: %d\n"
+.section .text
+.global main
+main:
+    movl $0, %ecx     # 循环计数器初始值是0
+    movl $0, %eax
+    jcxz done         # 如果ecx为0，则跳转到done标签
+loop1:
+    addl %ecx, %eax   # 将ECX的值累加到EAX
+    loop loop1        # 先将ECX减1，再判断是否为0。不为0则跳转到loop1
+done:
+    pushl %eax
+    pushl $output
+    call printf
+    addl $8, %esp
+    movl $1, %eax
+    movl $0, %ebx
+    int $0x80
+```
