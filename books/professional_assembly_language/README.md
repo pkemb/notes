@@ -1060,3 +1060,16 @@ movsx %bx, %eax
 data1:
     .int -3
 ```
+
+## SIMD整数
+
+### MMX整数
+
+### 传送MMX整数
+
+### SSE整数
+
+### 传送SSE整数
+
+略。
+
