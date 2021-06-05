@@ -1314,3 +1314,12 @@ SBB指令在多字节减法操作中利用进位和溢出标志实现跨越数�
 ```asm
 sbb source, destination
 ```
+
+### 递增和递减
+
+INC和DEC用于对无符号数进行递增和递减操作，且不会影响进位标志。所以可以用于递增或递减计数器的值。`destination`可以是8位、16位或32位寄存器或内存中的值。
+
+```asm
+inc destination
+dec destination
+```
