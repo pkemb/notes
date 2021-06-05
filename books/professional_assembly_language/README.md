@@ -1191,3 +1191,85 @@ fstl source # 从FPU寄存器堆栈顶部获取双精度浮点数，source是64�
 ## 转换
 
 略。
+
+# 第八章 基本数学功能
+
+本章研究汇编语言中基本`整数`数学功能。包含算数运算指令（加减乘除）、移位指令、十进制运算指令、布尔逻辑和位测试指令。
+
+## 整数运算
+
+整数的加法、减法、乘法和除法。
+
+### 加法
+
+#### ADD指令
+
+`ADD`指令用于把两个整数相加。指令格式如下，加法结果存储在`destination`。`source`可以是立即值、内存位置或寄存器，`destination`可以是内存位置或寄存器，不能同时为寄存器。
+
+```asm
+add source, destination  # destination = source + destination
+```
+
+`ADD`可以将8位、16位或32位值相加，需要要指令尾部添加b(8位)、w(16位)或l(32位)来指定操作数长度。`ADD`指令的示例如下。
+
+```asm
+addb $10, %al   # 8位，AL = 10 + AL
+addw %bx, %cx   # 16位，CX = BX + CX
+addl %eax, %eax # 32位，EAX = EAX + EAX
+```
+
+> 在没有使用整个32位寄存器时，最好使用0填充目标寄存器。必要时，可以使用`MOVSX`进行符号扩展。
+
+#### 检测进位或者溢出情况
+
+对于无符号数，加法照成进位时（结果大于允许的最大值），进位标志（Carry）置1。对于带符号整数，出现溢出情况时（结果小于允许的最小值、大于允许的最大值），溢出标志（Overflow）置1。在不确定输入值的长度时，总应该关心进位（无符号数）或溢出（有符号数）标志。
+
+> 进位和溢出标志的设置与加法中使用的数据长度相关联。ADDB结果超过255，进位标志置1。ADDW结果超过65535，进位标志置1。
+
+#### ADC指令
+
+当处理用32位寄存器无法存放的无符号或带符号数据时，可以把数据分割为多个双字数据元素，并对每个数据元素执行独立的加法。显然，需要将进位标志传递到下一对加法。可以使用`ADC`指令完成这项工作。`ADC`指令与`ADD`指令类似，但是`ADC`指令的结果包含进位标志，即`destination=source + destination + CF`。同样需要附加字符表示操作数的长度。`ADC`指令可以同时处理无符号数和带符号数。
+
+```asm
+adc source, destination
+```
+
+#### ADC使用范例
+
+考虑`0x01B041869F`和`0x0155ACB400`相加。`0x01B041869F`存储在EAX和EBX，`0x0155ACB400`存储在ECX和EDX。最终结果存储在ECX:EDX。
+
+```
+                    EAX            EBX
+0x01B041869F        0x00000001     0xB041869F
+                    ECX            EDX
+0x0155ACB400        0x00000001     0x55ACB400
+---------------------------------------------
+                    0x00000003     0x05EE3A9F
+```
+
+```asm
+.section .data
+data1:
+    .quad 0x01B041869F
+data2:
+    .quad 0x0155ACB400
+output:
+    .asciz "The result is %qd\n"
+.section .text
+.global main
+main:
+    movl data1, %ebx     # 内存是小端存储
+    movl data1 +4, %eax
+    movl data2, %edx
+    movl data + 2, %ecx
+    addl %ebx, %edx      # 低32位相加
+    adcl %eax, %ecx      # 高32位相加，需要使用adc指令，加上进位
+                         # 最终结果存储在 ecx:edx
+    pushl %ecx           # 内存是小端存储，栈向低地址增长
+    pushl %edx           # 所以先压高位（高地址），再压低位（低地址）
+    push $output
+    call printf
+    addl $12, %esp
+    pushl $0
+    call exit
+```
