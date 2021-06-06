@@ -1323,3 +1323,117 @@ INC和DEC用于对无符号数进行递增和递减操作，且不会影响进�
 inc destination
 dec destination
 ```
+
+### 乘法
+
+与加法和减法不同，对于无符号和带符号整数的乘法需要使用不同的指令。
+
+#### 使用MUL进行无符号整数乘法
+
+`mul`指令的格式如下，源操作数可以是8位、16位或32位寄存器或内存值。需要附加字符表示操作数的长度。根据源操作数长度的不同，目标操作数是AL、AX或EAX。由于乘法可能产生很大的值，所以`MUL`的目标位置必须是源操作数的两倍长度。下表列出了无符号整数乘法的需求。
+
+```asm
+mul source
+```
+
+| 源操作数长度 | 目标操作数长度 | 目标位置 |
+| - | - | - |
+| 8位 | AL | AX |
+| 16位 | AX | DX:AX |
+| 32位 | EAX | EDX:EAX |
+
+#### MUL指令范例
+
+把315814和165432相乘。这两个操作数都是32位，所以结果是64位，存储在`EDX:EAX`。
+
+```asm
+.section .data
+data1:
+    .int 315814
+data2:
+    .int 165432
+result:
+    .quad 0
+output:
+    .asciz "The result is %qd\n"
+.section .text
+.global main
+main:
+    movl data1. %eax       # EAX是隐含的目标操作数
+    mull data2             # EDX:EAX = data2 * eax
+    movl %eax, result      # 低32位
+    movl %edx, result + 4  # 高32位
+    pushl %edx
+    pushl %eax
+    pushl $output
+    call printf
+    add $12, %esp
+    pushl $0
+    call exit
+```
+
+#### 使用IMUL进行带符号整数乘法
+
+`imul`指令有三种不同的格式。第一种格式使用一个操作数，其行为和`mul`指令完全一样。目标操作数和目标位置的规则也是一样的。
+
+```asm
+imul source
+```
+
+第二种格式使用两个操作数，可以将结果存储在EAX之外的寄存器。source可以是16位或32位的寄存器或内存中的值，destination必须是16位或32位通用寄存器。这种格式结果最长是32位，需要检查溢出标志。
+
+```asm
+imul source, destination
+```
+
+第三种格式使用三个操作，multiplier是一个立即数，souce是16位或32位寄存器或内存中的值，destination必须是通用寄存器。这种格式执行一个值（source）和一个立即数（multiplier）的快速乘法，结果存储在目标位置（destination）。
+
+```asm
+imul multiplier, source, destination
+```
+
+#### IMUL指令范例
+
+第一种格式和`MUL`指令类似，这里给出后两种格式的范例。
+
+```asm
+.section .data
+value1:
+    .int 10
+value2:
+    .int -35
+value3:
+    .int 400
+.section .text
+.global main
+main:
+    movl value1, %ebx
+    movl value2, %ecx
+    imull %ebx, %ecx        # ecx = ecx * ebx
+    movl value3, %edx
+    imull $2, %edx, %eax    # eax = edx * 2
+    movl $1, %eax
+    movl $0, %ebx
+    int $0x80
+```
+
+#### 检查溢出
+
+当使用带符号整数和IMUL指令时，总是要检查结果中的溢出。可以使用JO指令完成。
+
+```asm
+.section .text
+.global main
+main:
+    movw $680, %ax
+    movw $100, %cx
+    imulw %cx         # DX:AX = 0x109A0, 结果导致16位寄存器溢出。CF/PF/IF/OF 会被设置
+    jo over
+    movl $1, %eax
+    movl $0, %ebx
+    int $0x80
+over:
+    movl $1, %eax
+    movl $1, %ebx
+    int $0x80
+```
