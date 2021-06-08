@@ -1437,3 +1437,72 @@ over:
     movl $1, %ebx
     int $0x80
 ```
+
+#### 除法
+
+无符号整数和带符号整数使用不同的除法指令。除法的结果分为两部分，商和余数。
+
+##### 无符号除法
+
+`DIV`指令用于无符号整数的除法操作，指令格式如下。需要附加字符表示操作数的长度。其中`divisor`（除数）是隐含的被除数要除以的值，可以是8位、16位或32位寄存器或内存中的值。被除数存储在AX、DX:AX或EDX:EAX中。结果存储在被除数值使用的相同寄存器中，所以除法操作完成时会丢失被除数。
+
+```asm
+div divisor
+```
+
+下表列出了`div`指令操作数长度和结果的存储位置。
+
+| 除数长度 | 被除数 | 被除数长度 | 商 | 余数 |
+| - | - | - | - | - |
+| 8 | AX | 16 | AL | AH |
+| 16 | DX:AX | 32 | AX | DX |
+| 32 | EDX:EAX | 64 | EAX | EDX |
+
+`div`指令的示例代码如下：
+
+```asm
+.section .data
+dividend:
+    .quad 8335
+divisor:
+    .int 25
+quotient:
+    .int 0
+remainder:
+    .int 0
+output:
+    .asciz "The quotient is %d, and the remainder is %d\n"
+.section .text
+.global main
+main:
+    movl dividend, %eax        # 64位整数低32位
+    movl dividend + 4, %edx    # 64位整数高32位
+    divl divisor
+    movl %eax, quotient        # 商：  EAX
+    movl %edx, remainder       # 余数：EDX
+    pushl quotient             # 从右往左压入参数
+    pushl remainder
+    pushl output
+    call printf
+    add $12, %esp
+    pushl $0
+    call exit
+```
+
+#### 带符号除法
+
+`IDIV`指令用于带符号除法，使用方法与`DIV`指令完全一致。
+
+```asm
+idiv divisor
+```
+
+注意的两点：
+* 余数的符号总是与被除数的符号相同
+* 被除数的长度必须是除数长度的两倍，所以有时候必须符号扩展整数值。例如`MOVSX`指令。
+
+> 如何符号扩展到64位整数？
+
+#### 检查除法错误
+
+执行除法指令前，需要检查除数是否为0。
