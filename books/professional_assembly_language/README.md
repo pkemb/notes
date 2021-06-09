@@ -1551,3 +1551,7 @@ sal shifter, destination   # 向左移动shifter值指定的位数
 | ROR | Rotate Right | 向右循环移位 |
 | RCL | Rotate Left with carry | 向左循环移位 |
 | RCR | Rotate Right with carry | 向右循环移位 |
+
+## 十进制运算
+
+略
