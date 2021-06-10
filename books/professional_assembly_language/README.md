@@ -1555,3 +1555,30 @@ sal shifter, destination   # 向左移动shifter值指定的位数
 ## 十进制运算
 
 略
+
+## 逻辑操作
+
+对字节值中的原始位执行各种操作。常见的有布尔逻辑和位测试。
+
+### 布尔逻辑
+
+| 指令 | 格式 | 说明 |
+| - | - | - |
+| AND | and source, destination | 按位与 |
+| NOT | not source | 按位取反 |
+| OR | or source, destination | 按位或 |
+| XOR | xor source, destination | 按位异或 |
+
+`source`可以是8位、16位或32位立即值、寄存器或内存中的值，`destination`可以是8位、16位或32位寄存器或内存中的值，但不能同时是内存中的值。`NOT`指令只有一个操作数。
+
+> 清空寄存器最快的方式是自己和自己异或，例如`xor %eax, %eax`。
+
+### 位测试
+
+有时候需要确定某一位是否为1。`TEST`指令在8位、16位或32位值之间执行按位AND操作，并相应地设置EFLAGS寄存器，而且不修改目标寄存器地值。
+
+```asm
+test source, destination
+```
+
+示例：[cpuidtest.s](code/ch08/cpuidtest.s)
