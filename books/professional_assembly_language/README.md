@@ -1726,3 +1726,8 @@ FISTL / FILDL  long,  32位
 ```
 
 从FPU寄存器弹出数据：以上带`ST`的指令，`ST`替换成`STP`。例如`FISTPL`，从ST0弹出32位整数。
+
+指令编码总结如下：
+```asm
+F[I][LD/ST/STP][S/L]
+```
