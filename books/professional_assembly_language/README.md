@@ -1660,3 +1660,40 @@ fstsw %ax
 * 01 零值
 * 10 特殊的浮点值
 * 11 无内容，空
+
+### 使用FPU堆栈
+
+了解如何把数据调度到堆栈中以及如何在堆栈中调度数据以便执行计算。
+
+```asm
+.section .data
+value1:
+    .int 40
+value2:
+    .float 92.4405
+value3:
+    .double 221.330321
+.section .bss
+    .lcomm int1, 4
+    .lcomm control, 2
+    .lcomm status, 2
+    .lcomm result, 4
+.section .text
+.global main
+main:
+    finit           # 初始化FPU，控制和状态寄存器设置为默认值，数据寄存器的值不改变
+    fstcw control   # 获取控制寄存器的值
+    fstsw status    # 获取状态寄存器的值
+    filds value1    # 把双字整数value1加载到FPU寄存器堆栈中，指令最后的s标识short
+    fists int1      # 获取寄存器堆栈顶部的值，并放到目标位置
+    flds  value2    # 把单精度浮点数加载到FPU寄存器堆栈中
+    fldl  value3    # 把双精度浮点数加载到FPU寄存器堆栈中，现在寄存器堆栈中有三个值
+    fst   %st(4)    # 把ST0寄存器的数据复制到另一个FPU寄存器（这里是ST4）。注意 %st(4) 的书写格式
+    fxch  %st(1)    # 交换ST0寄存器和另一个FPU寄存器的值（这里是ST1）
+    fstps result    # 弹出ST0寄存器的值到result。
+                    # FST复制ST0到内存或另一个FPU寄存器，保持ST0的值不变
+                    # FSTP会把值从寄存器中弹出，其余值向上移动一个位置
+    movl  $1, %eax
+    movl  $0, %ebx
+    int   $0x80
+```
