@@ -1697,3 +1697,32 @@ main:
     movl  $0, %ebx
     int   $0x80
 ```
+
+### FPU寄存器堆栈指令助记
+
+所有FPU指令都带有前缀`F`。`ST`表示`store`，从`ST0`获取数据到内存或其他FPU寄存器。`LD`表示`load`，从内存加载数据到`ST0`。
+
+两条最基本的指令，适用于浮点数：
+```asm
+FST   ST0  -> 内存
+FLD   内存 -> ST0
+```
+
+加上长度修饰：
+```asm
+FSTS
+FLDS   单精度浮点数，32位
+
+FSTL
+FLDL   双精度浮点数，64位
+```
+
+整数的FPU指令：
+```asm
+FIST / FILD
+
+FISTS / FILDS  short, 16位
+FISTL / FILDL  long,  32位
+```
+
+从FPU寄存器弹出数据：以上带`ST`的指令，`ST`替换成`STP`。例如`FISTPL`，从ST0弹出32位整数。
