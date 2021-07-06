@@ -40,3 +40,11 @@ loop1:
 
 应该更改为：
 > 清空寄存器的最高效的方式是使用`XOR`指令对寄存器和它本身进行异或操作。
+
+## P201
+
+9.3.3小节，将角度转换为弧度的代码片段，原代码：
+> fsts degree1     # load the degrees value stored in memeory into ST0
+
+应该修改为：
+> flds degree1     # load the degrees value stored in memeory into ST0

@@ -1810,7 +1810,7 @@ FPATAN计算角值ST1/ST0的反正切，计算结果存放在ST1，然后弹出S
 注意，三角函数使用弧度而不是角度，需要用公式`radians=(degrees*pi)/180`将角度转换为弧度。例如下面的代码。
 
 ```asm
-fsts degree         # 角度值存放在ST0寄存器
+flds degree         # 角度值存放在ST0寄存器
 fidivs val180       # 角度值除以180
 fldpi               # pi存放在ST0寄存器，角度值在ST1
 fmul %st(1), %st(0)
