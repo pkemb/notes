@@ -1902,3 +1902,22 @@ FCOMI指令的输出是EFLAGS寄存器，如下表所示。
 | ST0 < ST(x) | 0 | 0 | 1 |
 | ST0 = ST(x) | 1 | 0 | 0 |
 
+### FCMOV指令系列
+
+根据EFLAGS寄存器中的值，如果条件为true，就把`ST(x)`寄存器中的值传送到`ST(0)`寄存器。常见的用法是在`FCMOV`指令之前使用`FCOMI`指令。
+
+| 指令 | 描述 |
+| - | - |
+| FCMOVB | 如果ST(0)小于ST(x)，则进行传送 |
+| FCMOVE | 如果ST(0)等于ST(x)，则进行传送 |
+| FCMOVBE | 如果ST(0)小于或者等于ST(x)，则进行传送 |
+| FCMOVU | 如果ST(0)无序，则进行传送 |
+| FCMOVNB | 如果ST(0)不小于ST(x)，则进行传送 |
+| FCMOVNE | 如果ST(0)不等于ST(x)，则进行传送 |
+| FCMOVNBE | 如果ST(0)不小于或者等于ST(x)，则进行传送 |
+| FCMOVNU | 如果ST(0)非无序，则进行传送 |
+
+指令的GNU格式如下，其中`source`是`ST(x)`寄存器，destination是`ST(0)`寄存器。
+```asm
+fcmovxx source, destination
+```
