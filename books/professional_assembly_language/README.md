@@ -1972,3 +1972,82 @@ FSAVE指令把所有FPU寄存器复制到一个108字节的内存位置，然后
 * 在FPU寄存器中尽可能多的保留方程式的值
 * 在处理整数和浮点值时，把整数加载到FPU寄存器中并且执行运算。
 * 尽可能使用FCOMI指令，不使用FCOM指令。
+
+# 第十章 处理字符串
+
+本章介绍如何处理字符串，包括移动字符串、搜索字符串、比较字符串等内容。
+
+## 传送字符串
+
+将字符串从一个内存位置移动到另一个内存位置。显然，不能使用MOV指令。
+
+### MOVS指令
+
+把字符串从一个内存位置移动到另一个内存位置。有以下三种格式：
+* MOVSB 传送单一字节
+* MOVSW 传送一个字（2字节）
+* MOVSL 传送一个双字（4字节）
+> Intel文档使用MOVSD传送双字，GNU汇编器使用MOVSL。
+
+MOVS使用隐含的源操作数ESI，指向源字符串的位置。隐含的目标操作数EDI，指向要复制到的内存位置。为了获取内存地址，可以在标签前面加`$`，或使用`LEA`指令，`LEA`指令加载一个对象的有效地址。如下所示。
+```asm
+movl $output, %edi
+leal output, %edi
+```
+
+MOVS指令执行完毕之后，ESI和EDI寄存器会自动改变，为下一次传送做准备。DF标志为0，则ESI/EDI是自动递增；DF标志是1，则ESI/EDI是自动递减。CLD指令用于将DF标志清零；STD指令用于将DF标志置1。
+
+> DF置1时，尽管ESI/EDI寄存器向后计数，MOVSW/MOVSL指令还是按递增的顺序获取内存位置。
+
+示例代码：
+
+```asm
+.section .data
+value1:
+    .ascii "This is a test string.\n"
+.section .bss
+    .lcomm output, 23
+.section .text
+.global main
+main:
+    leal value1, %esi  # 加载标签value1的地址
+    leal output, %edi  # 加载标签output的地址
+    cld                # 清空DF标志，向上递增
+    movsb              # 执行完毕后，EDI=outpu + 1
+    movsw              # 执行完毕后，EDI=outpu + 1 + 2
+    movsl              # 执行完毕后，EDI=outpu + 1 + 2 + 4
+                       # output存储的字符串是 "This is"
+    movl $1, %eax
+    movl $0, %ebx
+    int $0x80
+```
+
+### REP前缀
+
+REP指令重复地执行紧跟在它后面的字符串指令，直到ECX寄存器中的值为零。
+
+REP和MOVSB组合，可以逐字节的传送字符串，但是这样效率比较低。REP和MOVSL组合，可以逐块地传送字符串（每次4字节）。这样有两个细节要考虑，ECX的初始值是字符串长度除以4。如果字符串长度不是4的整数倍，还需要使用MOVSB传送剩余的字节。
+
+```asm
+leal string1, %esi
+leal buffer,  %edi
+movl length, %ecx
+shrl $2, %ecx      # 向右逻辑移2位，即除以4
+
+cld
+rep movsl          # 以4字节为单位，传送字符串
+movl length, %ecx
+andl $3, %ecx      # 取length最低两位的值，即计算余数
+rep movb           # 以字节为单位，传送剩余的字符串
+```
+
+### 其他REP指令
+
+| 指令 | 描述 |
+| - | - |
+| REPE | 等于时重复 |
+| REPNE | 不等于时重复 |
+| REPNZ | 不为零时重复 |
+| REPZ | 为零时重复 |
+
+> REPE和REPZ是同义词，REPNE和REPNZ是同义词。
