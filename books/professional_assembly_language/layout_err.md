@@ -48,3 +48,25 @@ loop1:
 
 应该修改为：
 > flds degree1     # load the degrees value stored in memeory into ST0
+
+## P247
+
+`图11-6`左边的代码片段，`movl`语句写反了。原代码片段：
+```asm
+function:
+    pushl %ebp
+    movl %ebp, %esp
+    sub $8, %esp
+    .
+    .
+```
+
+应该修改为：
+```asm
+function:
+    pushl %ebp
+    movl %esp, %ebp
+    sub $8, %esp
+    .
+    .
+```
