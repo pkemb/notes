@@ -70,3 +70,19 @@ function:
     .
     .
 ```
+
+## P259
+
+本页开头的程序，
+
+```asm
+    call printf
+    addl $12, %esp      # 这里只用跳过两个参数，改为 addl $8, $esp
+    addl $4, %ebp
+    loop loop1          # 这里改为jmp loop1更合理，但是使用loop指令也能正常工作，不过很难看懂
+                        # 因为printf函数会导致ecx寄存器变为0
+                        # 0减1后变为-1，不等于0，loop指令还是会跳转到loop1标签
+endit:
+    pushl $0
+    call exit
+```
