@@ -2322,3 +2322,69 @@ ld -o main main.o func.o
 编译函数文件时需要加`-g`选项，GDB才能单步执行。否则GDB不会进入函数文件单步执行，所有指令被连续处理。
 
 注意GDB命令`n`和`s`的区别。`n`不会进入子函数，`s`进入子函数。更多GDB调试命令参考[GDB常用指令](https://pkemb.com/2021/05/gdb-command/)。
+
+## 使用命令行参数
+
+本节介绍如何获取操作系统传递给程序的命令行参数。
+
+### 程序剖析
+
+Linux下进程的内存布局，略。
+
+### 分析堆栈
+
+程序启动时，Linux把4种类型的信息放到程序堆栈中：
+* 命令行参数的数目
+* 程序的名称
+* 命令行中包含的命令行参数
+* 在程序启动时的所有当前Linux环境变量
+
+程序启动时，堆栈的一般布局如下图所示。ESP指向的参数数目，然后依次是命令行参数的指针，注意，程序名称是一个特殊的命令行参数。环境变量的指针和参数的指针间隔了一个NULL指针。最后面存储了实际的命令行参数和环境变量。命令行参数和环境变量都是`字符串`，尽管可能长的像数字。
+
+![](pic/程序堆栈.png)
+
+### 查看命令行参数和环境变量
+
+打印命令行参数和环境变量的示例程序。
+
+```asm
+.section .data
+output1:
+    .asciz "There are %d parameters:\n"
+output2:
+    .asciz "%s\n"
+.section .text
+.global main
+main:
+    movl (%esp), %ecx       # 参数数量
+    pushl %ecx
+    pushl $output1
+    call printf             # 调用printf函数，会导致ECX寄存器变为0
+    addl $4, %esp
+    popl %ecx               # 参数数量
+    movl %esp, %ebp
+    addl $4, %ebp           # 跳过参数数量
+loop1:
+    pushl %ecx              # 保存ECX
+    pushl (%ebp)            # 将EBP指向的内存单元的值压入栈
+    pushl $output2          # 内存单元的值是字符串首地址
+    call printf
+    addl $8, %esp
+    popl %ecx               # printf会将ECX寄存器变为0，所以需要恢复ECX
+    addl $4, %ebp           # 指向下一个字符串指针
+    loop loop1
+
+    addl $4, %ebp           # 忽略NULL
+loop2:
+    cmpl $0, (%ebp)         # 字符串指针为NULL，表示到了最后
+    je end
+    pushl (%ebp)
+    pushl $output
+    call printf
+    addl $8, %esp
+    addl $4, %ebp
+    jmp loop2
+end:
+    pushl $0
+    call exit
+```
