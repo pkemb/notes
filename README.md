@@ -1,33 +1,29 @@
 # 读书笔记
 
-<h2 id=9787121085116>
-    <a href="books/9787121085116/notes.md">
-        程序员的自我修养——链接、装载与库
-    </a>
-</h2>
+## 程序员的自我修养——链接、装载与库
 
-[豆瓣](https://book.douban.com/subject/3652388/)
+* [笔记](books/9787121085116/notes.md)
+* [排版错误](books/9787121085116/layout_err.md)
+* [常用指令](books/9787121085116/bin.md)
+* [豆瓣](https://book.douban.com/subject/3652388/)
 
 简介：
 > 本书主要介绍系统软件的运行机制和原理，设计在Windows和Linux两个系统平台上，一个应用程序在编译、链接和运行时刻所发生的各种事项，包括：代码指令是如何保存的，库文件如何与应用程序代码静态链接，应用程序如何被装载到内存中并开始运行，动态链接是如何实现，C/C++运行库的工作原理，以及操作系统提供的系统服务是如何被调用的。
 
-<h2 id=9787508338637>
-    <a href="books/linux-device-drivers-v3/README.md">
-        Linux设备驱动程序（第三版）
-    </a>
-</h2>
+## Linux设备驱动程序（第三版）
 
-[豆瓣](https://book.douban.com/subject/1723151/)
+* [笔记](books/linux-device-drivers-v3/README.md)
+* [排版错误](books/linux-device-drivers-v3/layout_err.md)
+* [豆瓣](https://book.douban.com/subject/1723151/)
 
 简介：
 > 顾名思义，本书是讲述如何编写Linux设备驱动程序的。面对层出不穷的新硬件产品，必须有人不断编写新的驱动程序以便让这些设备能够在Linux下正常工作，从这个意义上讲，讲述驱动程序的编写本身就是一件非常有意义的工作。但本书也涉及到Linux内核的工作原理，同时还讲述如何根据自己的需要和兴趣来定制Linux内核。Linux是一个开放的系统，我们希望借助本书使它能够更加开放，从而能够吸引更多的开发人员。
 
 
-<h2 id=9787508353944>
-    <a href="books/9787508353944/notes.md">
-        深入理解Linux内核（第三版）
-    </a>
-</h2>
+## 深入理解Linux内核（第三版）
+
+* [笔记](books/9787508353944/notes.md)
+* [豆瓣](https://book.douban.com/subject/2287506/)
 
 简介：
 > 本书集中讨论了如下内容：
@@ -40,13 +36,11 @@
 > * 进程间通信（IPC）
 > * 程序执行
 
-<h2 id=professional_assembly_language>
-    <a href="books/professional_assembly_language/README.md">
-        汇编语言程序设计
-    </a>
-</h2>
+## 汇编语言程序设计
 
-豆瓣：https://book.douban.com/subject/1446250/
+* [笔记](books/professional_assembly_language/README.md)
+* [排版错误](books/professional_assembly_language/layout_err.md)
+* [豆瓣](https://book.douban.com/subject/1446250/)
 
 简介：
 > 每种高级语言程序在连接为可执行程序之前，都必须被编译为汇编语言程序，因此对于高级语言程序设计者来说，了解编译器如何生成汇编语言代码十分有用。
