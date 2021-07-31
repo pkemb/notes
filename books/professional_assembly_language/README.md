@@ -2388,3 +2388,67 @@ end:
     pushl $0
     call exit
 ```
+
+# 第十二章 使用Linux系统调用
+
+Linux操作系统的核心提供应用程序可以访问的很多函数，以便容易地访问文件、确定用户组和权限、访问网络资源以及获得和显示数据。这些函数被称为系统调用（system call）。
+
+## Linux内核
+
+简要地描述Linux内核并且解释它如何提供系统调用。
+
+### 内核组成
+
+内核主要有四个责任：
+* 内存管理
+* 设备管理
+* 文件系统管理
+* 进程管理
+
+### Linux内核版本
+
+```shell
+uname -r
+```
+
+## 系统调用
+
+### 查找系统调用
+
+不同地内核版本会提供不同的系统调用，只需要查看内核就可以确定哪些系统调用可用。如果Linux系统已经针对一个程序设计开发环境配置过了，系统调用在下面的文件中定义：
+```shell
+/usr/include/asm/unistd.h
+```
+
+每个系统调用都被定义为一个名称（前面加上`__NR_`）和它的`系统调用号`。下面是文件的头几行。
+
+```c
+#define __NR_restart_syscall      0
+#define __NR_exit                 1
+#define __NR_fork                 2
+#define __NR_read                 3
+#define __NR_write                4
+#define __NR_open                 5
+#define __NR_close                6
+#define __NR_waitpid              7
+#define __NR_creat                8
+#define __NR_link                 9
+#define __NR_unlink              10
+#define __NR_execve              11
+#define __NR_chdir               12
+```
+
+### 查找系统调用定义
+
+可以在`man`手册中查找系统调用的定义，主要了解系统调用的功能、参数和返回值的含义。例如下面的命令查找`exit`调用的说明。
+
+```asm
+man 2 exit
+```
+
+> 某些系统调用和shell命令同名，所以要指定man手册第二部分。
+
+### 常用系统调用。
+
+略。请参考《UNIX环境高级编程》。
+
