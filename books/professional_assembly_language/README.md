@@ -2472,3 +2472,74 @@ ssize_t write(int fd, const void *buf, size_t count);
 ```
 
 如果系统调用有返回值，则存放在EAX寄存器。如果系统调用出错，会返回一个负的错误代码，尤其需要注意这一点。
+
+## 复杂的系统调用返回值
+
+有时系统调用会返回一个复杂的C样式结构体，本节介绍如何使用汇编处理复杂的数据结构。
+
+### sysinfo系统调用
+
+`sysinfo`系统调用通过参数返回结构体`struct sysinfo`，结构体的定义如下。
+
+```c
+int sysinfo(struct sysinfo *info);
+
+struct sysinfo {
+    long uptime;              // seconds since boot
+    unsigned long loads[3];   // 1, 5 and 15 minute load averages
+    unsigned long freeram;    // available memory size
+    unsigned long sharedram;  // amount of shared memory
+    unsigned long bufferram;  // memory used by buffers
+    unsigned long totalswap;  // total swap space size
+    unsigned long freeswap;   // swap space still available
+    unsigned short procs;     // number of current processes
+    unsigned long totalhigh;  // total high memory size
+    unsigned int mem_unit;    // memory unit size in bytes
+    char _f[20-2*sizeof(long) - sizeof(inf)]; // padding for libc5
+};
+```
+
+### 使用返回结构
+
+必须在一个内存位置创建这个结构，以便接收系统调用的返回值。下面是示例代码。
+
+```asm
+.section .data
+result:
+uptime:
+    .int 0
+load1:
+    .int 0
+load5:
+    .int 0
+load15:
+    .int 0
+totalram:
+    .int 0
+freeram:
+    .int 0
+sharedram:
+    .int 0
+bufferram:
+    .int 0
+totalswap:
+    .int 0
+freeswap:
+    .int 0
+procs:
+    .byte 0x00, 0x00
+totalhigh:
+    .int 0
+memunit:
+    .int 0
+.section .text
+.global main
+main:
+    movl $result, %ebx  # 指向结构体的指针
+    movl $116, $eax     # 系统调用号
+    int $0x80           # 触发系统调用
+
+    movl $0, %ebx
+    movl $1, %eax       # 调用exit
+    int $0x80
+```
