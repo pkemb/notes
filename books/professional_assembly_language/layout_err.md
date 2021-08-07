@@ -86,3 +86,15 @@ endit:
     pushl $0
     call exit
 ```
+
+P302
+
+第13.3.6小节，声明替换的名称不需要百分号。原文：
+```asm
+%[name]"constraint"(variable)
+```
+
+更改为：
+```asm
+[name]"constraint"(variable)
+```
