@@ -2883,3 +2883,51 @@ asm("imull %[value1], %[value2]"
     : [value2] "=r"(data2)
     : [value1] "r"(data1), "0"(data2));
 ```
+
+### 改动的寄存器列表
+
+编译器假设输入值和输出值使用的寄存器会被改动，并且相应地做出处理，不需要在改动地寄存器列表中包含这些值。如果做了，会产生错误。
+
+如果内联汇编使用了没有被初始地声明为输入值或者输出值地任何其他寄存器，则要通知编译器。
+
+```asm
+asm("movl %1, %%eax \n\t"
+    "addl %%eax, %0"
+    : "=r"(result)
+    : "r"(data1), "0"(result)
+    : "%eax");                 // 内联汇编更改了eax寄存器
+```
+
+> 如果在内联汇编更改了没有在输入值或输出值定义地任何内存位置，那么必须被标记为被破坏地。在改动地寄存器列表使用memory关键字通知编译器内存位置被内联汇编更改了。
+
+### 使用内存位置
+
+约束m用于引用输入值和输出值中的内存位置。如果指令要求使用寄存器，任然必须使用寄存器，不得不定义保存数据的中间寄存器。
+
+```c
+int main()
+{
+    int dividend = 20;
+    int divisor = 5;
+    int result;
+
+    asm("divb %2 \n\t"    // eax = eax / %2, %2 是内存位置
+        "movl %%eax, %0"
+        : "=m"(result)
+        : "a"(dividend), "m"(divisor))
+    printf("The result is %d\n", result);
+    return 0;
+}
+```
+
+生成的汇编代码如下：
+
+```asm
+        movl    $20, -8(%ebp)    # dividend
+        movl    $5, -12(%ebp)    # divisor
+        movl    -8(%ebp), %eax   # dividend 加载到eax，"a"(dividend)
+#APP
+        divb -12(%ebp)
+        movl %eax, -16(%ebp)     # 约束 "=m"(result)
+#NO_APP
+```
