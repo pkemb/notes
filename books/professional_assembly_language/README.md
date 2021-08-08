@@ -3135,3 +3135,111 @@ func:
 2. 链接成可执行文件。ld
 
 注：为了保证C程序能够编译通过，需要声明汇编函数的原型。
+
+## 在C程序中使用汇编函数
+
+如何从C和C++程序访问汇编语言函数的数据。
+
+### 使用整数返回值
+
+C程序生成的汇编语言代码提取存放在EAX寄存器中的值，并且把它传送到分配给C变量名称的内存位置。汇编语言程序可以通过EAX寄存器返回一个整数值，如果是64位值，通过EDX:EAX寄存器对返回。
+
+```c
+int result = function();
+```
+
+例如下面的例子。
+
+```asm
+# 原型：int square(int value);
+.type square, @function
+.global square
+square:
+    pushl %ebp
+    movl %esp, %ebp
+    movl 8(%ebp), %eax      # (%ebp)    old ebp
+                            # 4(%ebp)   return address
+    imull %eax, %eax
+    movl %ebp, %esp
+    popl %ebp
+    ret
+```
+
+### 使用字符串返回值
+
+EAX寄存器可能无法保存所有的字符，所以不能通过EAX寄存器直接返回字符串。可以返回字符串地址来达到返回字符串的目的。注意，C和C++要求字符串必须以空字符（'\0'）结尾。需要以合适的函数原型来告诉C编译器，函数返回的是指针。例如下面的例子。
+
+> 可以使用指针返回任意复杂的数据结构，不只是字符串。
+
+```asm
+#原型：char *cpuidfunc(void);
+.section .bss
+    .comm output, 13
+.section .text
+.type cpuidfunc, @function
+.global cpuidfunc
+cpuidfunc:
+    pushl %ebp
+    movl %esp, %ebp
+    pushl %ebx              # 保存ebx
+
+    movl $0, %eax
+    cpuid
+
+    movl $output, %edi      # output标签的地址传送到edi寄存器
+    movl %ebx, (%edi)
+    movl %edx, 4(%edi)
+    movl %ecx, 8(%edi)
+    movl $output, %eax      # 字符串地址传送到EAX
+
+    popl %ebx               # 恢复ebx
+    movl %ebp, %esp
+    popl %ebp
+    ret
+```
+
+调用函数
+
+```c
+char *cpuidfunc(void);  // 声明函数原型
+
+int main()
+{
+    char *cpuid = cpuidfunc();
+    return 0;
+}
+```
+
+### 使用浮点返回值
+
+C样式的函数使用ST(0)寄存器在函数之间交换浮点值。函数把返回值存放到FPU堆栈中，然后调用程序负责把返回值弹出堆栈并赋值给变量。在C/C++程序中，`float`表示单精度浮点数，`double`表示双精度浮点数。当从FPU传送浮点数时，FPU会自动转换类型，程序不需要关心。C/C++调用汇编函数之前，必须声明函数原型。
+
+```asm
+# 原型：float areafunc(int);
+.section .text
+.type areafunc, @function
+.global areafunc
+areafunc:
+    pushl %ebp
+    movl %esp, %ebp
+
+    fldpi               # 加载pi到st(0)
+    filds 8(%ebp)       # 加载半径到st(0)，来源于参数
+    fmul %st(0), %st(0)
+    fmul %st(1), %st(0) # 最终结果在st(0)寄存器中
+    movl %ebp, %esp
+    popl %ebp
+    ret
+```
+
+### 使用多个输入值
+
+函数有多个输入值时，注意参数从右到左依次压入堆栈。如下面的函数原型，是先压入b，再压入a，而堆栈是向下生长的，所以`8(%ebp)`指向第一个参数a，`12(%ebp)`指向第二个参数b，依次类推。
+
+```c
+int function(int a, int b);
+```
+
+### 使用混合数据类型的输入值
+
+当参数使用不同的数据类型时，情况更加复杂了。要注意参数的压入顺序和参数的大小，一定是从右至左依次压入堆栈；根据参数的大小读取相应的字节数，下一个参数要增加对应的偏移。
