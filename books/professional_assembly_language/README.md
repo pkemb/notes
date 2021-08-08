@@ -2931,3 +2931,73 @@ int main()
         movl %eax, -16(%ebp)     # 约束 "=m"(result)
 #NO_APP
 ```
+
+### 使用浮点值
+
+因为FPU以堆栈方式使用寄存器，所以要留意内联代码处理FPU寄存器的方式。处理FPU寄存器堆栈的约束有以下3个。从FPU获取输出值的时候，不能使用约束f，必须使用约束t或u。
+* f引用任何可用的浮点寄存器
+* t引用顶部的浮点寄存器，st(0)
+* u引用第二个浮点寄存器，st(1)
+
+示例代码
+
+```c
+int main()
+{
+    float angle = 90.0;
+    float radian, consine, sine;
+
+    radian = angle / 180 * 3.14159;
+
+    asm("fsincos"                    // 使用st(0)作为参数，st(0)存放con值，st(1)存放sin值
+        : "=t"(consine), "=u"(sine)
+        : "0"(radian));              // 值来自于变量 radian，使用%0的寄存器存放
+    printf("The cosine is %f, and the sine is %f\n", consine, sine);
+    return 0;
+}
+```
+
+生成的汇编代码如下
+
+```asm
+        flds    -28(%ebp)   # 加载 radian 到 st(0) 寄存器
+#APP
+        fsincos
+#NO_APP
+        fstps   -12(%ebp)  # 弹出cos的值
+        fstps   -8(%ebp)   # 弹出sin的值
+```
+
+如果在FPU堆栈中执行的任何操作没有被清楚，就必须在改动的寄存器列表中指定适当的FPU寄存器。
+
+```c
+int main()
+{
+    int radius = 10;
+    float area;
+
+    asm("fild %1 \n\t"
+        "fimul %1 \n\t"
+        "fldpi \n\t"
+        "fmul %%st(1), %%st(0)"
+        : "=t"(area)
+        : "m"(radius)
+        : "%st(1)");                // st(1) 没有被指定为输出值，所以必须在改动的寄存器列表中指定
+    printf("The result is %f\n", area);
+    return 0;
+}
+```
+
+生成的汇编代码如下
+
+```asm
+        movl    $10, -12(%ebp)   # 输入值是内存位置 radius
+#APP
+        fild -12(%ebp)           # 加载整数到 st(0)
+        fimul -12(%ebp)          # st(0) = st(0) * radius
+        fldpi                    # 加载pi，st(1) = radius^2, st(0) = pi
+        fmul %st(1), %st(0)      # 结果在st(0), 同时更改了st(1)寄存器
+#NO_APP
+        fstps   -8(%ebp)         # 弹出结果到变量 area
+                                 # 编译器没有对st(1)做处理
+```
