@@ -1,6 +1,16 @@
 # ARMv7-A/R汇编语言程序设计
 
-模仿`Richard Blum`的《汇编语言程序设计》，将书中`IA-32`相关的内容，基于`ARMv7-A/R`架构改写。同样是基于`Linux`系统，不考虑裸机程序。内容结构主体上保持不变，会增加`ARMv7-A/R`架构特有的内容，删除`ARMv7-A/R`没有的内容。
+模仿`Richard Blum`的《汇编语言程序设计》，将书中`IA-32`相关的内容，基于`ARMv7-A/R`架构、`Cortex-A7`处理器核心改写。同样是基于`Linux`系统，不考虑裸机程序。内容结构主体上保持不变，会增加`ARMv7-A/R`架构特有的内容，删除`ARMv7-A/R`没有的内容。
+
+# 理解arm文档
+
+在最最开始前，先要明白几个概念，这有助于我们查询ARM的文档。这里参考了ARM官方的[Understanding Arm documentation](https://developer.arm.com/documentation/102404/0200/Understanding-Arm-documentation)。这里明确解释了架构、处理器、SoC之间的关系。`ARMv7-A`是架构，描述了指令集、寄存器等内容，是思想上的指导性文档。`Cortex-A7`是基于`ARMv7-A`架构设计出来的一个处理器核心，是架构的落地实现。SoC则是基于处理器核心制造出来的IC，相比于处理器核心，主要是增加了外设、引脚等内容。
+
+架构相关的内容，需要参考`Arm Architecture Reference Manual`。处理器相关的内容，需要参考`Technical Reference Manual (TRM)`。SoC相关的内容，需要从SoC制造商获取。从`Arm Cortex-A Processor Comparison Table`可以了解到所有`Cortex-A`处理器使用的架构。
+
+* [ARM Architecture Reference Manual ARMv7-A and ARMv7-R edition](https://developer.arm.com/documentation/ddi0406/latest)
+* [Cortex-A7 MPCore Technical Reference Manual](https://developer.arm.com/documentation/ddi0464/d/)
+* [Arm Cortex-A Processor Comparison Table](https://developer.arm.com/-/media/Arm%20Developer%20Community/PDF/Cortex-A%20R%20M%20datasheets/Arm%20Cortex-A%20Comparison%20Table_v4.pdf?revision=ff02efe8-e170-4cc0-ae66-9b1ef1dd3b8b)
 
 # 什么是汇编语言
 
@@ -11,16 +21,16 @@ TODO。学习ARM指令编码后再改写。
 * Chapter A7 Advanced SIMD and Floating-point Instruction Encoding
 * Chapter A9 The ThumbEE Instruction Set
 
-# ARMv7-A和ARMv7-R平台
+# Cortex-A7处理器
 
 TODO。主要包括以下内容：
-1. 处理器核心部分
+1. 处理器核心框图
    1. 控制单元
    2. 执行单元
    3. 寄存器
    4. 特殊寄存器
 2. 关于ARM架构的其他内容
-3. 基于ARM内核的处理器
+3. 基于Cortex-A7的处理器
 
 * Chapter A1 Introduction to the ARM Architecture
 * xxx
@@ -32,6 +42,6 @@ TODO。主要包括以下内容：
 # 参考资料
 
 1. [ARM Architecture Reference Manual ARMv7-A and ARMv7-R edition](https://developer.arm.com/documentation/ddi0406/latest)
-
-
+2. [ARM Processor Architecture](https://www.cs.ccu.edu.tw/~pahsiung/courses/ese/notes/ESD_03_ARM_Architecture.pdf)
+3. https://developer.arm.com/architectures/learn-the-architecture/a-profile
 
