@@ -2,9 +2,9 @@
 
 ### 程序员的自我修养——链接、装载与库
 
-[笔记](books/9787121085116/notes.md) |
-[排版错误](books/9787121085116/layout_err.md) |
-[ELF分析常用指令](books/9787121085116/bin.md) |
+[笔记](books/程序员的自我修养链接装载与库/notes.md) |
+[排版错误](books/程序员的自我修养链接装载与库/layout_err.md) |
+[ELF分析常用指令](books/程序员的自我修养链接装载与库/bin.md) |
 [豆瓣](https://book.douban.com/subject/3652388/)
 
 > 本书主要介绍系统软件的运行机制和原理，设计在Windows和Linux两个系统平台上，一个应用程序在编译、链接和运行时刻所发生的各种事项，包括：代码指令是如何保存的，库文件如何与应用程序代码静态链接，应用程序如何被装载到内存中并开始运行，动态链接是如何实现，C/C++运行库的工作原理，以及操作系统提供的系统服务是如何被调用的。
@@ -20,8 +20,8 @@
 
 ### 深入理解Linux内核（第三版）
 
-[笔记](books/9787508353944/notes.md) |
-[豆瓣](https://book.douban.com/subject/2287506/) |
+[笔记](books/understanding-the-linux-kernel-v3/notes.md) |
+[豆瓣](https://book.douban.com/subject/2287506/)
 
 > 本书集中讨论了如下内容：
 > * 内存管理，包括文件缓冲、教程交换以及直接内存访问（DMA）
@@ -35,8 +35,8 @@
 
 ### 汇编语言程序设计
 
-[笔记](books/professional_assembly_language/README.md) |
-[排版错误](books/professional_assembly_language/layout_err.md) |
+[笔记](books/professional-assembly-language/README.md) |
+[排版错误](books/professional-assembly-language/layout_err.md) |
 [豆瓣](https://book.douban.com/subject/1446250/)
 
 > 每种高级语言程序在连接为可执行程序之前，都必须被编译为汇编语言程序，因此对于高级语言程序设计者来说，了解编译器如何生成汇编语言代码十分有用。 \
