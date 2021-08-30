@@ -1,6 +1,4 @@
-<h1 id=file_notes>
-    程序员的自我修养——链接、装载与库
-</h1>
+# 程序员的自我修养——链接、装载与库
 
 主要知识点：
 1. 编译 源文件 -> 目标文件
@@ -19,9 +17,7 @@
    1. 装载的方式：静态 动态
    2. 进程虚存空间分布
 
-<h2 id=ch_01>
-    温故而知新
-</h2>
+# 温故而知新
 
 * 站在程序员的角度看计算机：中央处理器CPU、内存和IO控制芯片。
 * 计算机科学领域的任何问题都可以通过增加一个间接的中间层来解决。
@@ -29,9 +25,7 @@
 * 虚拟内存与MMU：段页式内存管理方法。
 * 多进程与多线程：创建、调度与同步（进程/线程安全）。
 
-<h2 id=ch_02>
-    编译和链接
-</h2>
+# 编译和链接
 
 从源代码文件到可执行文件需要四步，本书重点介绍编译和链接两个部分。
 * 预处理 Prepressing
@@ -41,7 +35,7 @@
 
 ![编译的过程](pic/compilation_process.png)
 
-<h3 id=compilation>编译</h3>
+## 编译
 
 将高级语言翻译成机器语言。经编译产生的目标代码，其外部`符号`的地址还未确定，需要链接器`重定位`后，才能够执行。
 * 扫描 Scanner
@@ -53,7 +47,7 @@
 
 ![编译](pic/compilation.png)
 
-<h3 id=linking>链接</h3>
+## 链接
 
 * 符号 Symbol：在链接中，统一将函数和变量统称为符号。函数名或变量名就是`符号名`。
 * 重定位 Relocation：重新计算各个符号的地址的过程。每个要被修正的地方叫一个`重定位入口`。
@@ -68,51 +62,26 @@
 * 变量引用：将变量的地址设置为0，待链接器确定变量的地址，并修改所有引用变量的指令。
 
 
-<h2 id=ch_03>目标文件有什么</h2>
+# 目标文件有什么
 
 目标文件：源代码经编译后但未进行链接的中间文件
 * Windows:  .o
 * Linux: .obj
 
-<h3 id=ch_3.1>目标文件(可执行文件)的格式</h3>
+## 目标文件(可执行文件)的格式
 
 可执行文件、静态库(.a/.lib)、动态库(.so/.dll)以及目标文件(.o/.obj)都按照可执行文件的格式来存储。
 
 可执行文件格式一览表：
 
-<table>
-    <tr><th>平台</th><th>格式</th><th>缩写</th></tr>
-    <tr>
-        <td>Windows</td>
-        <td>Portable Executable</td>
-        <td>PE</td>
-    </tr>
-    <tr>
-        <td>Linux</td>
-        <td>Executable Linkable Format</td>
-        <td>ELF</td>
-    </tr>
-    <tr>
-        <td>Intel/Microsoft</td>
-        <td>Object Module Format</td>
-        <td>OMF</td>
-    </tr>
-    <tr>
-        <td>Unix System V Release 3</td>
-        <td>Common file format</td>
-        <td>COFF</td>
-    </tr>
-    <tr>
-        <td>Unix</td>
-        <td>a.out</td>
-        <td></td>
-    </tr>
-    <tr>
-        <td>MS-DOS</td>
-        <td>.COM</td>
-        <td></td>
-    </tr>
-</table>
+| 平台 | 格式 | 缩写 |
+| - | - | - |
+| Windows | Portable Executable | PE |
+| Linux | Executable Linkable Format | ELF |
+| Intel/Microsoft | Object Module Format | OMF |
+| Unix System V Release 3 | Common file format | COFF |
+| Unix | a.out |  |
+| MS-DOS | .COM |  |
 
 ELF文件类型：
 * 可重定位文件，`relocatable` file，例如 .o 文件。
@@ -124,51 +93,35 @@ ELF文件类型：
 
 ![可执行文件格式的发展](pic/exetutable_format.png)
 
-<h3 id=ch_3.2>目标文件是什么样的</h3>
+## 目标文件是什么样的
 
 目标文件由文件头和若干个段（section）组成，不同的段存储着不同的内容。
 
-<table>
-    <tr><th>存储位置</th><th>说明</th></tr>
-    <tr>
-        <td>文件头</td>
-        <td>描述了整个文件的文件属性。</td>
-    </tr>
-    <tr>
-        <td>.text</td>
-        <td>代码段，存放代码编译后生成的机器指令。</td>
-    </tr>
-    <tr>
-        <td>.data</td>
-        <td>数据段，初始化的全局变量和局部静态变量。</td>
-    </tr>
-    <tr>
-        <td>.bss</td>
-        <td>block start by symbol，为未初始化的全局变量和局部静态变量预留位置，不占存储空间。</td>
-    </tr>
-    <tr>
-        <td>段表</td>
-        <td>描述文件中各个段的数组，包含段在文件中的偏移地址及段的属性。</td>
-    </tr>
-</table>
+| 存储位置 | 说明 |
+| - | - |
+| 文件头 | 描述了整个文件的文件属性。 |
+| .text | 代码段，存放代码编译后生成的机器指令。 |
+| .data | 数据段，初始化的全局变量和局部静态变量。 |
+| .bss | block start by symbol，为未初始化的全局变量和局部静态变量预留位置，不占存储空间。 |
+| 段表 | 描述文件中各个段的数组，包含段在文件中的偏移地址及段的属性。 |
 
 分段（指令和数据分开存储）的优点：
 * 便于权限控制，防止指令（只读）被无意或有意修改。
 * 提高程序的局部性，提升CPU的缓存命中率。
 * 指令等只读数据可共享，节省存储空间。
 
-<h3 id=ch_3.3>挖掘SimpleSection.o</h3>
+## 挖掘SimpleSection.o
 
 以示例代码[SimpleSection.c](code/SimpleSection.c)编译出来的目标文件作为分析对象，深入挖掘目标文件的每一个字节。
 
-<h4>编译</h4>
+### 编译
 
 ```shell
 # 这将会得到SimpleSection.o
 gcc -c SimpleSection.c
 ```
 
-<h4>查看目标文件各个段的基本信息</h4>
+### 查看目标文件各个段的基本信息
 
 ```shell
 objdump -h SimpleSection.o
@@ -192,7 +145,7 @@ size SimpleSection.o
    6. CODE：指令
    7. DATA：数据
 
-<h4>查看目标文件各个段的数据</h4>
+### 查看目标文件各个段的数据
 
 ```shell
 objdump -s SimpleSection.o
@@ -207,7 +160,7 @@ objdump -s SimpleSection.o
 1. 在输出的内容中，最左面一列是偏移量，中间四列是十六进程内容，最右面一列是ASCII码。
 2. 字节序
 
-<h4>将二进制文件作为目标文件的一个段</h4>
+### 将二进制文件作为目标文件的一个段
 
 ```shell
 objcopy -I binary -O elf32-i386 -B i386 image.jpg image.o
@@ -215,7 +168,7 @@ objcopy -I binary -O elf32-i386 -B i386 image.jpg image.o
 
 [objcopy使用说明](bin.md#objcopy)。
 
-<h4>自定义段</h4>
+### 自定义段
 
 使用gcc的扩展机制，可将指定的代码或数据放到指定的段中。
 
@@ -228,7 +181,7 @@ __attribute__((section("BAR"))) void foo() {
 }
 ```
 
-<h3 id=ch_3.4>ELF文件结构描述</h3>
+## ELF文件结构描述
 
 下图是ELF文件的总体结构。ELF文件主要由以下部分组成：
 * [文件头](#elf_header)
@@ -239,7 +192,7 @@ __attribute__((section("BAR"))) void foo() {
 
 ![ELF文件总体结构](pic/elf_file_structure.png)
 
-<h4 id=elf_header>文件头</h4>
+### 文件头
 
 文件头是最重要的结构之一，上图有指明文件头各个成员的意义。文件头主要包含以下信息：
 * ELF魔数
@@ -255,12 +208,12 @@ __attribute__((section("BAR"))) void foo() {
 * 段的数量
 * ...
 
-<h4 id=elf_section_header_table>段表</h4>
+### 段表
 
 段表是除文件头外最重要的结构。段表描述了其余各个段的信息，也就是段表确定了ELF文件的结构。
 
 查看指令：
-* [readelf -S](bin.md#readelf-S) 
+* [readelf -S](bin.md#readelf-S)
 * [objdump -h](bin.md#objdump-h)
 
 段表包含的主要信息：
@@ -288,13 +241,13 @@ __attribute__((section("BAR"))) void foo() {
 * sh_addralign 段地址对齐，2的指数倍。
 * sh_entsize （固定大小）项的长度
 
-<h4 id=elf_relocation_table>重定位表</h4>
+### 重定位表
 
 段类型为 SHT_REL 的段称为`重定位表`，包含了重定位信息。每个需要重定位的代码段或数据段，都有一个对应的重定位表。例如 .data 段的重定位表是 .rel.data。
 
 sh_link表示符号表的下标。sh_info表示作用于哪一个段，例如.rel.text作用于.text段，而.text在段表的下标（索引）是1，则sh_info=1。
 
-<h4 id=elf_string_table>字符串表</h4>
+### 字符串表
 
 字符串的保存方式：将所有的字符串收集起来并存放在一个段中，使用字符串在表中的偏移来引用字符串。
 
@@ -302,7 +255,7 @@ sh_link表示符号表的下标。sh_info表示作用于哪一个段，例如.re
 * .strtab，字符串表，保存普通的字符串，比如符号的名字。
 * .shstrtab，段表字符串表，保存段表中用到的字符串，例如段名。
 
-<p id=Elf32_Ehr-e_shstrndx></p> 
+<p id=Elf32_Ehr-e_shstrndx></p>
 
 e_shstrndx 是`Section header string table index`的缩写，表示`段表字符串表`在段表中的下标。
 
@@ -310,7 +263,7 @@ e_shstrndx 是`Section header string table index`的缩写，表示`段表字符
 
 <p id=elf_symbol_table></p>
 
-<h3 id=ch_3.5>链接的接口——符号</h3>
+## 链接的接口——符号
 
 有关符号的一些基本概念：
 * 符号：函数或变量。
@@ -332,7 +285,7 @@ e_shstrndx 是`Section header string table index`的缩写，表示`段表字符
 * [extern "C"](#extern_c)
 * [弱符号和强符号](#weak_and_strong_symbol)
 
-<h4 id=elf_symbol_table>ELF符号表结构</h4>
+### ELF符号表结构
 
 查看符号表的指令：
 * nm object_file
@@ -368,7 +321,7 @@ Elf32_sym成员：
   * 可执行文件
     * st_value表示符号的虚拟地址。
 
-<h4 id=special_symbol>特殊符号</h4>
+### 特殊符号
 
 链接器在链接脚本会定义一些符号，可以在程序中声明并使用，这些符号称之为`特殊符号`。注意，链接之后，这些符号才会存在。
 
@@ -378,9 +331,7 @@ Elf32_sym成员：
 * _edata或edata：数据段的结束地址。
 * _end或end：程序结束地址。
 
-<h4 id=name_decoration_and_function_signature>
-    名称修饰和函数签名
-</h4>
+### 名称修饰和函数签名
 
 * 名称修饰：源代码中的函数名和变量名，转换成目标文件中对应的符号名的过程，称为名称修饰。
 * 函数签名：包含了一个函数的所有信息，包括函数名、参数类型、所在的类和名称空间，以及其他信息。用于识别不同的函数。
@@ -397,7 +348,7 @@ C++ 有类、继承、虚拟机制、重载、名称空间，他们使得名称�
 
 Visual C++的名称修饰规则没有对外公开。Microsoft提供了一个UnDecorateSymbolName()的API，可以将修饰后名称转换成函数签名。
 
-<h4 id=extern_c>extern "C"</h4>
+### extern "C"
 
 C++用来声明或定义一个C的符号的关键字：`extern "C"`。这会使C++的名称修饰机制失效。
 
@@ -426,7 +377,7 @@ extern "C" {
 #endif
 ```
 
-<h4 id=weak_and_strong_symbol>弱符号和强符号</h4>
+### 弱符号和强符号
 
 `弱符号`和`强符号`是针对定义来说，默认情况下，函数和初始化的全局变量为强符号，未初始化的全局变量为弱符号。可通过gcc的`__ttribute__((weak))`来定义一个强符号为弱符号。
 
@@ -445,17 +396,17 @@ extern "C" {
 * 库中定义的`弱符号`可以被用户定义的`强符号`所覆盖，从而使得程序可以使用自定义版本的库函数。
 * 对某些模块的引用定义为`弱引用`。与模块一起链接的时候，模块可以正常使用。去掉模块之后，也可以正常链接，只是没有对应的功能。
 
-<h3 id=ch_3.6>调试信息</h3>
+## 调试信息
 
 目标文件还可以保存调试信息，gcc编译时加上`-g`选项即可。ELF文件采用一个叫`DWARF(Debug With Arbitrary Record Format)`的标准的调试信息格式。
 
 调试信息占用很大的空间，可以使用 strip 命令去掉ELF文件中的调试信息。
 
-<h2 id=ch_04>静态链接</h2>
+# 静态链接
 
 链接的核心内容：静态链接，如何将多个目标文件链接起来，组成一个可执行文件。
 
-<h3 id=space_and_address_allocate>空间与地址分配</h3>
+## 空间与地址分配
 
 链接器将多个目标文件的段合并到输出文件的方法，即链接器为目标文件分配地址和空间的方法：
 * 按序叠加：将输入的目标文件按照次序叠加起来
@@ -475,13 +426,13 @@ extern "C" {
 
 符号地址的确定：段的基地址确定之后，根据符号在段中的偏移，即可确定符号的地址。
 
-<h3 id=symbol_resolution_and_relocation>符合解析和重定位</h3>
+## 符合解析和重定位
 
 地址和空间分配完成之后，就进入了符号解析和重定位。
 * 符号解析：定义在外部的符号，通过符号解析来找到符号的定义。
 * 重定位：对于定义在外部的符号，编译器会用一个临时值来代替符号值，待符号解析之后，再用真实值代替。
 
-<h4 id=relocation_table>重定位表</h4>
+### 重定位表
 
 ELF使用重定位表来保存重定位相关的信息，对于每一个需要重定位的段，都有一个相对应的重定位表。例如.text需要重定位，则对应.ref.text；.data需要重定位，则对应.rel.data。可以使用指令[objdump -r](bin.md#objdump-r)查看目标文件的重定位表。
 
@@ -502,16 +453,16 @@ r_info：重定位入口的类型和符号
 * 高24位：重定位入口的符号在符号表的下标。
 
 
-<h4 id=symbol_resolution>符号解析</h4>
+### 符号解析
 
 每个重定位入口都是对一个符号的引用，当链接需要对某一个符号进行重定位时，就需要确定这个符号的目标地址。这时候链接器就会去查找所有输入目标文件的符号表组成的全局符号表，找到相应的符号后进行重定位。
 
-<h4 id=instruction_modification>指令修正方式</h4>
+### 指令修正方式
 
 * 绝对寻址修正：
 * 先对寻址修正：
 
-<h4 id=common_block>COMMON块</h4>
+### COMMON块
 
 为了支持弱符号机制，现代的编译器和链接器引入了COMMON块的机制，当不同的目标文件中相同的符号所需要的COMMON块空间大小不一致时，以最大的那块为准。
 
@@ -527,14 +478,14 @@ COMMON块仅仅是针对弱符号而言，如果有一个符号是强符号，�
 int global __attribute__((nocommon));
 ```
 
-<h3 id=c++_related_issues>C++相关问题</h3>
+## C++相关问题
 
 由于C++支持的各种语言特性，使得它背后的数据结构异常复杂。主要有三个问题需要考虑：
 * C++重复代码消除
 * 全局构造和析构
 * C++程序的二进制兼容性
 
-<h4>重复代码消除</h4>
+### 重复代码消除
 
 C++会在很多时候产生重复代码，例如模板、外部内联函数和虚函数表。以模板举例，不同的编译单元同时实例化成相同类型的时候，必然会产生重复代码。最简单的方法是全部保留，但是会有以下缺点：
 * 空间浪费
@@ -558,13 +509,13 @@ C++会在很多时候产生重复代码，例如模板、外部内联函数和�
 * 重定位过程因段数目增加而变得非常复杂
 * 目标文件会增大
 
-<h4>全局构造与析构</h4>
+### 全局构造与析构
 
 C++的全局对象的构造函数在main函数之前被执行，析构函数在min函数之后被执行。为了实现类似的特性，ELF定义了两个特殊的段：
 * .init 包含了进程的初始化代码，在main函数被调用之前，glibc的初始化部分安排执行这个段中的代码。
 * .finit 包含了进程的终止代码，当main函数正常退出时，glibc会安排执行这个段中的代码。
 
-<h4>C++与ABI</h4>
+### C++与ABI
 
 ABI, Application Binary Interface，把符号修饰标准、变量内存布局、函数调用方式等这些与与可执行代码二进制兼容性相关的内容称为ABI。
 
@@ -592,7 +543,7 @@ ABI兼容的意义：
 * 微软的VISUAL C++
 * GNU阵营的GCC（Intel Itanium C++ ABI标准）
 
-<h3 id=static_library_link>静态库链接</h3>
+## 静态库链接
 
 为了方便程序使用操作系统提供的API，语言库通常会将操作系统的API进行封装，并以库的方式提供给开发者。库分为静态库和动态库两种类型。
 
@@ -612,7 +563,7 @@ ABI兼容的意义：
 
 一般来说，静态库里面一个目标文件只包含一个函数，这是为了避免将很多没用的函数一起链接进输出文件，避免浪费空间。
 
-<h3 id=ch_4.6>链接过程控制</h3>
+## 链接过程控制
 
 一般情况下，使用默认的链接规则对目标文件进行链接。但是对于一些有特殊要求的程序，因为一些特殊的限制，需要指定输出文件各个段的虚拟地址、段的名称、段存放顺序等。
 
@@ -629,7 +580,7 @@ ABI兼容的意义：
   * 那些输出段要丢弃
 * 指定输出段的名字、转载地址、属性等
 
-<h4>ld链接脚本语法简介</h4>
+### ld链接脚本语法简介
 
 * 链接脚本由一系列语句组成，语句分为`命令语句`和`赋值语句`。
 * 语句之间必须使用分号作为分隔符，`命令语句`可以使用换行作为分隔符。
@@ -643,33 +594,14 @@ ABI兼容的意义：
 命令语句：由一个关键字和紧随其后的参数组成。
 * 其中SECTIONS命令语句最复杂，还包含了一些赋值语句和SECTIONS语句所特有的映射规则，这是链接脚本的核心部分。
 
-<table>
-  <tr><th>命令语句</th><th>说明</th></tr>
-  <tr>
-    <td>ENTRY( symbol )</td>
-    <td>指定符号 symbol 的值为入口地址。</td>
-  </tr>
-  <tr>
-    <td>STARTUP( filename )</td>
-    <td>将文件 filename 作为链接过程中的第一个输入文件。</td>
-  </tr>
-  <tr>
-    <td>SEARCH_DIR( path )</td>
-    <td>将路径 path 加入到ld链接器的库查找目录，与"-Lpath"有相同的作用。</td>
-  </tr>
-  <tr>
-    <td>INPUT( file, file, ...)<br>INPUT( file file ... )</td>
-    <td>将指定文件作为链接过程中的输入文件。</td>
-  </tr>
-  <tr>
-    <td>INCLUE filename</td>
-    <td>将指定文件包含进本链接脚本，类似于#include预处理。</td>
-  </tr>
-  <tr>
-    <td>PROVIDE( symbol )</td>
-    <td>在链接脚本中定义某个符号，该符号可以在程序中被引用。</td>
-  </tr>
-</table>
+| 命令语句 | 说明 |
+| - | - |
+| ENTRY(symbol) | 指定符号 symbol 的值为入口地址。 |
+| STARTUP(filename) | 将文件 filename 作为链接过程中的第一个输入文件。 |
+| SEARCH_DIR(path) | 将路径 path 加入到ld链接器的库查找目录，与"-Lpath"有相同的作用。 |
+| INPUT(file, file, ...)<br>INPUT(file file ...) | 将指定文件作为链接过程中的输入文件。 |
+| INCLUE filename | 将指定文件包含进本链接脚本，类似于#include预处理。 |
+| PROVIDE(symbol) | 在链接脚本中定义某个符号，该符号可以在程序中被引用。 |
 
 SECTIONS命令的基本格式：
 
@@ -695,19 +627,19 @@ file.o  省略后面的小括号和段名，表示file1.o的所有段都符合�
 [a-z]*(.text*[A-Z]) 输入文件以小写字母开头，切段名以.text开头，以大写字母结尾。
 ```
 
-<h3 id=ch_4.7>BFD库</h3>
+## BFD库
 
 BFD库，Binary File Descriptor library，是binutils项目的子项目，目标是希望通过一种统一的接口来处理不同的目标文件格式。
 
 实现的大致原理：BFD把目标文件抽象成一个统一的模型，使得BFD库的程序只要通过操作这个抽象的目标文件模型就可以实现操作所有BFD支持的目标文件格式。即通过BFD库来操作目标文件，而不是直接操作目标文件。
 
-<h2 id=ch5>Windows PE/COFF</h2>
+# Windows PE/COFF
 
 *待填坑*
 
-<h2 id=ch6>可执行文件的转载与进程</h2>
+# 可执行文件的转载与进程
 
-<h3 id=process_virtual_address_space>进程虚拟地址空间</h3>
+## 进程虚拟地址空间
 
 程序和进程的区别：
 * 程序（可执行文件）：静态的概念，一个文件，包含指令和数据。
@@ -729,7 +661,7 @@ BFD库，Binary File Descriptor library，是binutils项目的子项目，目标
 
 解决内存不够用的根本方法：使用64位的CPU和操作系统。
 
-<h3 id=ch_6.2>转载的方式</h3>
+## 装载的方式
 
 必须将程序运行所需要的指令和数据装入内存，进程才可以运行。
 
@@ -741,7 +673,7 @@ BFD库，Binary File Descriptor library，是binutils项目的子项目，目标
   * [覆盖装入](#overlay_loading)
   * [页映射](#paging_loading)
 
-<h4 id=overlay_loading>覆盖装入</h4>
+### 覆盖装入
 
 将程序分为一个个模块，将模块按照它们之间的调用依赖关系组织成树状结构。有一个非常小的模块`覆盖管理器`，来管理模块何时驻留内存，何时应该被替换掉。
 
@@ -751,7 +683,7 @@ BFD库，Binary File Descriptor library，是binutils项目的子项目，目标
 
 这种方法不是很灵活，受限于程序的结构。当程序非常庞大时，覆盖装入很难胜任。
 
-<h4 id=paging_loading>页映射</h4>
+### 页映射
 
 页映射是虚拟存储机制的一部分，它随着虚拟存储的发明而诞生。目前几乎所有主流的操作系统都是按照页映射的方法装载程序。
 
@@ -761,7 +693,7 @@ BFD库，Binary File Descriptor library，是binutils项目的子项目，目标
 
 选择页换出的算法有很多，例如FIFO 先进先出算法、LUR 最少使用算法。
 
-<h3 id=ch_6.3>从操作系统角度看可执行文件的装载</h3>
+## 从操作系统角度看可执行文件的装载
 
 从操作系统的角度看，装载可执行文件意味着创建一个新进程。创建一个新进程，并加载对应的可执行文件并执行，OS需要完成三件事情：
 * 创建一个独立的虚拟地址空间。
@@ -778,9 +710,9 @@ BFD库，Binary File Descriptor library，是binutils项目的子项目，目标
 3. 在物理内存中分配一个页面，将进程中该虚拟页与物理页建立映射关系。
 4. 控制权还回给进程，在也错误的位置继续执行。
 
-<h3 id=ch_6.4>进程虚存空间分布</h3>
+## 进程虚存空间分布
 
-<h4 id=ch_linking_view_and_execute_view>ELF文件链接视图和执行视图</h4>
+### ELF文件链接视图和执行视图
 
 ELF将一个或多个属性类似的`Section`，划分到同一个`Segment`。装载可执行文件时，一个`Segment`对应一个VMA，这样可以减少VMA的数量，减少页面内部碎片，从而节省内存空间。
 
@@ -799,53 +731,20 @@ Segemnt和Section是从不同的角度对ELF文件进行了划分。从Section�
 
 程序头表是结构体`Elf32_Phdr`数组，此结构体各个成员的含义如下表所示：
 
-<table>
-  <tr><th>类型</th><th>成员</th><th>含义</th></tr>
-  <tr>
-    <td>Elf32_Word</td>
-    <td>p_type</td>
-    <td>Segment的类型，常见的有LOAD、DYNAMIC、INTERP。</td>
-  </tr>
-  <tr>
-    <td>Elf32_Off</td>
-    <td>p_offset</td>
-    <td>Segment在文件中的偏移。</td>
-  </tr>
-  <tr>
-    <td>Elf32_Addr</td>
-    <td>p_vaddr</td>
-    <td>Segment的第一个字节在进程虚拟地址空间的起始位置，程序头表所有LOAD类型的元素，按照p_vaddr从小到大排列。</td>
-  </tr>
-  <tr>
-    <td>Elf32_Addr</td>
-    <td>p_paddr</td>
-    <td>Segment的物理装载地址，即LMA（Load Memory Address）。一般情况下与p_vaddr相等。</td>
-  </tr>
-  <tr>
-    <td>Elf32_Word</td>
-    <td>p_filesz</td>
-    <td>Segment在ELF文件中所占空间的长度，可能为0。</td>
-  </tr>
-  <tr>
-    <td>Elf32_Word</td>
-    <td>p_memse</td>
-    <td>Segment在进程虚拟地址中所占用的长度，也可能是0。</td>
-  </tr>
-  <tr>
-    <td>Elf32_Word</td>
-    <td>p_flags</td>
-    <td>Segment的权限，比如R 可读，W 可写，X 可执行。</td>
-  </tr>
-  <tr>
-    <td>Elf32_Word</td>
-    <td>p_align</td>
-    <td>Segment的对齐属性，实际对齐字节等于2的p_align次方。</td>
-  </tr>
-</table>
+| 类型       | 成员      | 含义 |
+| -          | -        | - |
+| Elf32_Word | p_type   | Segment的类型，常见的有LOAD、DYNAMIC、INTERP。 |
+| Elf32_Off  | p_offset | Segment在文件中的偏移。 |
+| Elf32_Addr | p_vaddr  | Segment的第一个字节在进程虚拟地址空间的起始位置，程序头表所有LOAD类型的元素，按照p_vaddr从小到大排列。 |
+| Elf32_Addr | p_paddr  | Segment的物理装载地址，即LMA（Load Memory Address）。一般情况下与p_vaddr相等。 |
+| Elf32_Word | p_filesz | Segment在ELF文件中所占空间的长度，可能为0。 |
+| Elf32_Word | p_memse  | Segment在进程虚拟地址中所占用的长度，也可能是0。 |
+| Elf32_Word | p_flags  | Segment的权限，比如R 可读，W 可写，X 可执行。 |
+| Elf32_Word | p_align  | Segment的对齐属性，实际对齐字节等于2的p_align次方。 |
 
 Tips：对于load类型的segment来说，p_memsz不能小于p_filesz，但是可以大于p_filesz。多余的部分填充为0，留给BSS段使用。这也是数据段和BSS段的唯一区别：数据段从文件初始化内容，而BSS段的内容全部初始化为0。
 
-<h4 id=heap_and_stack>堆和栈</h4>
+### 堆和栈
 
 Linux也通过VMA来管理进程的堆和栈（实际上所有的内存空间都是通过VMA来管理的）。通过查看文件`/proc/[pid]/maps`，来查看进程的VMA。
 
@@ -856,16 +755,16 @@ Linux也通过VMA来管理进程的堆和栈（实际上所有的内存空间都
 00010000-00c4c000 r-xp 00000000 b3:04 14376      /usr/bin/rclone
 00c50000-01a84000 r--p 00c40000 b3:04 14376      /usr/bin/rclone
 01a90000-01b00000 rw-p 01a80000 b3:04 14376      /usr/bin/rclone
-01b00000-01b16000 rw-p 00000000 00:00 0 
-03000000-13000000 rw-p 00000000 00:00 0 
-13000000-23400000 ---p 00000000 00:00 0 
-a6adf000-a7cf1000 rw-p 00000000 00:00 0 
-a7cf1000-b6eef000 ---p 00000000 00:00 0 
-b6eef000-b6f2f000 rw-p 00000000 00:00 0 
+01b00000-01b16000 rw-p 00000000 00:00 0
+03000000-13000000 rw-p 00000000 00:00 0
+13000000-23400000 ---p 00000000 00:00 0
+a6adf000-a7cf1000 rw-p 00000000 00:00 0
+a7cf1000-b6eef000 ---p 00000000 00:00 0
+b6eef000-b6f2f000 rw-p 00000000 00:00 0
 bed6c000-bed8d000 rw-p 00000000 00:00 0          [stack]
 beef1000-beef2000 r-xp 00000000 00:00 0          [sigpage]
 ffff0000-ffff1000 r-xp 00000000 00:00 0          [vectors]
-[root@pi3b upload]# 
+[root@pi3b upload]#
 ```
 
 VMA与Segment不完全对应，一个VMA可以映射到某个文件的一个区域，也可以没有映射到任何一个文件。即以上的stack、sigpage、vertors（为啥没有heap？还有一些没有名字），也叫做匿名虚拟内存（Anonymous Virtual Memeory Area）。
@@ -878,7 +777,7 @@ VMA与Segment不完全对应，一个VMA可以映射到某个文件的一个区�
 
 书中的程序在64位下运行有一个小问题，具体可以看[这里](layout_err.md#P168)。
 
-<h4 id=ch_6.4.4>段地址对齐</h4>
+### 段地址对齐
 
 在装载过程中，页是最小的映射单位。由于地址对齐的存在，如果一个段最后一页不足4096字节，势必会照成物理内存空间的浪费。为了解决这个问题，UNIX让各个段接壤部分共享一个物理页面，然后将该物理页面分别映射两次。
 
@@ -888,7 +787,7 @@ VMA与Segment不完全对应，一个VMA可以映射到某个文件的一个区�
 
 ![](pic/segment_address_alignment.png)
 
-<h3 id=ch_6.5>Linux内核装载ELF过程简介</h3>
+## Linux内核装载ELF过程简介
 
 用户层面：调用fork()创建一个新进程，新进程调用exec函数族执行指定的elf文件。exec函数族最终会调用内核的sys_execve()。
 
@@ -905,13 +804,13 @@ load_elf_binary()
 
 当sys_execve()系统调用从内核态返回用户态时，EIP寄存器直接跳转到了ELF程序的入口地址，于是新的程序开始执行，ELF文件装载完毕。
 
-<h3 id=ch_6.6>Windows PE的装载</h3>
+## Windows PE的装载
 
 *待填坑*
 
-<h2 id=ch_7>动态链接</h2>
+# 动态链接
 
-<h3 id=ch_7.1>为什么要动态链接</h3>
+## 为什么要动态链接
 
 静态链接的缺点：
 * 浪费内存和磁盘空间：一些公共部分的模块，在每个程序中都存在一份拷贝。
@@ -927,7 +826,7 @@ load_elf_binary()
 1. 库升级之后，新库和旧库之间的接口不兼容。
 2. 程序在每次装载时都要重新链接，会带来一些性能上的损失。不过可以通过延迟绑定等方法优化。
 
-<h2 id=ch_7.2>简单的动态链接例子</h2>
+## 简单的动态链接例子
 
 * gcc 可以使用 `-shared`选项产生共享对象文件。
 * 共享对象文件需要参与可执行文件的链接。
@@ -935,9 +834,9 @@ load_elf_binary()
 * 共享对象文件的VMA默认从0开始，因为装载地址在编译时无法确定。
 * 共享对象文件是由`动态链接器（ld.so）`装载的。
 
-<h3 id=ch_7.3>地址无关代码</h3>
+## 地址无关代码
 
-<h4 id=ch_7.3.1>固定装载地址的困扰</h4>
+### 固定装载地址的困扰
 
 由于指令和数据可能包含一些绝对地址的引用，所以在链接的时候就要确定共享对象文件的装载地址。有以下两种方法：
 
@@ -954,13 +853,13 @@ load_elf_binary()
 
 可执行文件往往是第一个加载的文件，所以可以假设装载位置。
 
-<h4 id=ch_7.3.2>装载时重定位</h4>
+### 装载时重定位
 
 共享对象为了支持在任意地址装载，在链接时，所有的绝对地址不进行重定位；而是在装载时进行重定位。
 
 数据在进程之间是不共享的，而指令在进程之间是共享的。对于同一个共享对象，在不同的进程其装载地址可能不同。所以数据可以使用装载时重定位，指令不能使用装载时重定位的方法，否则就失去了共享指令节省内存的优点。
 
-<h4 id=ch_7.3.3>地址无关代码</h4>
+### 地址无关代码
 
 解决共享对象指令中对绝地地址重定位的问题：指令部分在装载时不需要因为装载地址的改变而改变。
 
@@ -989,7 +888,7 @@ readelf -d foo.so | grep TEXTREL
 
 PIE：地址无关可执行文件，Position-Independent Executetable。-fPIE 或 -fpie。
 
-<h4 id=ch7.3.4>共享模块的全局变量问题</h4>
+### 共享模块的全局变量问题
 
 ```c
 extern int global;
@@ -1007,11 +906,11 @@ int foo()
 
 如果上面的代码段是共享对象文件的一部分，那么一定按照跨模块引用的方式来产生代码。
 
-<ch4 id=ch_7.3.5>数据段地址无关性</ch4>
+### 数据段地址无关性
 
 由于数据段在每个进程都有一个独立的副本，所以可以使用装载时重定位的方法来解决。对于绝对地址引用，编译器和链接器就会产生一个重定位表。
 
-<h3 id=ch_7.4>延迟绑定（PLT）</h3>
+## 延迟绑定（PLT）
 
 动态链接相比静态链接，在性能上有些损失，主要体现在以下两个方面：
 1. 跨模块的数据引用或函数调用，会利用GOT进行复杂的定位或间接跳转。
@@ -1043,17 +942,17 @@ int foo()
 
 ![](pic/plt.png)
 
-<h3 id=ch_7.5>动态链接相关结构</h3>
+## 动态链接相关结构
 
 在动态链接情况下，可执行文件转载完毕之后，操作系统会继续装载一个叫做`动态链接器`的文件，并将控制权转交给动态链接器。动态链接器会装载所有依赖的共享对象文件。当所有的动态链接工作完成之后，动态链接器会将控制权转交给可执行文件，程序开始正式执行。
 
-<h4 id=ch_7.5.1>.interp段</h4>
+### .interp段
 
 存储了可执行文件需要的动态链接器的路径。注意：只有可执行文件才有这个段。
 
 查询指令：[readelf -l elf_file | grep interpreter](bin.md#readelf-l)
 
-<h4 id=ch_7.5.2>.dynamic段</h4>
+### .dynamic段
 
 保存了动态链接所需要的基本信息，这个段是结构体`Elf32_Dyn`数组，此结构体由一个类型值加上一个附加的数值或指针，对于不同的类型，后面附加的数值或者指针有者不同的含义。
 
@@ -1069,37 +968,25 @@ typedef struct {
 
 常见的类型值及其含义：
 
-<table>
-  <tr><th>d_tag类型</th><th>d_un的含义</th></tr>
-  <tr><td>DT_SYMTAB</td>
-      <td><a href=#ch_7.5.3>动态符号表</a>的地址，d_ptr表示 .dynsym 的地址。</td></tr>
-  <tr><td>DT_STRTAB</td>
-      <td>动态符号字符串表，d_ptt表示 .dynstr 的地址。</td></tr>
-  <tr><td>DT_STRSZ</td>
-      <td>动态符号字符串表大小，d_val表示大小。</td></tr>
-  <tr><td>DT_HASH</td>
-      <td>动态链接哈希表地址，d_ptr 表示 .hash 的地址。</td></tr>
-  <tr><td>DT_SONAME</td>
-      <td>本共享对象的SO-NAME。</td></tr>
-  <tr><td>DT_RPATH</td>
-      <td>动态链接共享对象搜索路径。</td></tr>
-  <tr><td>DT_INIT</td>
-      <td>初始化代码地址。</td></tr>
-  <tr><td>DT_FINIT</td>
-      <td>结束代码地址。</td></tr>
-  <tr><td>DT_NEED</td>
-      <td>依赖的共享对象文件，d_ptr表示所依赖的共享对象文件名。</td></tr>
-  <tr><td>DT_REL<br>DT_RELA</td>
-      <td>动态链接重定位表地址。</td></tr>
-  <tr><td>DT_RELENT<br>DT_RELAENT</td>
-      <td>动态重读位表入口地址。</td></tr>
-</table>
+| d_tag类型 | d_un的含义 |
+| - | - |
+| DT_SYMTAB | [动态符号表](#动态符号表)的地址，d_ptr表示 .dynsym 的地址。 |
+| DT_STRTAB | 动态符号字符串表，d_ptt表示 .dynstr 的地址。 |
+| DT_STRSZ | 动态符号字符串表大小，d_val表示大小。 |
+| DT_HASH | 动态链接哈希表地址，d_ptr 表示 .hash 的地址。 |
+| DT_SONAME | 本共享对象的SO-NAME。 |
+| DT_RPATH | 动态链接共享对象搜索路径。 |
+| DT_INIT | 初始化代码地址。 |
+| DT_FINIT | 结束代码地址。 |
+| DT_NEED | 依赖的共享对象文件，d_ptr表示所依赖的共享对象文件名。 |
+| DT_REL<br>DT_RELA | 动态链接重定位表地址。 |
+| DT_RELENT<br>DT_RELAENT | 动态重读位表入口地址。 |
 
 查看.dynamic段的指令：[readelf -d](bin.md#readelf-d)
 
 查看共享库或可执行文件依赖的共享库：[ldd](bin.md#ldd)
 
-<h4 id=ch_7.5.3>动态符号表</h4>
+### 动态符号表
 
 动态链接最关键的还是所依赖的符号和相关文件信息。
 
@@ -1113,7 +1000,7 @@ typedef struct {
 * 保存符号名的表：动态符号字符串表 .dynstr，Dynamic String Table。
 * hash表，用于加快符号的查找速度。
 
-<h4 id=ch_7.5.4>动态链接重定位表</h4>
+### 动态链接重定位表
 
 动态连接的情况下，要在运行时重定位，确定导入符号的地址。共享库一般使用PIC的技术编译，所以代码段无需重定位，只需重定位数据段和.got即可。
 
@@ -1132,7 +1019,7 @@ static int *p = &a;
 
 需要注意的是，如果不以PIC的方法来编译，那么导入函数的重定位入口可能出现在`.rel.dyn`中。
 
-<h4 id=ch_7.5.5>动态链接时进程堆栈初始化信息</h4>
+### 动态链接时进程堆栈初始化信息
 
 当操作系统将控制权交给动态链接器的时候，会通过堆栈传递`辅助信息数组（Auxiliary Vectory）`，此数组是`Elf32_auxv结构体数组`。
 
@@ -1149,49 +1036,26 @@ typedef struct
 
 常见的类型及含义如下表：
 
-<table>
-  <tr><th>a_type定义</th><th>a_type值</th><th>a_val含义</th></tr>
-  <tr>
-    <td>AT_NULL</td>
-    <td>0</td>
-    <td>表示辅助信息数组结束。</td>
-  </tr><tr>
-    <td>AT_EXEFD</td>
-    <td>2</td>
-    <td>可执行文件的句柄。执行可执行文件时，操作系统会打开此文件。动态链接器可使用操作系统的文件读写操作来访问可执行文件。</td>
-  </tr><tr>
-    <td>AT_PHDR</td>
-    <td>3</td>
-    <td>可执行文件程序头表在进程中的地址。动态链接器也可以直接访问进程的VMA来访问可执行文件。</td>
-  </tr><tr>
-    <td>AT_PHENT</td>
-    <td>4</td>
-    <td>可执行文件中程序头表中每一个入口的大小。</td>
-  </tr><tr>
-    <td>AT_PHNUM</td>
-    <td>5</td>
-    <td>可执行文件中程序头表中入口的数量。</td>
-  </tr><tr>
-    <td>AT_BASE</td>
-    <td>7</td>
-    <td>动态链接器本身的装载地址。</td>
-  </tr><tr>
-    <td>AT_ENTRY</td>
-    <td>9</td>
-    <td>可执行文件入口地址，即启动地址。</td>
-  </tr>
-</table>
+| a_type定义 | a_type值 | a_val含义 |
+| - | - | - |
+| AT_NULL | 0 | 表示辅助信息数组结束。 |
+| AT_EXEFD | 2 | 可执行文件的句柄。执行可执行文件时，操作系统会打开此文件。动态链接器可使用操作系统的文件读写操作来访问可执行文件。 |
+| AT_PHDR | 3 | 可执行文件程序头表在进程中的地址。动态链接器也可以直接访问进程的VMA来访问可执行文件。 |
+| AT_PHENT | 4 | 可执行文件中程序头表中每一个入口的大小。 |
+| AT_PHNUM | 5 | 可执行文件中程序头表中入口的数量。 |
+| AT_BASE | 7 | 动态链接器本身的装载地址。 |
+| AT_ENTRY | 9 | 可执行文件入口地址，即启动地址。 |
 
 示例程序：[print_stack.c](code/print_stack.c)。相比书中的示例，增加了对64位的支持。
 
-<h3 id=ch_7.6>动态链接器的步骤和实现</h3>
+## 动态链接器的步骤和实现
 
 动态链接基本上可以分为三步：
 1. [启动动态链接器](#ch_7.6.1)
 2. [装载依赖的共享对象](#ch_7.6.2)
 3. [重定位和初始化](#ch_7.6.3)
 
-<h4 id=ch_7.6.1>动态链接器自举</h4>
+### 动态链接器自举
 
 动态链接器本身也是一个共享对象，相对于一般的共享对象，有以下限制：
 1. 动态链接器不能依赖其他任何共享对象。
@@ -1209,7 +1073,7 @@ typedef struct
 3. 根据.dynamic段的信息，获取动态链接器本身的重定位表和符号表等，从而得到重定位入口。
 4. 完成重定位。
 
-<h4 id=ch_7.6.2>装载共享对象</h4>
+### 装载共享对象
 
 动态链接器自举完成之后，将可执行文件和动态链接器的符号表都合并到`全局符号表`。同时，根据可执行文件.dynamic段中，DT_NEEDED项，找出可执行文件依赖的所有共享对象，并将共享对象的名字放入到`装载集合`中。
 
@@ -1231,7 +1095,7 @@ typedef struct
 
 所以模块的内部函数调用，需要当作模块外部符号处理。为了提高调用的速度，可以使用static关键字修饰函数，告诉编译器，此函数不会被外部模块调用，使用相对地址调用。
 
-<h4 id=ch_7.6.3>重定位和初始化</h4>
+### 重定位和初始化
 
 共享对象加载完毕之后，动态链接器开始重新遍历可执行文件和每个共享对象的重定位表，将他们的GOT/PLT中的每个需要重定位的位置进行修正。
 
@@ -1239,7 +1103,7 @@ typedef struct
 
 以上操作完成之后，动态链接器将执行权转交给可执行文件，并开始执行。
 
-<h4 id=ch_7.6.4>Linux动态链接器实现</h4>
+### Linux动态链接器实现
 
 Linux的动态链接器是/lib/ld-linux.so.2，实际上是指向/lib/ld-x.y.z.so的一个软链接器。动态链接器是一个非常特殊的共享文件，它还可以直接执行。Linux的动态链接器是Glibc的一部分，源码位于elf目录下面，源码解析：略。
 
@@ -1250,7 +1114,7 @@ Linux的动态链接器是/lib/ld-linux.so.2，实际上是指向/lib/ld-x.y.z.s
 2. 动态链接器不一定是PIC，但是PIC会简单一些。实际上确实是PIC。
 3. 动态链接器的装载地址是0x00000000。内核在装载的时候，会选择一个合适的地址。
 
-<h3 id=ch_7.7>显式运行时链接</h3>
+## 显式运行时链接
 
 显式运行时链接，Explicit Run-time linking，让程序自己在运行时控制加载指定的模块，并且可以在不需要该模块时将其卸载。
 
@@ -1269,7 +1133,7 @@ Linux的动态链接器是/lib/ld-linux.so.2，实际上是指向/lib/ld-x.y.z.s
 3. [dlerror()](#ch_7.7.3)
 4. [dlclose()](#ch_7.7.4)
 
-<h4 id=ch_7.7.1>dlopen()</h4>
+### dlopen()
 
 dlopen()函数用来打开一个动态库，并将其加载到进程的地址空间，完成初始化过程（执行.init段中的代码）。
 
@@ -1302,7 +1166,7 @@ RTLD_NOW与RTLD_LAZY互斥，推荐使用RTLD_NOW。如果引用了未定义的�
 2. 如果模块已经通过dlopen()加载，那么返回同一个句柄。
 3. 如果模块之间有依赖关系，必须手动加载被依赖的模块。
 
-<h4 id=ch_7.7.2>dlsym()</h4>
+### dlsym()
 
 寻找需要的符号。
 
@@ -1341,7 +1205,7 @@ void *dlsym(void *handle, char *symbol);
 
 `依赖序列`：以dlopen()打开的共享对象为根节点，对它所有依赖的共享对象进行广度优先遍历，直到找到符号为止。
 
-<h4 id=ch_7.7.3>dlerror()</h4>
+### dlerror()
 
 每次调用dlopen() dlsym() dlclose() 之后，都可以调用dlerror()来判断上一次调用是否成功。
 
@@ -1355,7 +1219,7 @@ char *dlerror();
 
 调用成功返回NULL，否则返回相应的错误信息。
 
-<h4 id=ch_7.7.4>dlclose()</h4>
+### dlclose()
 
 将一个已经加载的模块卸载。系统对每个模块会维持一个加载计数器。dlopen()加载一个模块时，计数器加1；dlclose()卸载一个模块时，计数器减1。只有当计数器的值减少到0，模块才被真正的卸载掉。
 
@@ -1379,17 +1243,17 @@ int dlcose(void *handle);
 
 成功返回0，出错返回非0。具体的错误信息可以调用dlerror()函数。
 
-<h4 id=ch7.7.5>运行时装载的演示程序</h4>
+### 运行时装载的演示程序
 
 *暂时看不懂，待填坑*
 
-<h2 id=ch_8>Linux共享库的组织</h2>
+# Linux共享库的组织
 
 这一章主要介绍共享库的管理问题。
 
-<h3 id=ch_8.1>共享库版本</h3>
+## 共享库版本
 
-<h4 id=ch_8.1.1>共享库兼容性</h4>
+### 共享库兼容性
 
 共享库的更新大致可以分为两类：
 * 兼容更新：更新只是在原有的共享库基础上添加一些内容，所有原有的接口都保持不变。
@@ -1405,7 +1269,7 @@ int dlcose(void *handle);
 * 导出数据的结构发生变化。
 * 导出函数的接口发生变化。
 
-<h4 id=ch_8.1.2>共享库版本命名</h4>
+### 共享库版本命名
 
 Linux规定共享库的文件命名规则必须如下：
 ```
@@ -1427,7 +1291,7 @@ libname.so.x.y.z
 
 参考资料：[Library Interface Versioning in Solaris and Linux](http://www.usenix.org/publications/library/proceedings/als00/2000papers/papers/full_papers/browndavid/browndavid_html/)
 
-<h4 id=ch_8.1.3>SO-NAME</h4>
+### SO-NAME
 
 显然，共享库的主版本号和次版本号决定了一个共享库的接口。为了区分不同版本的共享库，程序需要记录共享库的`名字`和`主版本号`。
 
@@ -1443,13 +1307,13 @@ Linux提供了一个工具`ldconfig`，会遍历所有默认的库目录，更�
 
 libXXX.so.x.y.z中的`XXX`称为共享库的`链接名`。在编译时，使用`-lXXX`的选项，编译器会在系统中查找最新版本的`libXXX.so.x`，并记录到程序中。如果链接器使用了`-static`选项，会查找`libXXX.a`；默认情况或使用了`-Bdynamic`选项，会查找最新版本的`libXXX.so.x.y.z`。
 
-<h3 id=ch_8.2>符号版本</h3>
+## 符号版本
 
 基于SO-NAME的机制，还存在一个`次版本号交会问题`。因为次版本号只向下兼容，而不向上兼容。如果软件使用了高次版本的符号，而系统中只存在低次版本的共享库，那么会发生重定位错误。
 
 解决方法：基于符号的版本机制，让每个导出和导入的符号都有一个相关联的版本号。
 
-<h4 id=ch_8.2.2>Solaris中的符号版本机制</h4>
+### Solaris中的符号版本机制
 
 基于符号的版本机制最早是1995年Sun在Solaris2.5上实现的，增加了`版本机制`和`范围机制`。
 
@@ -1483,7 +1347,7 @@ SUNW_1.2 {
 
 有了符号版本机制之后，在链接时，程序会记录所依赖的符号版本。注意：不是记录最新的，而是记录所依赖的最小的。当程序运行时，会检查系统中共享库的符号版本。如果满足要求，则运行；否则阻止程序运行。
 
-<h4 id=ch_8.2.3>Linux中的符号版本机制</h4>
+### Linux中的符号版本机制
 
 Linux下主要使用符号版本机制的是Glibc的二十多个共享库。GCC对Solaris的符号版本主要有两个扩展：
 1. 除了在符号版本脚本中指定符号的版本，还可以使用一个叫做`.symver`的汇编宏指令来指定符号的版本。可以是GAS汇编中，也可以是嵌入汇编。
@@ -1507,7 +1371,7 @@ ld在链接共享库时，可以使用`--version-script`选项，指定符号版
 gcc -shared -fPIC lib.c -Xlinker --version-script lib.ver -o lib.so
 ```
 
-<h3 id=ch_8.3>共享库系统路径</h3>
+## 共享库系统路径
 
 `FHS(File Hierarchy Standard)`标准，规定了一个系统中的系统文件应该如何存放。
 
@@ -1516,7 +1380,7 @@ FHS规定，一个系统中主要有三个存放共享库的位置：
 2. /usr/lib 非系统运行时所需要的关键性的共享库，主要是一些开发时需要用到的共享库。
 3. /usr/local/lib 与操作系统本身并不十分相关的库，主要是一些第三方的应用程序库。
 
-<h3 id=ch_8.4>共享库查找过程</h3>
+## 共享库查找过程
 
 任何一个动态链接模块所依赖的动态共享库记录在.dynamic段，由DT_NEED类型的项表示。
 
@@ -1529,13 +1393,13 @@ FHS规定，一个系统中主要有三个存放共享库的位置：
 
 动态链接库本来是查找/etc/ld.so.conf文件里面指定的路径，但是遍历每个目录太慢了。所以ldconfig在安装共享库的时候，会将所有的SO-NAME收集起来，存放在/etc/ld.so.cache。
 
-<h3 id=ch_8.5>环境变量</h3>
+## 环境变量
 
 * [LD_LIBRARY_PATH](#ENV_LD_LIBRARY_PATH)
 * [LD_PRELOAD](#ENV_LD_PRELOAD)
 * [LD_DEBUG](#ENV_LD_DEBUG)
 
-<h4 id=ENV_LD_LIBRARY_PATH>LD_LIBRARY_PATH</h4>
+### LD_LIBRARY_PATH
 
 此环境变量由若干个路径组成，路径之间由冒号隔开。默认为空，如果为进程设置了LD_LIBRARY_PATH，启动进程时，动态链接器首先会在LD_LIBRARY_PATH指定的目录中查找动态库。也会影响gcc编译时查找动态库的路径，相当于`-L`。
 
@@ -1547,7 +1411,7 @@ FHS规定，一个系统中主要有三个存放共享库的位置：
 
 注意：LD_LIBRARY_PATH对于共享库的开发和测试来说非常方便，但是不应该被滥用。随意修改LD_LIBRARY_PATH并导出至全局范围，可能会引起其他程序的奔溃。
 
-<h4 id=ENV_LD_PRELOAD>LD_PRELOAD</h4>
+### LD_PRELOAD
 
 LD_PRELOAD会指定一些预先装载的动态库或目标文件。动态链接器在按照固定的规则搜索动态库之前，会装载这些动态库或目标文件，无论可执行文件是否依赖他们。
 
@@ -1555,7 +1419,7 @@ LD_PRELOAD会指定一些预先装载的动态库或目标文件。动态链接�
 
 /etc/ld.so.preload的作用与LD_PRELOAD一样。
 
-<h4 id=ENV_LD_DEBUG>LD_DEBUG</h4>
+### LD_DEBUG
 
 LD_DEBUG用来打开动态链接器的调试信息。设置此环境变量之后，动态链接器在运行时会打印各种有用的信息，便于开发和调试共享库。
 
@@ -1567,29 +1431,20 @@ LD_DEBUG=value /path/to/program
 
 `value`有以下可能的取值：
 
-<table>
-  <tr><th>取值</th><th>说明</th></tr>
-  <tr><td>bindings</td>
-      <td>显示动态链接的符号绑定过程。</td></tr>
-  <tr><td>libs</td>
-      <td>显示共享库的查找过程。</td></tr>
-  <tr><td>versions</td>
-      <td>显示符号的版本依赖关系。</td></tr>
-  <tr><td>reloc</td>
-      <td>显示重定位过程。</td></tr>
-  <tr><td>symbols</td>
-      <td>显示符号表查找过程。</td></tr>
-  <tr><td>statistics</td>
-      <td>显示动态链接过程中的各种统计信息。</td></tr>
-  <tr><td>all</td>
-      <td>显示以上所有信息。</td></tr>
-  <tr><td>help</td>
-      <td>显示上面的各种可选值的帮助信息。</td></tr>
-</table>
+| 取值 | 说明 |
+| - | - |
+| bindings | 显示动态链接的符号绑定过程。 |
+| libs | 显示共享库的查找过程。 |
+| versions | 显示符号的版本依赖关系。 |
+| reloc | 显示重定位过程。 |
+| symbols | 显示符号表查找过程。 |
+| statistics | 显示动态链接过程中的各种统计信息。 |
+| all | 显示以上所有信息。 |
+| help | 显示上面的各种可选值的帮助信息。 |
 
-<h3 id=ch_8.6>共享库的创建和安装</h3>
+## 共享库的创建和安装
 
-<h4 id=ch_8.6.1>共享库的创建</h4>
+### 共享库的创建
 
 gcc的几个关键参数：
 * -shared 输出的文件是共享库类型。
@@ -1605,7 +1460,7 @@ gcc的几个关键参数：
 
 一个小问题：清除符号信息后，是如何进行符号查找的？
 
-<h4 id=ch_8.6.3>共享库的安装</h4>
+### 共享库的安装
 
 如果有root权限，将共享库放入到某个标准的共享库目录，运行ldconfig程序即可。
 
@@ -1619,7 +1474,7 @@ ldconfig -n shared_library_path
 2. -rpath 参数
 3. LD_LIBRARY_PATH 环境变量
 
-<h4 id=ch_8.6.4>共享库构造和析构函数</h4>
+### 共享库构造和析构函数
 
 在函数声明的时候，加上`__attribute__((constructor))`属性，即指定该函数为共享库的构造函数。类似的，`__attribute__((destructor))`指定为析构函数。
 
@@ -1637,7 +1492,7 @@ void __attribute__((destructor(m))) finit_function2(void);
    1. 对于构造函数来说，数字小的先执行。
    2. 对于析构函数来说，数字大的先执行。
 
-<h4 id=ch_8.6.5>共享库脚本</h4>
+### 共享库脚本
 
 共享库还可以是符合一定格式的链接脚本文件，可以把几个现有的共享库通过一定的方式组合起来。语法与LD链接脚本类似。
 
@@ -1647,13 +1502,13 @@ GROUP( /lib/libc.so.6 /lib/libm.so.2)
 ```
 
 
-<h2 id=ch9>Windows下的动态链接</h2>
+# Windows下的动态链接
 
 **待填坑**
 
-<h2 id=ch_10>内存</h2>
+# 内存
 
-<h3 id=ch_10.1>程序的内存布局</h3>
+## 程序的内存布局
 
 Linux程序典型的内存布局如下图所示：
 
@@ -1669,9 +1524,9 @@ Linux程序典型的内存布局如下图所示：
 
 栈区和堆区在程序运行时起到了关键的作用，接下来会详细介绍这两个区域。
 
-<h3 id=ch_10.2>栈与调用惯例</h3>
+## 栈与调用惯例
 
-<h4 id=ch_10.2.1>什么是栈</h4>
+### 什么是栈
 
 栈的定义：栈是一个特殊的容器，用户可以将数据压入栈中（压栈，push），也可以将已压入栈中的数据弹出（出栈，pop）。先入栈的数据后出栈（FILO）。
 
@@ -1702,7 +1557,7 @@ Linux程序典型的内存布局如下图所示：
 
 Hook技术：在函数的开头插入一些空指令（占位符）。如果需要替换某些函数，只需将函数开头的占位符，替换成跳转到其他函数的指令即可。
 
-<h4 id=ch_10.2.2>调用惯例</h4>
+### 调用惯例
 
 调用惯例：函数调用方和被调用方对于函数如何调用的约定。
 
@@ -1762,7 +1617,7 @@ void __cdecl foo(int a, int b);
 // gcc 是 __attribute__((cdecl))
 ```
 
-<h4 id=ch_10.2.3>函数返回值传递</h4>
+### 函数返回值传递
 
 返回值的长度小于等于4字节，通过eax寄存器传递。如果长度介于5~8字节之间，eax返回低4字节，edx返回高1~4字节。
 
@@ -1782,7 +1637,7 @@ void __cdecl foo(int a, int b);
 2. 返回大尺寸对象可能会照成两次拷贝，所以不到万不得已，不要返回大尺寸对象。
 3. C++返回对象，有可能采取类似的方法（无论对象的大小）。这会照成两次构造函数的调用，一次析构函数的调用。
 
-<h3 id=ch_10.3>堆与内存管理</h3>
+## 堆与内存管理
 
 `Heap`，堆，主要用于程序在运行时动态的申请内存，这块内存在程序主动释放之前，都会一直有效。
 
