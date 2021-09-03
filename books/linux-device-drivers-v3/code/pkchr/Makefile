@@ -14,4 +14,4 @@ uninstall:
 	rmmod pkchr
 
 clean:
-	rm -rf *.o *.order *.ko *.mod.c *.markers *.symvers
+	rm -rf *.o *.order *.ko *.mod.c *.markers *.symvers .*.o.cmd .*.ko.cmd .tmp_versions
