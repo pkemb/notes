@@ -7,10 +7,12 @@
 #include <linux/fs.h>
 
 #define DEVICE_NAME     "pkchr"
+#define MEM_SIZE        16
 
 struct pkchr_dev {
     struct cdev cdev;
     // 设备自定义数据
+    char mem[MEM_SIZE];
 };
 
 #endif // __PKCHR_H__

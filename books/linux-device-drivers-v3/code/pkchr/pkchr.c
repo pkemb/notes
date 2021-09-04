@@ -1,5 +1,7 @@
 #include <linux/module.h>
 #include <linux/init.h>
+#include <linux/kernel.h>
+#include <asm/uaccess.h>
 #include "pkchr.h"
 
 static int pkchr_major = 0;
@@ -12,17 +14,66 @@ struct pkchr_dev pkchr = {0};
 // filp 表示一个打开的文件，f_mode / f_ops / f_flags / f_op / private_data / f_dentry
 int pkchr_open(struct inode *inode, struct file *filp)
 {
+    struct pkchr_dev *pkchr = NULL;
+    // 从字符设备结构体，找到pkchr_dev结构体的地址
+    pkchr = container_of(inode->i_cdev, struct pkchr_dev, cdev);
+    filp->private_data = pkchr;
     return 0;
 }
 
+// 从用户空间拷贝数据到内核空间
 ssize_t pkchr_write(struct file *filp, const char __user *buff, size_t size, loff_t *off)
 {
-    return 0;
+    long pos = *off;
+    size_t count = size;
+    struct pkchr_dev *pkchr = filp->private_data;
+
+    printk(KERN_DEBUG"write, pos = %d, count = %d\n", pos, count);
+
+    // 写入的数据量大于最大值，返回没有空间
+    if (count > MEM_SIZE)
+        return -ENOSPC;
+
+    // 写入位置超过范围，返回0
+    if (pos >= MEM_SIZE)
+        return 0;
+
+    // 剩余空间不够，至写入部分值
+    if (count > MEM_SIZE - pos)
+        count = MEM_SIZE - pos;
+
+    // 返回值大于0：剩余没有拷贝的数据
+    // 返回值等于0：拷贝成功
+    // 小于0：出错
+    if (copy_from_user(pkchr->mem + pos, buff, count)) {
+        return -EFAULT;
+    }
+
+    *off = pos + count;
+    return count;
 }
 
+// 从内核空间拷贝数据到用户空间
 ssize_t pkchr_read(struct file *filp, char __user *buff, size_t size, loff_t *off)
 {
-    return 0;
+    long pos = *off;
+    size_t count = size;
+    struct pkchr_dev *pkchr = filp->private_data;
+
+    printk(KERN_DEBUG"read, pos = %d, count = %d\n", pos, count);
+
+    if (pos >= MEM_SIZE)
+        return 0;
+
+    if (count > MEM_SIZE - pos)
+        count = MEM_SIZE - pos;
+
+    if (copy_to_user(buff, pkchr->mem + pos, count)) {
+        return -EFAULT;
+    }
+
+    *off = pos + count;
+    return count;
 }
 
 loff_t pkchr_llseek(struct file *filp, loff_t off, int whence)
@@ -35,9 +86,11 @@ int pkchr_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, unsign
     return 0;
 }
 
-// file结构释放时，将调用此函数
+// file结构释放时，将调用此函数。close系统调用会执行release函数。
+// 只有file结构引用计数为0的时候，close才会调用release。保证了一次open对应一次release
 int pkchr_release(struct inode *inode, struct file *filp)
 {
+    // 释放open函数申请的资源
     return 0;
 }
 
