@@ -11,7 +11,7 @@ static int pkchr_dev_num = 1;
 struct pkchr_dev pkchr = {0};
 
 // inode 表示一个唯一的文件，主要关注成员 i_rdev 和 i_cdev
-// filp 表示一个打开的文件，f_mode / f_ops / f_flags / f_op / private_data / f_dentry
+// filp 表示一个打开的文件，f_mode / f_pos / f_flags / f_op / private_data / f_dentry
 int pkchr_open(struct inode *inode, struct file *filp)
 {
     struct pkchr_dev *pkchr = NULL;
@@ -76,9 +76,45 @@ ssize_t pkchr_read(struct file *filp, char __user *buff, size_t size, loff_t *of
     return count;
 }
 
+// 设置偏移量，file结构体的f_pos成员
+// f_pos表示缓冲区的位置指针，取值范围是 0 ~ MEM_SIZE-1
+// 如果设置的值超过范围，则返回错误EINVAL。
 loff_t pkchr_llseek(struct file *filp, loff_t off, int whence)
 {
-    return 0;
+    loff_t ret = 0;
+    loff_t new_pos = 0;
+    switch (whence)
+    {
+    case SEEK_SET:
+        if (off >= MEM_SIZE || off < 0) {
+            ret = -EINVAL;
+        } else {
+            filp->f_pos = off;
+            ret = filp->f_pos;
+        }
+        break;
+
+    case SEEK_CUR:
+        new_pos = filp->f_pos + off;
+        if (new_pos < 0 || new_pos >= MEM_SIZE) {
+            ret = -EINVAL;
+        } else {
+            filp->f_pos = new_pos;
+            ret = filp->f_pos;
+        }
+        break;
+
+    case SEEK_END:
+        filp->f_pos = MEM_SIZE - 1;
+        ret = filp->f_pos;
+        break;
+
+    default:
+        ret = -EINVAL;
+        break;
+    }
+
+    return ret;
 }
 
 int pkchr_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, unsigned long arg)
