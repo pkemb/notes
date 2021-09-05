@@ -304,13 +304,37 @@ module_param()的第一个参数是变量名称，第二个参数是变量类型
 
 编写驱动程序的第一步就是定义驱动程序为用户程序提供的能力（机制）。
 
-scull实现了以下类型的设备：
-* scull0 ~ scull3
-* scullpipe0 ~ scullpipe3
-* scullsingle
-* scullpriv
-* sculluid
-* scullwuid
+scull实现了以下类型的设备，本章主要关注最简单的`scull[0-3]`。
+
+| 类型 | 说明 |
+| - | - |
+| scull0 ~ scull3 | 维护一个全局且持久的内存区域。 |
+| scullpipe0 ~ scullpipe3 | 类似于管道，一个进程写入，另一个进程读取。 |
+| scullsingle | 一次只允许一个进程使用 |
+| scullpriv | 对每个控制台是私有的 |
+| sculluid | 只能被一个用户打开 |
+| scullwuid | 实现了阻塞式的open |
+
+> scull 的设计其实是很复杂的，对于初学者来说不太好掌握。为了把握字符设备的关键所在，编写了一个简单版本的[pkchr](code/pkchr)，维护一个内存buff，支持读写。
+
+## 字符设备的注册
+
+字符设备的关键是结构体`struct cdev`，无需关心结构体的内部成员。结构体可以静态分配也可以动态申请（cdev_alloc()）
+
+在设备的初始化函数中，需要初始化`cdev`。`cdev_init()`会将`cdev`和`file_operations`关联起来，后者实现了文件操作的函数。有关`file_operations`的更多信息请参考[一些重要的数据结构](#一些重要的数据结构)。`cdev_add()`负责将设备添加到系统中，有关`dev_t`的更多信息请参考[主设备号和次设备号](#主设备号和次设备号)。
+
+在设备的退出函数中，需要调用`cdev_del()`删除设备。
+
+```c
+// 动态分配 cdev 结构
+struct cdev * cdev_alloc(void);
+// 初始化已分配到的结构
+void cdev_init(struct cdev *cdev, struct file_operations *fops);
+// 将设备添加到系统。该调用返回之后，设备即可使用。
+int cdev_add(struct cdev *cdev, dev_t devno, unsigned int count);
+// 移除一个字符设备
+void cdev_del(struct cdev *cdev);
+```
 
 ## 主设备号和次设备号
 
@@ -337,9 +361,19 @@ int alloc_chrdev_region(dev_t *dev, unsigned int firstminor, unsigned int count,
 void unregister_chrdev_region(dev_t first, unsigned int count);
 ```
 
-推荐动态分配主设备号。Documentation/devices.txt列出了静态分配的设备号。如果需要静态分配设备号，应该要避免已经分配的设备号。
+推荐动态分配主设备号。`Documentation/devices.txt`列出了静态分配的设备号。如果需要静态分配设备号，应该要避免已经分配的设备号。可以通过读取文件`/proc/devices`来获取设备号，然后再创建设备节点。
 
-动态分配的缺点：无法预先创建设备节点。不过可以通过读取文件`/proc/devices`来获取设备号，然后再创建设备节点。
+> 最新的内核抛弃了devfs，而使用udev。udevd可以根据rules文件自动创建设备节点。
+
+### 打印设备编号
+
+使用下面的函数，可以将设备编号打印到给定的缓冲区。考虑到未来可能会使用64位的设备编号，缓冲区至少有20字节。
+
+```c
+#include <linux/kdev_t.h>
+int print_dev_t(char *buffer, dev_t dev);    // 返回打印的字节数
+char *format_dev_t(cahr *buffer, dev_t dev); // 返回缓冲区
+```
 
 ## 一些重要的数据结构
 
@@ -349,7 +383,7 @@ void unregister_chrdev_region(dev_t first, unsigned int count);
 
 当向系统添加字符设备时，需要提供一个`struct file_opetations`实例，里面包含了操作字符设备的系统调用的实现。这些系统调用，一般有这两个参数：`struct file *filp`和`struct inode *inode`。
 
-filp表示了一个打开的文件。filp的`private_data`可用来跨系统调用保存信息。
+filp表示了一个打开的文件，filp的`private_data`可用来跨系统调用保存信息。
 
 inode用来表示一个文件。与filp不同，多个打开的filp，可能对应同一个inode。inode包含了大量有关文件的信息。对于字符设备来说，以下两个字段非常有用：
 ```c
@@ -361,25 +395,6 @@ struct cdev *i_cdev;    // inode 指向一个字符设备文件时，包含了�
 ```c
 unsigned int imajor(struct inode *inode);
 unsigned int imonor(struct inode *inode);
-```
-
-## 字符设备的注册
-
-```c
-// 动态分配 cdev 结构
-struct cdev * cdev_alloc(void);
-// 初始化已分配到的结构
-void cdev_init(struct cdev *cdev, struct file_operations *fops);
-// 将设备添加到系统。该调用返回之后，设备即可使用。
-int cdev_add(struct cdev *cdev, dev_t num, unsigned int count);
-// 移除一个字符设备
-void cdev_del(struct cdev *cdev);
-```
-
-早期注册字符设备的方法：
-```c
-int register_chrdev(unsigned int major, const char *name, struct file_operations *fops);
-int unregister_chrdev(unsigned int major, const char *name);
 ```
 
 ## open 和 release
@@ -397,7 +412,7 @@ int (*open)(struct inode *inode, struct file *filp);
 
 inode参数的i_cdev字段，包含了先前设置的cdev结构。
 
-release方法与open方法正好相反。不是所有的close调用都会调用release方法，只有真正释放设备数据结构的close调用才会调用这个方法。主要完成以下工作：
+release方法与open方法正好相反。不是所有的close调用都会调用release方法，只有`filp`引用计数为零时才会调用这个方法。主要完成以下工作：
 * 释放由open分配的、保存在filp->private_data中的所有内容
 * 在最后一次关闭操作时关闭设备
 
@@ -405,8 +420,6 @@ release方法的原型：
 ```c
 int (*release)(struct inode *inode, struct file *filp);
 ```
-
-## scull的内存使用
 
 ## read 和 write
 
@@ -418,12 +431,7 @@ ssize_t write(struct file *filp, const char __user *buff, size_t count, loff_t *
 
 filp是文件指针，count是请求传输的数据长度，buff是指向用户空间的缓冲区，offp指明用户在文件中进行存取操作的位置。
 
-buff是用户空间的指针，基于以下原因，不能直接操作：
-* 在内核模式中，用户空间指针可能无效。
-* 用户空间是分页的，buff指向的页可能不在内存中。直接引用可能导致页错误。
-* 应用程序可能是个恶意程序，直接引用可能导致系统出现后门。
-
-为了安全的访问用户空间，必须使用专用的函数：
+buff是用户空间的指针。为了安全的访问用户空间，必须使用专用的函数：
 ```c
 // 拷贝数据到用户空间
 unsigned long copy_to_user(void __user *to, const void *from, unsigned long count);
@@ -431,11 +439,15 @@ unsigned long copy_to_user(void __user *to, const void *from, unsigned long coun
 unsigned long copy_from_user(void *to, const void __user *from, unsigned long count);
 ```
 
-如果指针无效，会拒绝拷贝。返回值是还需要拷贝的内存数量。被寻址的内存空间可能不在内存中，会导致当前进程被转入睡眠状态。这就要求访问用户空间的任何函数都必须是可重入的，必须能和其他驱动程序函数并发执行。
-
-无论传输了多少数据，都应该更新offp所表示的文件位置。
+如果指针无效，会拒绝拷贝。返回值是还需要拷贝的内存数量，如果出错则返回负值。被寻址的内存空间可能不在内存中，会导致当前进程被转入睡眠状态。这就要求访问用户空间的任何函数都必须是可重入的，必须能和其他驱动程序函数并发执行。无论传输了多少数据，都应该更新offp所表示的文件位置。
 
 read方法和write方法的返回值：略。
+
+## 字符设备编码技巧
+
+1. 创建一个自定义的`struct xxx_dev`，里面包含了`struct cdev`和设备私有的数据。
+2. 在`open`函数，使用container_of宏，从`inode->i_cdev`获取自定义设备结构体的地址。
+3. 在`open`函数，将`filp->private_data`指向自定义设备结构体，其他函数则可以通过`filp`获取自定义的设备结构体。
 
 # 第四章 调试技术
 
