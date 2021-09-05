@@ -117,9 +117,24 @@ loff_t pkchr_llseek(struct file *filp, loff_t off, int whence)
     return ret;
 }
 
+// inode和filp表示一个打开的文件，cmd表示不同的操作，arg是一个可选的参数
 int pkchr_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, unsigned long arg)
 {
-    return 0;
+    struct pkchr_dev *pkchr = filp->private_data;
+    int ret = 0;
+
+    switch (cmd)
+    {
+    case PKCHR_IOCLEAR:
+        memset(pkchr->mem, 0, MEM_SIZE);
+        ret = 0;
+        break;
+
+    default:
+        ret = -EINVAL;
+        break;
+    }
+    return ret;
 }
 
 // file结构释放时，将调用此函数。close系统调用会执行release函数。
