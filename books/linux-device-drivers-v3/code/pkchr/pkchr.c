@@ -29,7 +29,7 @@ ssize_t pkchr_write(struct file *filp, const char __user *buff, size_t size, lof
     size_t count = size;
     struct pkchr_dev *pkchr = filp->private_data;
 
-    printk(KERN_DEBUG"write, pos = %d, count = %d\n", pos, count);
+    printk(KERN_DEBUG"write, pos = %ld, count = %d\n", pos, count);
 
     // 写入的数据量大于最大值，返回没有空间
     if (count > MEM_SIZE)
@@ -61,7 +61,7 @@ ssize_t pkchr_read(struct file *filp, char __user *buff, size_t size, loff_t *of
     size_t count = size;
     struct pkchr_dev *pkchr = filp->private_data;
 
-    printk(KERN_DEBUG"read, pos = %d, count = %d\n", pos, count);
+    printk(KERN_DEBUG"read, pos = %ld, count = %d\n", pos, count);
 
     if (pos >= MEM_SIZE)
         return 0;
