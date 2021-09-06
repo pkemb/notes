@@ -2,13 +2,14 @@
 #include <linux/init.h>
 #include <linux/kernel.h>
 #include <asm/uaccess.h>
+#include <linux/slab.h>
 #include "pkchr.h"
 
 static int pkchr_major = 0;
 static int pkchr_minor = 0;
-static int pkchr_dev_num = 1;
+static int pkchr_dev_num = 4;
 
-struct pkchr_dev pkchr = {0};
+struct pkchr_dev *pkchr = NULL;
 
 // inode 表示一个唯一的文件，主要关注成员 i_rdev 和 i_cdev
 // filp 表示一个打开的文件，f_mode / f_pos / f_flags / f_op / private_data / f_dentry
@@ -155,10 +156,29 @@ struct file_operations fops = {
     .release = pkchr_release,
 };
 
+static void pkchr_setup_dev(struct pkchr_dev *pkchr, int index)
+{
+    dev_t devno = MKDEV(pkchr_major, pkchr_minor + index);
+    int err = 0;
+
+    printk(KERN_INFO"init pkchr%d\n", index);
+
+    // 初始化 struct cdev, 需要 fops 结构体
+    cdev_init(&pkchr->cdev, &fops);
+    pkchr->cdev.owner = THIS_MODULE;
+
+    // 注册cdev
+    err = cdev_add(&pkchr->cdev, devno, 1);
+    if (err < 0) {
+        printk(KERN_INFO"add cdev %x fail, err = %d\n", devno, err);
+    }
+}
+
 static int __init pkchr_init(void)
 {
     dev_t devno = 0;
     int ret = 0;
+    int i = 0;
     printk(KERN_INFO"pk char device init\n");
 
     // 申请设备号，0 正确，小于0 错误
@@ -177,29 +197,34 @@ static int __init pkchr_init(void)
     printk(KERN_INFO"major = %d\n", pkchr_major);
     printk(KERN_INFO"minor = %d\n", pkchr_minor);
 
-    // 初始化 pkchr 变量
-    // 初始化 struct cdev, 需要 fops 结构体
-    cdev_init(&pkchr.cdev, &fops);
-    pkchr.cdev.owner = THIS_MODULE;
-    pkchr.cdev.ops   = &fops;
-
-    // 注册cdev
-    ret = cdev_add(&pkchr.cdev, devno, 1);
-    if (ret < 0) {
-        printk(KERN_INFO"add cdev %x fail, err = %d\n", devno, ret);
+    pkchr = kmalloc(sizeof(*pkchr) * pkchr_dev_num, GFP_KERNEL);
+    if (pkchr == NULL) {
+        printk(KERN_ERR"kmalloc fail\n");
         return -1;
     }
+    memset(pkchr, 0, sizeof(*pkchr) * pkchr_dev_num);
 
-    return 0;
+    // 初始化 pkchr 变量
+    for (i = 0; i < pkchr_dev_num; i++) {
+        pkchr_setup_dev(pkchr + i, i);
+    }
+
+    return ret;
 }
 module_init(pkchr_init);
 
 static void __exit pkchr_exit(void)
 {
     dev_t dev = MKDEV(pkchr_major, pkchr_minor);
+    int i = 0;
     printk(KERN_INFO"pk char device exit\n");
     // 删除字符设备
-    cdev_del(&pkchr.cdev);
+    if (pkchr) {
+        for (i = 0; i < pkchr_dev_num; i++) {
+            cdev_del(&pkchr[i].cdev);
+        }
+        kfree(pkchr);
+    }
     // 删除设备号
     unregister_chrdev_region(dev, pkchr_dev_num);
 }
