@@ -524,8 +524,96 @@ if (printk_ratelimit())
 int print_dev_t(char *buffer, dev_t dev);    // 返回打印的字节数
 char *format_dev_t(cahr *buffer, dev_t dev); // 返回缓冲区
 ```
+## 通过查询调试
 
-## 使用 proc 文件系统
+使用`printk`打印大量日志会使系统的性能显著下降。在多数情况下，获取相关信息的最好方法是需要的时候才去查询系统信息。本小节介绍`proc`文件系统和`ioctl`系统调用。`sysfs`将在[第十四章](#第十四章-Linux设备模型)介绍。
+
+### 使用proc文件系统
+
+`/proc`文件系统是一种特殊的、由软件创建的文件系统，内核使用它向外界导出信息。`/proc`下面的每个文件都绑定于一个内核函数，用户读取其中的文件时，该函数动态的生成文件的内容。`/proc`文件不仅可以用户读出数据，也可以用于写入数据。本小节只介绍只读的情况。
+
+[procfs-guide.pdf](https://www.cs.cmu.edu/afs/grand.central.org/archive/twiki/pub/Main/SumitKumar/procfs-guide.pdf)对`proc`文件系统的API进行了详细的介绍。
+
+#### 在proc中实现文件
+
+使用`proc`文件系统需要包含头文件`linux/proc_fs.h`。
+
+为创建一个`proc`文件，需要实现一个读取文件生成数据的函数。函数的原型如下：
+
+```c
+int (*read_proc)(
+    char *buf,
+    char **start,
+    off_t offset,
+    int count,
+    int *eof,
+    void *data);
+```
+
+参数说明如下：
+* buf 指向用来写入数据的缓冲区，缓冲区由内核分配，大小是`PAGE_SIZE`
+* start 返回实际的数据写到内存页的哪个位置。此参数的用法有点复杂，可用于实现大于一个内存页的`proc`文件。
+* offset 读取的位置
+* count 请求读取的字节数
+* eof 指向一个整型数，当没有数据可返回时，驱动程序必需设置这个参数
+* data 提供给驱动程序的专用数据指针，可用于内部记录
+
+返回值：存放到内存缓冲区的字节数
+
+如果返回小于`PAGE_SIZE`的数据，则忽略参数`start`、`offset`、`count`、`eof`。默认从0开始写入数据。
+
+如果返回大于`PAGE_SIZE`的数据，则需要自己申请内存，`offset`表示本次读取的偏移，`*start`指向`offset`指定的偏移量处的数据，`*eof`置1表示没有数据可供继续读取。
+
+#### 创建自己的`proc`文件
+
+`create_proc_read_entry()`把`read_proc()`和一个`proc`入口项链接起来。
+
+```c
+struct proc_dir_entry *create_proc_read_entry(
+    const char *name,
+    mode_t mode,
+    struct proc_dir_entry *base,
+    read_proc_t *read_proc,
+    void *data
+);
+```
+
+参数说明如下：
+* name 创建的文件名称
+* mode 文件的权限，0表示使用系统默认值
+* base 文件所在的目录。如果为NULL，则创建在/proc根目录
+* read_proc
+* data 内核会忽略，但是会传递给read_proc函数
+
+在卸载模块时，使用`remove_proc_entry()`删除`proc`入口项。参数说明略。
+
+```c
+void remove_proc_entry(const char *name, struct proc_dir_entry *base);
+```
+
+`proc`有两个严重的问题，不推荐使用：
+* `proc`文件的使用不会增加模块的引用计数，文件在使用时卸载模块会出问题。
+  * try_module_get() / module_put() 可以解决此问题
+* 使用同一名字注册两个入口项。
+
+#### seq_file接口
+
+`seq_file`接口为大的内核虚拟文件提供了一组简单的函数。`seq_file`假定创建的虚拟文件要顺序遍历一个项目序列。每前进一步，输出该序列中的一个项目。如果`proc`文件包含大量的输出行，建议使用`seq_file`。
+
+```c
+void *start(struct seq_file *sfile, loff_t *pos);
+void *next(struct seq_file *sfile, void *v, loff_t *pos); // 迭代器移动到下一个位置
+void stop(struct seq_file *sfile, void *v);
+int show(struct seq_file *sfile, void *v); // 为迭代器v所指向的项目建立输出
+// show() 函数应该使用如下接口
+int seq_printf(struct seq_file *sfile, const char *fmt, ...);
+int seq_putc(struct seq_file *sfile, char c);
+int seq_puts(struct seq_file *sfile, const char *s);
+int seq_escape(struct seq_file *m, const char *s, const char *esc);
+
+struct seq_operations; // 包含指向start/next/stop/show等函数的指针
+int seq_open(struct file *filp, struct seq_operations *seq_ops);
+```
 
 ## 通过监视调试
 
