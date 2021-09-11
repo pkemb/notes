@@ -615,6 +615,10 @@ struct seq_operations; // 包含指向start/next/stop/show等函数的指针
 int seq_open(struct file *filp, struct seq_operations *seq_ops);
 ```
 
+### ioctl方法
+
+略。详细介绍请参考第六章[ioctl](#ioctl)。
+
 ## 通过监视调试
 
 strace 指令。
