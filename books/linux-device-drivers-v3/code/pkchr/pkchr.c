@@ -3,6 +3,7 @@
 #include <linux/kernel.h>
 #include <asm/uaccess.h>
 #include <linux/slab.h>
+#include <linux/proc_fs.h>
 #include "pkchr.h"
 
 static int pkchr_major = 0;
@@ -156,6 +157,20 @@ struct file_operations fops = {
     .release = pkchr_release,
 };
 
+int pkchr_read_proc(char *buf, char **start, off_t offset, int count, int *eof, void *data)
+{
+    int len = 0;
+    // 增加模块引用计数
+    if (!try_module_get(THIS_MODULE))
+        return 0;
+
+    len += sprintf(buf + len, "%d\n", MEM_SIZE);
+    printk(KERN_INFO"count = %d, offset = %ld, buf = %p, len = %d\n", count, (long)offset, buf, len);
+    module_put(THIS_MODULE);
+
+    return len;
+}
+
 static void pkchr_setup_dev(struct pkchr_dev *pkchr, int index)
 {
     dev_t devno = MKDEV(pkchr_major, pkchr_minor + index);
@@ -209,6 +224,9 @@ static int __init pkchr_init(void)
         pkchr_setup_dev(pkchr + i, i);
     }
 
+    // 在 /proc 根目录创建pkchr_length入口
+    create_proc_read_entry("pkchr_length", 0, NULL, pkchr_read_proc, NULL);
+
     return ret;
 }
 module_init(pkchr_init);
@@ -227,6 +245,9 @@ static void __exit pkchr_exit(void)
     }
     // 删除设备号
     unregister_chrdev_region(dev, pkchr_dev_num);
+
+    // 删除proc入口
+    remove_proc_entry("pkchr_length", NULL);
 }
 module_exit(pkchr_exit);
 
