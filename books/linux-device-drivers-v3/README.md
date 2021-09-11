@@ -374,15 +374,7 @@ void unregister_chrdev_region(dev_t first, unsigned int count);
 
 > 最新的内核抛弃了devfs，而使用udev。udevd可以根据rules文件自动创建设备节点。
 
-### 打印设备编号
-
-使用下面的函数，可以将设备编号打印到给定的缓冲区。考虑到未来可能会使用64位的设备编号，缓冲区至少有20字节。
-
-```c
-#include <linux/kdev_t.h>
-int print_dev_t(char *buffer, dev_t dev);    // 返回打印的字节数
-char *format_dev_t(cahr *buffer, dev_t dev); // 返回缓冲区
-```
+考虑到可移植性，使用[打印设备编号](#打印设备编号)小节提到的API来打印设备编号。
 
 ## 一些重要的数据结构
 
@@ -462,11 +454,76 @@ read方法和write方法的返回值：略。
 
 ## 内核中的调试支持
 
-一些用于调试的内核选项。
+一些用于调试的内核选项。略。
 
 ## 通过打印调试
 
 ### printk
+
+与`printf`类似，但是`printk`可以通过宏指定日志级别。例如：
+
+```c
+printk(KERN_DEBUG"xxxx\n"); // 调试信息
+printk(KERN_CRIT"xxxxx\n"); // 临界信息
+```
+
+所有的日志等级如下表所示。每个宏表示一个尖括号中的整数，数值范围是0~7。数值越小，优先级越高。
+
+| level        | 数值 | 说明 |
+| -            | - | - |
+| KERN_EMERG   | 0 | 用于紧急事件消息，它们一般是系统崩溃之前提示的消息。 |
+| KERN_ALERT   | 1 | 用于需要立即采取动作的情况。 |
+| KERN_CRIT    | 2 | 临界状态，通常设计严重的硬件或软件操作失败。 |
+| KERN_ERR     | 3 | 用于报告错误状态。 |
+| KERN_WARNING | 4 | 对可能出现问题的情况进行警告，但这类情况通常不会对系统照成严重问题。 |
+| KERN_NOTICE  | 5 | 有必要进行提示的正常情行。 |
+| KERN_INFO    | 6 | 提示性信息。 |
+| KERN_DEBUG   | 7 | 用于调试信息。 |
+
+小于当前日志等级的日志才会打印到控制台。可以通过文件`/proc/sys/kernel/printk`查看和修改当前的日志等级。这个文件有4个值，依次为：
+1. 当前的日志级别
+2. 未明确指定日志级别时的默认消息级别
+3. 最小允许的日志级别
+4. 引导时的默认日志级别
+
+可以使用`echo`工具修改当前的日志级别。
+
+```shell
+[root@localhost ~]# cat /proc/sys/kernel/printk
+7       4       1       7
+[root@localhost ~]# echo 8 > /proc/sys/kernel/printk
+[root@localhost ~]# cat /proc/sys/kernel/printk
+8       4       1       7
+```
+
+### 重定向控制台消息
+
+内核可以将消息发送到一个指定的虚拟控制台，使用下面的程序可以完成此问题。程序的参数是控制台的编号。如果使用虚拟机，需要进入`tty1~tty6`执行（Ctrl + Shift + F[1-6]）。
+
+[setconsole.c](code/ch04/setconsole.c ':include')
+
+### 速度限制
+
+`printk_ratelimit()`会监控控制台的消息数量，如果输出的数量超过一定的阈值，`printk_ratelimit()`将会访问0。可以通过这个函数来控制打印日志消息的速度。
+
+```c
+if (printk_ratelimit())
+    printk("xxx");
+```
+
+可以通过修改以下两个文件，来定制`printk_ratelimit()`的行为。
+* /proc/sys/kernel/printk_ratelimit 在重新打开消息之前应该等待的秒数
+* /proc/sys/kernel/printk_ratelimit_burst 在进行速度限制之前可以接受的消息数
+
+### 打印设备编号
+
+使用下面的函数，可以将设备编号打印到给定的缓冲区。考虑到未来可能会使用64位的设备编号，缓冲区至少有20字节。
+
+```c
+#include <linux/kdev_t.h>
+int print_dev_t(char *buffer, dev_t dev);    // 返回打印的字节数
+char *format_dev_t(cahr *buffer, dev_t dev); // 返回缓冲区
+```
 
 ## 使用 proc 文件系统
 
