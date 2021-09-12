@@ -4,6 +4,7 @@
 #include <asm/uaccess.h>
 #include <linux/slab.h>
 #include <linux/proc_fs.h>
+#include <linux/seq_file.h>
 #include "pkchr.h"
 
 static int pkchr_major = 0;
@@ -171,6 +172,57 @@ int pkchr_read_proc(char *buf, char **start, off_t offset, int count, int *eof, 
     return len;
 }
 
+// 返回值是stop/show函数的void *v参数
+static void *pkchr_seq_start(struct seq_file *s, loff_t *pos)
+{
+    if (*pos >= pkchr_dev_num) {
+        return NULL;
+    }
+    return pkchr + *pos;
+}
+
+// 返回值是stop/show函数的void *v参数
+static void *pkchr_seq_next(struct seq_file *s, void *v, loff_t *pos)
+{
+    (*pos)++;
+    if (*pos >= pkchr_dev_num) {
+        return NULL;
+    }
+    return pkchr + *pos;
+}
+
+static void pkchr_seq_stop(struct seq_file *s, void *v)
+{
+    return;
+}
+
+static int pkchr_seq_show(struct seq_file *s, void *v)
+{
+    struct pkchr_dev *dev = (struct pkchr_dev *)v;
+    seq_printf(s, "dev address = 0x%p\n", dev);
+    return 0;
+}
+
+static struct seq_operations pkchr_seq_ops = {
+    .start = pkchr_seq_start,
+    .stop  = pkchr_seq_stop,
+    .next  = pkchr_seq_next,
+    .show  = pkchr_seq_show,
+};
+
+static int pkchr_seq_proc_open(struct inode *inode, struct file *filp)
+{
+    return seq_open(filp, &pkchr_seq_ops);
+}
+
+static struct file_operations pkchr_seq_proc_ops = {
+    .owner   = THIS_MODULE,
+    .open    = pkchr_seq_proc_open,
+    .read    = seq_read,    // sed_read 是kernel定义的函数
+    .llseek  = seq_lseek,   // seq_lseek 是kernel定义的函数
+    .release = seq_release, // seq_release 是kernel定义的函数
+};
+
 static void pkchr_setup_dev(struct pkchr_dev *pkchr, int index)
 {
     dev_t devno = MKDEV(pkchr_major, pkchr_minor + index);
@@ -195,6 +247,7 @@ static int __init pkchr_init(void)
     int ret = 0;
     int i = 0;
     struct proc_dir_entry *proc_entry = NULL;
+    struct proc_dir_entry *seq_proc_entry = NULL;
     printk(KERN_INFO"pk char device init\n");
 
     // 申请设备号，0 正确，小于0 错误
@@ -233,6 +286,10 @@ static int __init pkchr_init(void)
         goto create_proc_entry_fail;
     }
 
+    seq_proc_entry = create_proc_entry("pkchr_seq", 0, NULL);
+    if (seq_proc_entry)
+        seq_proc_entry->proc_fops = &pkchr_seq_proc_ops;
+
     return ret;
 
 create_proc_entry_fail:
@@ -261,6 +318,7 @@ static void __exit pkchr_exit(void)
 
     // 删除proc入口
     remove_proc_entry("pkchr_length", NULL);
+    remove_proc_entry("pkchr_seq", NULL);
 }
 module_exit(pkchr_exit);
 
