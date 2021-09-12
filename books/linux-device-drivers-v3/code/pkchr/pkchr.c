@@ -194,6 +194,7 @@ static int __init pkchr_init(void)
     dev_t devno = 0;
     int ret = 0;
     int i = 0;
+    struct proc_dir_entry *proc_entry = NULL;
     printk(KERN_INFO"pk char device init\n");
 
     // 申请设备号，0 正确，小于0 错误
@@ -204,7 +205,7 @@ static int __init pkchr_init(void)
         DEVICE_NAME);   // 设备名
     if (ret < 0) {
         printk(KERN_ERR"dev number alloc fail, ret = %d\n", ret);
-        return -1;
+        goto alloc_devno_fail;
     }
     printk(KERN_INFO"devno = %d\n", devno);
     pkchr_major = MAJOR(devno);
@@ -212,10 +213,11 @@ static int __init pkchr_init(void)
     printk(KERN_INFO"major = %d\n", pkchr_major);
     printk(KERN_INFO"minor = %d\n", pkchr_minor);
 
+    // 申请设备结构体
     pkchr = kmalloc(sizeof(*pkchr) * pkchr_dev_num, GFP_KERNEL);
     if (pkchr == NULL) {
         printk(KERN_ERR"kmalloc fail\n");
-        return -1;
+        goto kmalloc_fail;
     }
     memset(pkchr, 0, sizeof(*pkchr) * pkchr_dev_num);
 
@@ -225,9 +227,20 @@ static int __init pkchr_init(void)
     }
 
     // 在 /proc 根目录创建pkchr_length入口
-    create_proc_read_entry("pkchr_length", 0, NULL, pkchr_read_proc, NULL);
+    proc_entry = create_proc_read_entry("pkchr_length", 0, NULL, pkchr_read_proc, NULL);
+    if (proc_entry == NULL) {
+        printk(KERN_ERR"create_proc_read_entry fail\n");
+        goto create_proc_entry_fail;
+    }
 
     return ret;
+
+create_proc_entry_fail:
+    kfree(pkchr);
+kmalloc_fail:
+    unregister_chrdev_region(devno, pkchr_dev_num);
+alloc_devno_fail:
+    return -1;
 }
 module_init(pkchr_init);
 
