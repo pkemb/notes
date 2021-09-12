@@ -621,7 +621,7 @@ int seq_open(struct file *filp, struct seq_operations *seq_ops);
 
 ## 通过监视调试
 
-strace 指令。
+strace指令，略。strace指令的使用方法请参考[使用strace监控系统调用](https://pkemb.com/2021/09/use-strace-monitor-syscall/)。
 
 ## 调试系统故障
 
