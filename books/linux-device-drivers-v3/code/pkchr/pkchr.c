@@ -165,8 +165,12 @@ int pkchr_read_proc(char *buf, char **start, off_t offset, int count, int *eof, 
     if (!try_module_get(THIS_MODULE))
         return 0;
 
-    len += sprintf(buf + len, "%d\n", MEM_SIZE);
     printk(KERN_INFO"count = %d, offset = %ld, buf = %p, len = %d\n", count, (long)offset, buf, len);
+
+    len += sprintf(buf + len, "major = %d\n", pkchr_major);
+    len += sprintf(buf + len, "dev num = %d\n", pkchr_dev_num);
+    len += sprintf(buf + len, "buff len = %d\n", MEM_SIZE);
+
     module_put(THIS_MODULE);
 
     return len;
