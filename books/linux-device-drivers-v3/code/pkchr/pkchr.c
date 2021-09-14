@@ -280,13 +280,13 @@ static int __init pkchr_init(void)
     }
 
     // 在 /proc 根目录创建pkchr_length入口
-    proc_entry = create_proc_read_entry("pkchr_length", 0, NULL, pkchr_read_proc, NULL);
+    proc_entry = create_proc_read_entry(PROC_NAME, 0, NULL, pkchr_read_proc, NULL);
     if (proc_entry == NULL) {
         printk(KERN_ERR"create_proc_read_entry fail\n");
         goto create_proc_entry_fail;
     }
 
-    seq_proc_entry = create_proc_entry("pkchr_seq", 0, NULL);
+    seq_proc_entry = create_proc_entry(PROC_SEQ_NAME, 0, NULL);
     if (seq_proc_entry)
         seq_proc_entry->proc_fops = &pkchr_seq_proc_ops;
 
@@ -317,8 +317,8 @@ static void __exit pkchr_exit(void)
     unregister_chrdev_region(dev, pkchr_dev_num);
 
     // 删除proc入口
-    remove_proc_entry("pkchr_length", NULL);
-    remove_proc_entry("pkchr_seq", NULL);
+    remove_proc_entry(PROC_NAME, NULL);
+    remove_proc_entry(PROC_SEQ_NAME, NULL);
 }
 module_exit(pkchr_exit);
 

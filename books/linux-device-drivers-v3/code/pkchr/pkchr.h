@@ -25,4 +25,8 @@ struct pkchr_dev {
 #define PKCHR_IOC_MAGIC         'k'
 #define PKCHR_IOCLEAR           _IO(PKCHR_IOC_MAGIC, 0)
 
+// proc name
+#define PROC_NAME               "pkchr"
+#define PROC_SEQ_NAME           "pkchr_seq"
+
 #endif // __PKCHR_H__
