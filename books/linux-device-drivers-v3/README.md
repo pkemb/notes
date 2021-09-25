@@ -1038,6 +1038,30 @@ int access_ok(int type, const void *addr, unsigned long size);
 
 ### 权能与受限访问
 
+通过设备文件的权限控制对设备的访问。一些特权操作，只能`root`用户执行。`Linux`可以通过`capability`授权普通用户进程可以执行特定特权操作。系统调用`capget()`和`capset()`管理进程的`capability`，命令`setcap`设置文件的`capability`。
+
+`capability`将特权划分为独立的组，常见的如下表所示。有关`capability`的更多信息，可以参考手册[capabilities.7.html](https://man7.org/linux/man-pages/man7/capabilities.7.html)。
+
+| cap | 说明 |
+| - | - |
+| CAP_DAC_OVERRIDE | 越过文件或目录的访问限制的能力。 |
+| CAP_NET_ADMIN | 执行网络管理任务的能力，包括那些能影响网络接口的任务。 |
+| CAP_SYS_MODULE | 载入或卸载内核模块的能力。 |
+| CAP_SYS_RAWIO | 执行裸IO操作的能力哦。例如访问设备端口或直接与USB设备通信。 |
+| CAP_SYS_ADMIN | 截获的能力，提供了访问许多系统管理操作的途径。 |
+| CAP_SYS_TTY_CONFIG | 执行tty配置任务的能力。 |
+
+在设备驱动程序中，可通过`capable()`检查进程是否有合适的CAP。
+
+```c
+#include <sys/sched.h>
+int capable(int capability);
+
+// 示例代码
+if (!capable(CAP_SYS_ADMIN))
+  return -EPERM;
+```
+
 ### ioctl命令的实现
 
 ### 非ioctl的设备控制
