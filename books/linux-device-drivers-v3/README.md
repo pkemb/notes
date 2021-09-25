@@ -1020,6 +1020,22 @@ _IOC_SIZE(cmd);     // size 字段
 
 ### 使用ioctl参数
 
+附加参数`unsigned long arg`可以解释为一个整数，也可以解释为一个指向用户空间的指针。如果解释为指针，则必需要确保指向的用户空间是合法的。所以要通过`access_ok()`函数验证地址（不传输数据）。
+
+```c
+// type: VERIFY_READ（只读）或VERIFY_WRITE（读写）
+// addr：一个用户空间的地址
+// size：字节数，可以从ioctl命令获取（_IOC_SIZE()宏）
+// 返回值：1 成功 0 失败
+int access_ok(int type, const void *addr, unsigned long size);
+```
+
+内核空间和用户空间传递数据的方法：`copy_from_user()`、`copy_to_user()`。也可使用以下经过优化的函数，用于传递1、2、4、8字节的数据：
+* put_user(datum, ptr) / __put_user()
+  * 把datum写入到用户空间，大小取决于ptr的类型。如果ptr是字符指针，则传递一个字节。
+* get_user(local, ptr) / __get_user()
+  * 从用户空间接收数据保存到变量local
+
 ### 权能与受限访问
 
 ### ioctl命令的实现
