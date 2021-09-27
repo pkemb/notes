@@ -28,10 +28,8 @@ jobs:
       env:
         UPYUN_STORAGE_KEY: ${{ secrets.UPYUN_STORAGE_KEY }}
       run: |
-        alias upx='~/upx/upx'
-
-        file_list=$(upx --auth $UPYUN_STORAGE_KEY ls | awk '{print $9}')
-        for file in ${file_list}; do upx --auth $UPYUN_STORAGE_KEY rm -a $file; done
+        file_list=$(~/upx/upx --auth $UPYUN_STORAGE_KEY ls | awk '{print $9}')
+        for file in ${file_list}; do ~/upx/upx --auth $UPYUN_STORAGE_KEY rm -a $file; done
 
         file_list="books media _navbar.md _sidebar.md index.html README.md"
-        for file in ${file_list}; do upx --auth $UPYUN_STORAGE_KEY put $file; done
+        for file in ${file_list}; do ~/upx/upx --auth $UPYUN_STORAGE_KEY put $file; done
