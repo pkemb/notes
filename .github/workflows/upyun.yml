@@ -18,7 +18,6 @@ jobs:
         wget -P ~/upx http://collection.b0.upaiyun.com/softwares/upx/upx_0.3.5_linux_x86_64.tar.gz
         tar -xf ~/upx/upx_0.3.5_linux_x86_64.tar.gz -C ~/upx
         chmod +x ~/upx/upx
-        alias upx='~/upx/upx'
 
     # check it to your workflow can access it
     # from: https://github.com/actions/checkout
@@ -29,6 +28,8 @@ jobs:
       env:
         UPYUN_STORAGE_KEY: ${{ secrets.UPYUN_STORAGE_KEY }}
       run: |
+        alias upx='~/upx/upx'
+
         file_list=$(upx --auth $UPYUN_STORAGE_KEY ls | awk '{print $9}')
         for file in ${file_list}; do upx --auth $UPYUN_STORAGE_KEY rm -a $file; done
 
