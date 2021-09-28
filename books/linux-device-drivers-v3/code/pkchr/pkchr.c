@@ -125,6 +125,21 @@ int pkchr_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, unsign
 {
     struct pkchr_dev *pkchr = filp->private_data;
     int ret = 0;
+    int err = 0;
+
+    // 检查类型和编号位字段
+    if (_IOC_TYPE(cmd) != PKCHR_IOC_MAGIC)
+        return -ENOTTY;
+    if (_IOC_NR(cmd) > PKCHR_IOC_MAXNR)
+        return -ENOTTY;
+
+    // 如果命令涉及读写用户空间的数据，则检查用户空间内存区域
+    // access_ok() 成功返回1，失败返回0，所以要取反
+    if (_IOC_DIR(cmd) & _IOC_READ)
+        err = !access_ok(VERIFY_ERITE, (void __user *)arg, _IOC_SIZE(cmd));
+    if (_IOC_DIR(cmd) & _IOC_WRITE)
+        err = !access_ok(VERIFY_WRITE, (void __user *)arg, _IOC_SIZE(cmd));
+    if (err) return -EFAULT;
 
     switch (cmd)
     {
