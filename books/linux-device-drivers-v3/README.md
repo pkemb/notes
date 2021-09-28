@@ -1064,6 +1064,8 @@ if (!capable(CAP_SYS_ADMIN))
 
 ### ioctl命令的实现
 
+参考[pkchr_ioctl()](code/pkchr/pkchr.c)的实现。
+
 ### 非ioctl的设备控制
 
 ## 阻塞型IO
