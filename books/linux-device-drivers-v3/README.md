@@ -826,9 +826,50 @@ void spin_unlock_bh(spinlock_t *lock);
 
 ### 读取者/写入者自旋锁
 
-类似于读取者写入者信号量。
+类似于读取者写入者信号量。定义：
 
-相关API：略。
+```c
+#include <linux/spinlock.h>
+rwlock_t
+```
+
+声明和初始化：
+
+```c
+// 静态
+rwlock_t my_rwlock = RW_LOCK_UNLOCKED;
+// 动态
+rwlock_t my_rwlock;
+rwlock_init(&my_rwlock);
+```
+
+读取者的函数：
+
+```c
+void read_lock(rwlock_t *lock);
+void read_lock_irqsave(rwlock_t *lock, unsigned long flags);
+void read_lock_irq(rwlock_t *lock);
+void read_lock_bh(rwlock_t *lock);
+
+void read_unlock(rwlock_t *lock);
+void read_unlock_irqrestore(rwlock_t *lock, unsigned long flags);
+void read_unlock_irq(rwlock_t *lock);
+void read_unlock_bh(rwlock_t *lock);
+```
+
+写入者的函数：
+
+```c
+void write_lock(rwlock_t *lock);
+void write_lock_irqsave(rwlock_t *lock, unsigned long flags);
+void write_lock_irq(rwlock_t *lock);
+void write_lock_bh(rwlock_t *lock);
+
+void write_unlock(rwlock_t *lock);
+void write_unlock_irqrestore(rwlock_t *lock, unsigned long flags);
+void write_unlock_irq(rwlock_t *lock);
+void write_unlock_bh(rwlock_t *lock);
+```
 
 ## 锁陷阱
 
