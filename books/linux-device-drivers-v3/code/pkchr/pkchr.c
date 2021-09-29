@@ -45,6 +45,9 @@ ssize_t pkchr_write(struct file *filp, const char __user *buff, size_t size, lof
     if (count > MEM_SIZE - pos)
         count = MEM_SIZE - pos;
 
+    if (down_interruptible(&pkchr->sem))
+        return -ERESTARTSYS;
+
     // 返回值大于0：剩余没有拷贝的数据
     // 返回值等于0：拷贝成功
     // 小于0：出错
@@ -53,6 +56,7 @@ ssize_t pkchr_write(struct file *filp, const char __user *buff, size_t size, lof
     }
 
     *off = pos + count;
+    up(&pkchr->sem);
     return count;
 }
 
@@ -71,11 +75,15 @@ ssize_t pkchr_read(struct file *filp, char __user *buff, size_t size, loff_t *of
     if (count > MEM_SIZE - pos)
         count = MEM_SIZE - pos;
 
+    if (down_interruptible(&pkchr->sem))
+        return -ERESTARTSYS;
+
     if (copy_to_user(buff, pkchr->mem + pos, count)) {
         return -EFAULT;
     }
 
     *off = pos + count;
+    up(&pkchr->sem);
     return count;
 }
 
@@ -145,8 +153,13 @@ int pkchr_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, unsign
     switch (cmd)
     {
     case PKCHR_IOCLEAR:
+        if (down_interruptible(&pkchr->sem)) {
+            ret = -ERESTARTSYS;
+            break;
+        }
         memset(pkchr->mem, 0, MEM_SIZE);
         ret = 0;
+        up(&pkchr->sem);
         break;
 
     default:
@@ -253,6 +266,7 @@ static void pkchr_setup_dev(struct pkchr_dev *pkchr, int index)
     // 初始化 struct cdev, 需要 fops 结构体
     cdev_init(&pkchr->cdev, &fops);
     pkchr->cdev.owner = THIS_MODULE;
+    init_MUTEX(&pkchr->sem);
 
     // 注册cdev
     err = cdev_add(&pkchr->cdev, devno, 1);

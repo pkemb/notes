@@ -13,6 +13,8 @@
 struct pkchr_dev {
     struct cdev cdev;
     // 设备自定义数据
+    // 信号量用于保护pkchr结构体
+    struct semaphore sem;
     char mem[MEM_SIZE];
 };
 
