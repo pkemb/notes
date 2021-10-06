@@ -1117,9 +1117,7 @@ if (!capable(CAP_SYS_ADMIN))
 
 ### 休眠的简单介绍
 
-休眠是进程的一种状态。对进程来说，会从运行队列中移走，并被打上特殊标记。当标记被移除是，才会在任意CPU上调度。
-
-进入休眠状态很容易，但要注意以下事项：
+休眠是进程的一种状态。对进程来说，会从运行队列中移走，并被打上特殊标记。当标记被移除时，才会在任意CPU上调度。进入休眠状态很容易，但要注意以下事项：
 * 永远不要在原子上下文中进入休眠
   * 拥有自旋锁、seqlock、RCU时不能休眠
   * 禁止中断时不能休眠
@@ -1127,9 +1125,8 @@ if (!capable(CAP_SYS_ADMIN))
 * 唤醒时无法知道休眠了多长时间，休眠时都发生了什么。唤醒后，不能对状态做出任何假定。
 * 除非知道其他地方会唤醒我们，否则不要进入休眠。
 
-Linux通过等待队列来管理休眠的进程，等待队列是一个进程链表，包含了等待`某个特定事件`的所有进程。
+Linux通过等待队列来管理休眠的进程，等待队列是一个进程链表，包含了等待`某个特定事件`的所有进程。等待队列通过一个`等待队列头`（`wait_queue_head_t`）来管理。可通过如下方式声明并初始化等待队列头。
 
-等待队列头的数据类型是`wait_queue_head_t`。
 ```c
 // 静态定义并初始化
 DECLARE_WAIT_QUEUE_HEAD(name);
@@ -1138,9 +1135,45 @@ wait_queue_head_t my_queue;
 init_waitqueue_head(&my_queue);
 ```
 
-### 简单休眠
+等待队列包含若干个`等待队列入口`（`wait_queue_t`）。可通过如下方式声明并初始化等待队列入口。
+```c
+// 静态，将当前进程加入等待队列入口
+DEFINE_WAIT(my_wait);
+// 动态
+wait_queue_t my_wait;
+init_wait(&my_wait);
+// 将指定进程加入等待队列入口
+DECLARE_WAITQUEUE(name, tsk);
+```
 
-wait_event系列宏，可使进程进入休眠状态，直到condition变为真。在进入和退出休眠的时候，都会对condition求值（会被多次求值），所以表达式最好不要有副作用。
+通过下面的函数，可添加或移除等待队列入口。
+
+```c
+void add_wait_queue(wait_queue_head_t *q, wait_queue_t *wait);
+void remove_wait_queue(wait_queue_head_t *q, wait_queue_t *wait);
+```
+
+### 阻塞和非阻塞型操作
+
+用户程序可通过设置`O_NONBLOCK`位的形式，通过驱动程序是否阻塞。显示的非阻塞操作由`filp->f_flags`中的`O_NONBLOCK`标志决定。
+* 阻塞操作：当操作不能继续下去时，让进程进入休眠状态，等待可以继续操作。
+* 非阻塞操作：当操作不能继续下去时，直接返回错误（`-EAGAIN`）。
+
+只有`write`、`read`、`open`受`O_NONBLOCK`标志位的影响。下表列出了三个函数在阻塞和非阻塞状态下的行为。
+
+| 函数 | 阻塞 | 非阻塞 |
+| - | - | - |
+| write | 当没有空间写入时，进程阻塞。腾出部分空间后，进程唤醒，write调用成功，即使写入的数据小于要求的count。 | 直接返回`-EAGAIN`。 |
+| read | 当没有数据可读时，进程阻塞。有部分数据到达后，进程唤醒，read调用成功，即使读取的数据小于要求的count。 | 直接返回`-EAGAIN`。 |
+| open | 当打开设备需要较长时间的初始化时，进程阻塞。 | 当打开设备需要较长时间的初始化时，开始初始化之后，立即返回`-EAGAIN`。 |
+
+> 1. 使用stdio处理非阻塞IO时，要时刻检查errno。否则会将错误返回当作EOF。
+> 2. open支持O_NONBLOCK是可选的。
+
+### 进入休眠wait_event
+
+`wait_event`系列宏让`当前进程`直接进入休眠状态，直到`condition`变为真。注意，`condition`会被多次求值，所以表达式最好不要有副作用。
+
 ```c
 // 非中断休眠，不会被信号打断
 wait_event(queue, condition);
@@ -1150,83 +1183,67 @@ wait_event_timeout(queue, condition, timeout);
 wait_event_timeout_interruptible(queue, condition, timeout);
 ```
 
-wake_up系列函数可用于唤醒指定queue上的所有进程。进程唤醒后会对condition再次求值，如果依旧为假，进程会再次休眠。
-```c
-void wake_up(wait_queue_head_t *queue);
-void wake_up_interruptible(wait_queue_head_t *queue);
-```
+> `wait_event`只能让当前进程`current`进入休眠状态。如果想让多个进程进入休眠状态，则需要手工休眠。
 
-书中151页给出的示例程序存在竞态，应该如何解决？
-1. 使用后文介绍的独占等待。
+### 手工休眠
 
-### 阻塞和非阻塞型操作
+手工休眠的步骤如下：
+1. 建立并初始化一个等待队列入口
+2. 等待队列入口加入等待队列头
+3. 设置进程状态为`TASK_INTERRUPTIBLE（中断休眠）`或`TASK_UNINTERRUPTIBLE（不可中断休眠）`（set_current_state()）。
+4. 调用`schedule()`，让出CPU。**调用之前，应再次确认等待条件**。
+5. `schedule()`返回后，从等待队列移出等待队列入口
+6. 设置进程状态为`TASK_RUNNING`。
 
-* 阻塞操作：当操作不能继续下去时，让进程进入休眠状态，等待可以继续操作。
-* 非阻塞操作：当操作不能继续下去时，直接返回错误。
+其中第2、3步可通过`prepare_to_wait()`函数完成，第5、6步可通过`finish_wait()`来完成。这两个函数的定义如下。
 
-如果应用程序指定了O_NONBLOCK 或 O_NDELAY 标志，read没有数据，或write没有空间时，应该立即返回-EAGAIN。
-> 使用stdio处理非阻塞IO时，要时刻检查errno。否则会将错误返回当作EOF。
-
-O_NONBLOCK标志也可用于open方法。如果打开设备需要很长的时间，可以考虑支持O_NONBLOCK标志。
-
-*只有write read open受O_NONBLOCK标志影响。*
-
-### 一个阻塞IO示例
-
-建议下载源码包，同时阅读scull_p_read()和scull_p_write()。
-
-主要注意以下要点：
-1. 进入休眠时，即调用wait_event_interruptible()宏时，不要处于原子上下文。
-2. read()将进程放入inq队列，但是最后唤醒outq队列。
-
-### 高级休眠
-
-在特殊的情况，可能需要使用底层的函数接口来实现休眠操作。
-
-#### 进程如何休眠
-
-进程进入休眠的步骤：
-1. 分配并初始化一个`wait_queue_t`结构，并加入到对应的等待队列。
-2. 设置进程的状态为`TASK_INTERRUPTIBLE`或`TASK_UNINTERRUPTIBLE`。这两种状态均可表示休眠。可用函数`set_current_state()`设置进程状态。
-3. 调用`schedule()`放弃CPU。注意，在放弃CPU前，务必再次检查休眠条件。将进程放入等待队列之前，唤醒条件可能已经发生了。如果不检查，可能会丢失此唤醒条件。
-
-几个需要注意的点：
-1. `schedule()`调用并返回之后，进程无法得知过了多久，这段时间内发生了什么。
-2. `schedule()`返回之后，需要手动的将进程从等待队列移除。
-3. 如果跳过了对`schedule()`的调用，需要将进程状态设置为`TASK_RUNNING`，并从等待队列中移除。
-
-#### 手工休眠
-
-可以手工处理进程进入休眠的步骤，但是很容易出错。内核提供了一些函数，可以简化这些操作。
-
-* 建立并初始化一个等待队列入口
-```c
-// 静态
-DEFINE_WAIT(my_wait);
-// 动态
-wait_queue_t my_wait;
-init_wait(&my_wait);
-```
-* 加入等待队列并设置进程的状态
 ```c
 void prepare_to_wait(
-    wait_queue_head_t *queue,  // 等待队列
-    wait_queue_t       *wait,  // 等待队列入口
-    int state)                 // 进程的新状态
+     wait_queue_head_t *queue,  // 等待队列
+     wait_queue_t       *wait,  // 等待队列入口
+     int state)                 // 进程的新状态
                                // TASK_INTERRUPTIBLE   可中断休眠
                                // TASK_UNINTERRUPTIBLE 不可中断休眠
+void finish_wait(wait_queue_head_t *queue, wait_queue_t *wait)
 ```
-* 调用`schedule()`。调用之前，务必再次检查休眠条件。
-* `schedule()`返回之后，开始清理。
-```c
-void finish_wait(
-    wait_queue_head_t *queue,
-    wait_queue_t      *wait)
-)
-```
-* 再次测试休眠条件，判断是否需要再次进入休眠。
 
-#### 独占等待
+`wait_event()`宏的内部实现也是上述步骤。
+
+```c
+#define __wait_event(wq, condition) 					\
+do {									\
+	DEFINE_WAIT(__wait);						\
+									\
+	for (;;) {							\
+		prepare_to_wait(&wq, &__wait, TASK_UNINTERRUPTIBLE);	\
+		if (condition)						\
+			break;						\
+		schedule();						\
+	}								\
+	finish_wait(&wq, &__wait);					\
+} while (0)
+```
+
+### 唤醒
+
+`wake_up`系列函数可用于唤醒指定queue上的所有进程。被唤醒的进程会对condition再次求值，如果依旧为假，会再次休眠。
+
+```c
+// 唤醒队列上所有非独占等待的进程，以及单个独占等待者
+void wake_up(wait_queue_head_t *queue);
+// 类似上面的函数，跳过不可中断休眠的进程
+void wake_up_interruptible(wait_queue_head_t *queue);
+
+// 唤醒nr个独占等待进程。nr=0表示唤醒所有独占等待进程
+void wake_up_nr(wait_queue_head_t *queue, int nr);
+void wake_up_interruptible_nr(wait_queue_head_t *queue, int nr);
+
+// 唤醒包括独占等待的进程
+void wake_up_all(wait_queue_head_t *queue);
+void wake_up_interruptible_all(wait_queue_head_t *queue);
+```
+
+### 独占等待
 
 调用`wake_up()`时，会唤醒等待队列中的所有进程。如果资源只允许被一个进程获取，那么其余的进程会再次进入休眠，极大的浪费了系统的资源。独占等待可以解决此问题。
 
@@ -1244,13 +1261,15 @@ void prepare_to_wait_exclusive(
     int state);
 ```
 
-#### 唤醒的相关细节
+### 一个阻塞IO示例
 
-当一个进程被唤醒时，实际的结果由等待队列入口中的一个函数控制。默认的唤醒函数将进程设置为可运行状态。
+建议下载源码包，同时阅读scull_p_read()和scull_p_write()。
 
-wake_up的所有变种：略。
+主要注意以下要点：
+1. 进入休眠时，即调用wait_event_interruptible()宏时，不要处于原子上下文。
+2. read()将进程放入inq队列，但是最后唤醒outq队列。
 
-#### 旧的历史：sleep_on
+### 旧的历史sleep_on
 
 `sleep_on()`没有提供对竞态的任何保护。调用sleep_on()和进程真正进入休眠之间，有一段窗口期。窗口期内的唤醒将会丢失。所以不建议使用，以后会删除这两个接口。
 
