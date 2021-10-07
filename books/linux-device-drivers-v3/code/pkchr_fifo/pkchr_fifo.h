@@ -16,6 +16,12 @@ struct pkchr_fifo_dev {
     // 信号量用于保护pkchr结构体
     struct semaphore sem;
     char mem[MEM_SIZE];
+    // 读写指针
+    size_t read_point;   // 指向的位置可读，除非等于write_point
+    size_t write_point;  // 指向的位置可写，不可读
+    // 读写的休眠队列
+    wait_queue_head_t read_queue;
+    wait_queue_head_t write_queue;
 };
 
 // proc name
