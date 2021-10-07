@@ -22,6 +22,8 @@ struct pkchr_fifo_dev {
     // 读写的休眠队列
     wait_queue_head_t read_queue;
     wait_queue_head_t write_queue;
+    // 异步通知
+    struct fasync_struct *async_queue;
 };
 
 // proc name

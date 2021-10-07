@@ -115,6 +115,10 @@ ssize_t pkchr_fifo_write(struct file *filp, const char __user *buff, size_t size
 
     // 唤醒读者
     wake_up_interruptible(&dev->read_queue);
+
+    // 异步通知
+    if (dev->async_queue)
+        kill_fasync(&dev->async_queue, SIGIO, POLL_IN);
     return count;
 }
 
@@ -201,6 +205,12 @@ static unsigned int pkchr_fifo_poll(struct file *filp, poll_table *wait)
     return mask;
 }
 
+static int pkchr_fifo_fasync(int fd, struct file *filp, int mode)
+{
+    struct pkchr_fifo_dev *dev = filp->private_data;
+    return fasync_helper(fd, filp, mode, &dev->async_queue);
+}
+
 struct file_operations fifo_fops = {
     .owner   = THIS_MODULE,
     .open    = pkchr_fifo_open,
@@ -209,6 +219,7 @@ struct file_operations fifo_fops = {
     .llseek  = no_llseek,
     .release = pkchr_fifo_release,
     .poll    = pkchr_fifo_poll,
+    .fasync  = pkchr_fifo_fasync,
 };
 
 int pkchr_fifo_read_proc(char *buf, char **start, off_t offset, int count, int *eof, void *data)
