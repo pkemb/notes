@@ -51,7 +51,7 @@ int pkchr_fifo_open(struct inode *inode, struct file *filp)
     // 从字符设备结构体，找到pkchr_dev结构体的地址
     pkchr_fifo = container_of(inode->i_cdev, struct pkchr_fifo_dev, cdev);
     filp->private_data = pkchr_fifo;
-    return 0;
+    return nonseekable_open(inode, filp);
 }
 
 // 从用户空间拷贝数据到内核空间
@@ -174,47 +174,6 @@ ssize_t pkchr_fifo_read(struct file *filp, char __user *buff, size_t size, loff_
     return count;
 }
 
-// 设置偏移量，file结构体的f_pos成员
-// f_pos表示缓冲区的位置指针，取值范围是 0 ~ MEM_SIZE-1
-// 如果设置的值超过范围，则返回错误EINVAL。
-loff_t pkchr_fifo_llseek(struct file *filp, loff_t off, int whence)
-{
-    loff_t ret = 0;
-    loff_t new_pos = 0;
-    switch (whence)
-    {
-    case SEEK_SET:
-        if (off >= MEM_SIZE || off < 0) {
-            ret = -EINVAL;
-        } else {
-            filp->f_pos = off;
-            ret = filp->f_pos;
-        }
-        break;
-
-    case SEEK_CUR:
-        new_pos = filp->f_pos + off;
-        if (new_pos < 0 || new_pos >= MEM_SIZE) {
-            ret = -EINVAL;
-        } else {
-            filp->f_pos = new_pos;
-            ret = filp->f_pos;
-        }
-        break;
-
-    case SEEK_END:
-        filp->f_pos = MEM_SIZE - 1;
-        ret = filp->f_pos;
-        break;
-
-    default:
-        ret = -EINVAL;
-        break;
-    }
-
-    return ret;
-}
-
 // file结构释放时，将调用此函数。close系统调用会执行release函数。
 // 只有file结构引用计数为0的时候，close才会调用release。保证了一次open对应一次release
 int pkchr_fifo_release(struct inode *inode, struct file *filp)
@@ -228,7 +187,7 @@ struct file_operations fifo_fops = {
     .open    = pkchr_fifo_open,
     .write   = pkchr_fifo_write,
     .read    = pkchr_fifo_read,
-    .llseek  = pkchr_fifo_llseek,
+    .llseek  = no_llseek,
     .release = pkchr_fifo_release,
 };
 
