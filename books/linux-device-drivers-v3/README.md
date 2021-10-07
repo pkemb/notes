@@ -1280,31 +1280,36 @@ void interruptible_sleep_on(wait_queue_head_t *queue);
 
 ## poll和select
 
-select / poll / epoll 用于那些要使用多个输入或输出流而又不会阻塞其中任何一个流的应用程序中。这三个系统调用均需要设备驱动程序`poll()`方法的支持。
+`select`、`poll`、`epoll`用于那些要使用多个输入或输出流而又不会阻塞其中任何一个流的应用程序中。这三个系统调用均需要设备驱动程序实现`poll()`方法。`poll()`方法的原型如下：
 
-`poll()`方法的原型如下：
 ```c
 unsigned int (*poll)(struct file *filp, poll_table *wait);
 ```
 
 `poll()`方法的处理步骤：
-1. 在一个或多个可指示poll状态变化的等待队列上调用 poll_wait。
+1. 使用`poll_wait()`向`poll_table`添加等待队列。
     ```c
     // 向 poll_table 结构添加一个等待队列
     void poll_wait(struct file *filp, wait_queue_head_t *head, poll_table *wait);
     ```
-2. 返回一个用来描述操作是否可立即无阻塞执行的位掩码。
-    * POLLIN
-    * POLLRDNORM
-    * POLLRDBAND
-    * POLLPRI
-    * POLLHUP
-    * POLLERR
-    * POLLOUT
-    * POLLWRNORM
-    * POLLWRBAND
+2. 返回一个用来描述操作是否可立即无阻塞执行的位掩码。位掩码及其解释见下表。
 
-### poll 方法在驱动程序的实现
+| 位掩码 | 说明 |
+| - | - |
+| POLLIN     | 如果设备可以无阻塞地读取，就设置该位。|
+| POLLRDNORM | 如果通常可读取的数据已经就位，就设置该位。一个可读设备返回 POLLIN \| POLLRDNORM。|
+| POLLRDBAND | 可以从设备读取out-of-band的数据。设备驱动程序一般不用。|
+| POLLPRI    | 可以无阻塞地读取高优先级（out-of-band）的数据。|
+| POLLHUP    | 读取设备的进程到达文件尾时，驱动程序必需设置此位。select会告知设备可读。|
+| POLLERR    | 设备发生了错误。poll会报告即可读也可写。因为读写都会返回错误码。|
+| POLLOUT    | 如果设备可以无阻塞地写入，就设置该位。|
+| POLLWRNORM | 与POLLOUT同义。|
+| POLLWRBAND | 与POLLRDBAND类似。|
+
+`poll()`方法的实现参考`pkchr_fifo`。
+
+> pkchr_fifo 在没有进程写入的时候，读取进程会一直阻塞。 \
+> 普通的fifo在没有写进程打开的时候，读进程会直接返回文件尾。这需要实现阻塞打开，防止没有写进程的情况下，读进程直接返回。
 
 ### 与read和write的交互
 
@@ -1318,12 +1323,6 @@ unsigned int (*poll)(struct file *filp, poll_table *wait);
 ```c
 int (*fsync)(struct file *, struct dentry *, int datasync);
 ```
-
-### 底层的数据结构
-
-当用户程序调用了poll/select/epoll函数时，内核会调用由该系统调用引用的全部文件的poll方法，并向它们传递同一个poll_table。
-
-poll_table的结构：略。
 
 ## 异步通知
 
