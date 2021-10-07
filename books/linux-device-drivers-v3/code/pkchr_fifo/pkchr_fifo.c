@@ -184,6 +184,8 @@ ssize_t pkchr_fifo_read(struct file *filp, char __user *buff, size_t size, loff_
 int pkchr_fifo_release(struct inode *inode, struct file *filp)
 {
     // 释放open函数申请的资源
+    // 释放异步通知的资源
+    pkchr_fifo_fasync(-1, filp, 0);
     return 0;
 }
 
