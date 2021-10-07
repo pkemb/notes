@@ -6,6 +6,7 @@
 #include <linux/proc_fs.h>
 #include <linux/seq_file.h>
 #include <linux/sched.h>
+#include <linux/poll.h>
 #include "pkchr_fifo.h"
 
 static int pkchr_fifo_major = 0;
@@ -182,6 +183,24 @@ int pkchr_fifo_release(struct inode *inode, struct file *filp)
     return 0;
 }
 
+static unsigned int pkchr_fifo_poll(struct file *filp, poll_table *wait)
+{
+    struct pkchr_fifo_dev *dev = filp->private_data;
+    unsigned int mask = 0;
+
+    down(&dev->sem);
+    // 添加等待队列到poll_table
+    poll_wait(filp, &dev->read_queue, wait);
+    poll_wait(filp, &dev->write_queue, wait);
+    // 设置位掩码
+    if (dev->read_point != dev->write_point)
+        mask |= POLLIN | POLLRDNORM;
+    if (get_free_space(dev))
+        mask |= POLLOUT | POLLWRNORM;
+    up(&dev->sem);
+    return mask;
+}
+
 struct file_operations fifo_fops = {
     .owner   = THIS_MODULE,
     .open    = pkchr_fifo_open,
@@ -189,6 +208,7 @@ struct file_operations fifo_fops = {
     .read    = pkchr_fifo_read,
     .llseek  = no_llseek,
     .release = pkchr_fifo_release,
+    .poll    = pkchr_fifo_poll,
 };
 
 int pkchr_fifo_read_proc(char *buf, char **start, off_t offset, int count, int *eof, void *data)
