@@ -4,7 +4,8 @@
 #include <asm/uaccess.h>
 #include <linux/slab.h>
 #include <linux/proc_fs.h>
-#include <linux/seq_file.h>
+#include <linux/jiffies.h>
+
 #include "pktime.h"
 
 static int pktime_major = 0;
@@ -53,17 +54,30 @@ struct file_operations fops = {
     .release = pktime_release,
 };
 
-int pktime_read_proc(char *buf, char **start, off_t offset, int count, int *eof, void *data)
+int pktime_jiffies(char *buf, char **start, off_t offset, int count, int *eof, void *data)
 {
     int len = 0;
+    long j = 0;
+    u64 j64 = 0;
+    struct timeval timeval = {0};
+    struct timespec timespec = {0};
     // 增加模块引用计数
     if (!try_module_get(THIS_MODULE))
         return 0;
 
-    PDEBUG("count = %d, offset = %ld, buf = %p, len = %d\n", count, (long)offset, buf, len);
+    j = jiffies;
+    j64 = get_jiffies_64();
 
-    len += sprintf(buf + len, "major = %d\n", pktime_major);
-    len += sprintf(buf + len, "dev num = %d\n", pktime_dev_num);
+    jiffies_to_timespec(j, &timespec);
+    jiffies_to_timeval(j, &timeval);
+
+    len += sprintf(buf + len, "HZ = %d\n", HZ);
+    len += sprintf(buf + len, "jiffies = %ld\n", j);
+    len += sprintf(buf + len, "jiffies_64 = %lld\n", j64);
+    len += sprintf(buf + len, "timeval: tv_sec = %ld, tv_usec = %ld\n",
+                    timeval.tv_sec, timeval.tv_usec);
+    len += sprintf(buf + len, "timespec: tv_sec = %ld, tv_nsec = %ld\n",
+                    timespec.tv_sec, timespec.tv_nsec);
 
     module_put(THIS_MODULE);
 
@@ -126,7 +140,7 @@ static int __init pktime_init(void)
     }
 
     // 在 /proc 根目录创建pktime_length入口
-    proc_entry = create_proc_read_entry(PROC_NAME, 0, NULL, pktime_read_proc, NULL);
+    proc_entry = create_proc_read_entry(PROC_JIFFIES, 0, NULL, pktime_jiffies, NULL);
     if (proc_entry == NULL) {
         PDEBUG("create_proc_read_entry fail\n");
         goto create_proc_entry_fail;
@@ -159,7 +173,7 @@ static void __exit pktime_exit(void)
     unregister_chrdev_region(dev, pktime_dev_num);
 
     // 删除proc入口
-    remove_proc_entry(PROC_NAME, NULL);
+    remove_proc_entry(PROC_JIFFIES, NULL);
 }
 module_exit(pktime_exit);
 
