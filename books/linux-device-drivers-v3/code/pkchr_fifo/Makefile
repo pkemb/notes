@@ -14,4 +14,4 @@ uninstall:
 	./uninstall.sh
 
 clean:
-	rm -rf *.o *.order *.ko *.mod.c *.markers *.symvers .*.o.cmd .*.ko.cmd .tmp_versions
+	rm -rf *.o *.order *.ko *.mod.c *.markers *.symvers .*.o.cmd .*.o.d .*.ko.cmd .tmp_versions

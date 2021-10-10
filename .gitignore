@@ -12,4 +12,5 @@ books/linux-device-drivers-v3/ldd3-scull-ch03.si4project
 *.symvers
 .*.ko.cmd
 .*.o.cmd
+*.o.d
 .tmp_versions
