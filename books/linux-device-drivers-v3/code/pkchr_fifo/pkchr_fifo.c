@@ -179,6 +179,12 @@ ssize_t pkchr_fifo_read(struct file *filp, char __user *buff, size_t size, loff_
     return count;
 }
 
+static int pkchr_fifo_fasync(int fd, struct file *filp, int mode)
+{
+    struct pkchr_fifo_dev *dev = filp->private_data;
+    return fasync_helper(fd, filp, mode, &dev->async_queue);
+}
+
 // file结构释放时，将调用此函数。close系统调用会执行release函数。
 // 只有file结构引用计数为0的时候，close才会调用release。保证了一次open对应一次release
 int pkchr_fifo_release(struct inode *inode, struct file *filp)
@@ -205,12 +211,6 @@ static unsigned int pkchr_fifo_poll(struct file *filp, poll_table *wait)
         mask |= POLLOUT | POLLWRNORM;
     up(&dev->sem);
     return mask;
-}
-
-static int pkchr_fifo_fasync(int fd, struct file *filp, int mode)
-{
-    struct pkchr_fifo_dev *dev = filp->private_data;
-    return fasync_helper(fd, filp, mode, &dev->async_queue);
 }
 
 struct file_operations fifo_fops = {
