@@ -65,7 +65,7 @@ ssize_t pkchr_fifo_write(struct file *filp, const char __user *buff, size_t size
     struct pkchr_fifo_dev *dev = filp->private_data;
     DEFINE_WAIT(wait);
 
-    printk(KERN_DEBUG"write, pos = %ld, count = %d\n", pos, count);
+    PDEBUG("write, pos = %ld, count = %d\n", pos, count);
 
     if (down_interruptible(&dev->sem))
         return -ERESTARTSYS;
@@ -97,7 +97,7 @@ ssize_t pkchr_fifo_write(struct file *filp, const char __user *buff, size_t size
         count = min(count, MEM_SIZE - dev->write_point);
     }
 
-    printk(KERN_DEBUG"write, wp = %d, rp = %d, count = %d\n",
+    PDEBUG("write, wp = %d, rp = %d, count = %d\n",
                      dev->write_point, dev->read_point, count);
 
     // 返回值大于0：剩余没有拷贝的数据
@@ -131,7 +131,7 @@ ssize_t pkchr_fifo_read(struct file *filp, char __user *buff, size_t size, loff_
     size_t count = size;
     struct pkchr_fifo_dev *dev = filp->private_data;
 
-    printk(KERN_DEBUG"read, pos = %ld, count = %d\n", pos, count);
+    PDEBUG("read, pos = %ld, count = %d\n", pos, count);
 
     if (down_interruptible(&dev->sem))
         return -ERESTARTSYS;
@@ -159,7 +159,7 @@ ssize_t pkchr_fifo_read(struct file *filp, char __user *buff, size_t size, loff_
         count = min(count, MEM_SIZE - dev->read_point);
     }
 
-    printk(KERN_DEBUG"read, wp = %d, rp = %d, count = %d\n",
+    PDEBUG("read, wp = %d, rp = %d, count = %d\n",
                      dev->write_point, dev->read_point, count);
 
     if (copy_to_user(buff, dev->mem + dev->read_point, count)) {
@@ -231,7 +231,7 @@ int pkchr_fifo_read_proc(char *buf, char **start, off_t offset, int count, int *
     if (!try_module_get(THIS_MODULE))
         return 0;
 
-    printk(KERN_INFO"count = %d, offset = %ld, buf = %p, len = %d\n", count, (long)offset, buf, len);
+    PDEBUG("count = %d, offset = %ld, buf = %p, len = %d\n", count, (long)offset, buf, len);
 
     len += sprintf(buf + len, "major = %d\n", pkchr_fifo_major);
     len += sprintf(buf + len, "buff len = %d\n", MEM_SIZE);
@@ -246,7 +246,7 @@ static int __init pkchr_fifo_init(void)
     dev_t devno = 0;
     int ret = 0;
     struct proc_dir_entry *proc_entry = NULL;
-    printk(KERN_INFO"%s init\n", DEVICE_NAME);
+    PDEBUG("%s init\n", DEVICE_NAME);
 
     // 申请设备号，0 正确，小于0 错误
     ret = alloc_chrdev_region(
@@ -255,20 +255,20 @@ static int __init pkchr_fifo_init(void)
         1,              // 设备总数
         DEVICE_NAME);   // 设备名
     if (ret < 0) {
-        printk(KERN_ERR"dev number alloc fail, ret = %d\n", ret);
+        PDEBUG("dev number alloc fail, ret = %d\n", ret);
         goto alloc_devno_fail;
     }
     pkchr_fifo_major = MAJOR(devno);
     pkchr_fifo_minor = MINOR(devno);
 
-    printk(KERN_INFO"devno = %d\n", devno);
-    printk(KERN_INFO"major = %d\n", pkchr_fifo_major);
-    printk(KERN_INFO"minor = %d\n", pkchr_fifo_minor);
+    PDEBUG("devno = %d\n", devno);
+    PDEBUG("major = %d\n", pkchr_fifo_major);
+    PDEBUG("minor = %d\n", pkchr_fifo_minor);
 
     // 申请设备结构体
     pkchr_fifo = kmalloc(sizeof(*pkchr_fifo), GFP_KERNEL);
     if (pkchr_fifo == NULL) {
-        printk(KERN_ERR"kmalloc fail\n");
+        PDEBUG("kmalloc fail\n");
         goto kmalloc_fail;
     }
     memset(pkchr_fifo, 0, sizeof(*pkchr_fifo));
@@ -284,14 +284,14 @@ static int __init pkchr_fifo_init(void)
     // 注册cdev
     ret = cdev_add(&pkchr_fifo->cdev, devno, 1);
     if (ret < 0) {
-        printk(KERN_INFO"add cdev %x fail, ret = %d\n", devno, ret);
+        PDEBUG("add cdev %x fail, ret = %d\n", devno, ret);
         goto cdev_add_fail;
     }
 
     // 在 /proc 根目录创建pkchr_length入口
     proc_entry = create_proc_read_entry(PROC_NAME, 0, NULL, pkchr_fifo_read_proc, NULL);
     if (proc_entry == NULL) {
-        printk(KERN_ERR"create_proc_read_entry fail\n");
+        PDEBUG("create_proc_read_entry fail\n");
         goto create_proc_entry_fail;
     }
 
@@ -311,7 +311,7 @@ module_init(pkchr_fifo_init);
 static void __exit pkchr_fifo_exit(void)
 {
     dev_t dev = MKDEV(pkchr_fifo_major, pkchr_fifo_minor);
-    printk(KERN_INFO"%s exit\n", DEVICE_NAME);
+    PDEBUG("%s exit\n", DEVICE_NAME);
     // 删除字符设备
     if (pkchr_fifo) {
         cdev_del(&pkchr_fifo->cdev);

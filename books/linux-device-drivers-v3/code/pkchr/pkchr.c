@@ -31,7 +31,7 @@ ssize_t pkchr_write(struct file *filp, const char __user *buff, size_t size, lof
     size_t count = size;
     struct pkchr_dev *pkchr = filp->private_data;
 
-    printk(KERN_DEBUG"write, pos = %ld, count = %d\n", pos, count);
+    PDEBUG("write, pos = %ld, count = %d\n", pos, count);
 
     // 写入的数据量大于最大值，返回没有空间
     if (count > MEM_SIZE)
@@ -67,7 +67,7 @@ ssize_t pkchr_read(struct file *filp, char __user *buff, size_t size, loff_t *of
     size_t count = size;
     struct pkchr_dev *pkchr = filp->private_data;
 
-    printk(KERN_DEBUG"read, pos = %ld, count = %d\n", pos, count);
+    PDEBUG("read, pos = %ld, count = %d\n", pos, count);
 
     if (pos >= MEM_SIZE)
         return 0;
@@ -194,7 +194,7 @@ int pkchr_read_proc(char *buf, char **start, off_t offset, int count, int *eof, 
     if (!try_module_get(THIS_MODULE))
         return 0;
 
-    printk(KERN_INFO"count = %d, offset = %ld, buf = %p, len = %d\n", count, (long)offset, buf, len);
+    PDEBUG("count = %d, offset = %ld, buf = %p, len = %d\n", count, (long)offset, buf, len);
 
     len += sprintf(buf + len, "major = %d\n", pkchr_major);
     len += sprintf(buf + len, "dev num = %d\n", pkchr_dev_num);
@@ -261,7 +261,7 @@ static void pkchr_setup_dev(struct pkchr_dev *pkchr, int index)
     dev_t devno = MKDEV(pkchr_major, pkchr_minor + index);
     int err = 0;
 
-    printk(KERN_INFO"init pkchr%d\n", index);
+    PDEBUG("init pkchr%d\n", index);
 
     // 初始化 struct cdev, 需要 fops 结构体
     cdev_init(&pkchr->cdev, &fops);
@@ -271,7 +271,7 @@ static void pkchr_setup_dev(struct pkchr_dev *pkchr, int index)
     // 注册cdev
     err = cdev_add(&pkchr->cdev, devno, 1);
     if (err < 0) {
-        printk(KERN_INFO"add cdev %x fail, err = %d\n", devno, err);
+        PDEBUG("add cdev %x fail, err = %d\n", devno, err);
     }
 }
 
@@ -282,7 +282,7 @@ static int __init pkchr_init(void)
     int i = 0;
     struct proc_dir_entry *proc_entry = NULL;
     struct proc_dir_entry *seq_proc_entry = NULL;
-    printk(KERN_INFO"pk char device init\n");
+    PDEBUG("pk char device init\n");
 
     // 申请设备号，0 正确，小于0 错误
     ret = alloc_chrdev_region(
@@ -291,19 +291,19 @@ static int __init pkchr_init(void)
         pkchr_dev_num,  // 设备总数
         DEVICE_NAME);   // 设备名
     if (ret < 0) {
-        printk(KERN_ERR"dev number alloc fail, ret = %d\n", ret);
+        PDEBUG("dev number alloc fail, ret = %d\n", ret);
         goto alloc_devno_fail;
     }
-    printk(KERN_INFO"devno = %d\n", devno);
+    PDEBUG("devno = %d\n", devno);
     pkchr_major = MAJOR(devno);
     pkchr_minor = MINOR(devno);
-    printk(KERN_INFO"major = %d\n", pkchr_major);
-    printk(KERN_INFO"minor = %d\n", pkchr_minor);
+    PDEBUG("major = %d\n", pkchr_major);
+    PDEBUG("minor = %d\n", pkchr_minor);
 
     // 申请设备结构体
     pkchr = kmalloc(sizeof(*pkchr) * pkchr_dev_num, GFP_KERNEL);
     if (pkchr == NULL) {
-        printk(KERN_ERR"kmalloc fail\n");
+        PDEBUG("kmalloc fail\n");
         goto kmalloc_fail;
     }
     memset(pkchr, 0, sizeof(*pkchr) * pkchr_dev_num);
@@ -316,7 +316,7 @@ static int __init pkchr_init(void)
     // 在 /proc 根目录创建pkchr_length入口
     proc_entry = create_proc_read_entry(PROC_NAME, 0, NULL, pkchr_read_proc, NULL);
     if (proc_entry == NULL) {
-        printk(KERN_ERR"create_proc_read_entry fail\n");
+        PDEBUG("create_proc_read_entry fail\n");
         goto create_proc_entry_fail;
     }
 
@@ -339,7 +339,7 @@ static void __exit pkchr_exit(void)
 {
     dev_t dev = MKDEV(pkchr_major, pkchr_minor);
     int i = 0;
-    printk(KERN_INFO"pk char device exit\n");
+    PDEBUG("pk char device exit\n");
     // 删除字符设备
     if (pkchr) {
         for (i = 0; i < pkchr_dev_num; i++) {
