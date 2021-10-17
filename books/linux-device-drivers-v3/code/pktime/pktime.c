@@ -5,6 +5,7 @@
 #include <linux/slab.h>
 #include <linux/proc_fs.h>
 #include <linux/jiffies.h>
+#include <linux/timex.h>
 
 #include "pktime.h"
 
@@ -84,6 +85,22 @@ int pktime_jiffies(char *buf, char **start, off_t offset, int count, int *eof, v
     return len;
 }
 
+int pktime_cycles(char *buf, char **start, off_t offset, int count, int *eof, void *data)
+{
+    cycles_t c = 0;
+    int len = 0;
+    if (!try_module_get(THIS_MODULE))
+        return 0;
+
+    c = get_cycles();
+    len += sprintf(buf + len, "cycles = %lld\n", c);
+    *start = buf;
+
+    module_put(THIS_MODULE);
+
+    return len;
+}
+
 static void pktime_setup_dev(struct pktime_dev *pktime, int index)
 {
     dev_t devno = MKDEV(pktime_major, pktime_minor + index);
@@ -142,13 +159,21 @@ static int __init pktime_init(void)
     // 在 /proc 根目录创建pktime_length入口
     proc_entry = create_proc_read_entry(PROC_JIFFIES, 0, NULL, pktime_jiffies, NULL);
     if (proc_entry == NULL) {
-        PDEBUG("create_proc_read_entry fail\n");
-        goto create_proc_entry_fail;
+        PDEBUG("create %s fail\n", PROC_JIFFIES);
+        goto create_proc_jiffies_fail;
+    }
+
+    proc_entry = create_proc_read_entry(PROC_CYCLES, 0, NULL, pktime_cycles, NULL);
+    if (proc_entry == NULL) {
+        PDEBUG("create %s fail\n", PROC_CYCLES);
+        goto create_proc_cycles_fail;
     }
 
     return ret;
 
-create_proc_entry_fail:
+create_proc_cycles_fail:
+    remove_proc_entry(PROC_JIFFIES, NULL);
+create_proc_jiffies_fail:
     kfree(pktime);
 kmalloc_fail:
     unregister_chrdev_region(devno, pktime_dev_num);
@@ -174,6 +199,7 @@ static void __exit pktime_exit(void)
 
     // 删除proc入口
     remove_proc_entry(PROC_JIFFIES, NULL);
+    remove_proc_entry(PROC_CYCLES, NULL);
 }
 module_exit(pktime_exit);
 

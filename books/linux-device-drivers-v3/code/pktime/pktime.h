@@ -19,6 +19,7 @@ struct pktime_dev {
 
 // proc name
 #define PROC_JIFFIES               "pktime_jiffies"
+#define PROC_CYCLES                "pktime_cycles"
 
 #define DEBUG
 
