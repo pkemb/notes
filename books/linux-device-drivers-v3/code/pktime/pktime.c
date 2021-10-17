@@ -11,6 +11,7 @@
 
 struct proc_dir_entry *proc_jiffies = NULL;
 struct proc_dir_entry *proc_cycles  = NULL;
+struct proc_dir_entry *proc_busy    = NULL;
 
 int pktime_jiffies(char *buf, char **start, off_t offset, int count, int *eof, void *data)
 {
@@ -65,6 +66,27 @@ int pktime_cycles(char *buf, char **start, off_t offset, int count, int *eof, vo
     return len;
 }
 
+int pktime_busy(char *buf, char **start, off_t offset, int count, int *eof, void *data)
+{
+    long before = 0;
+    long after  = 0;
+    int len = 0;
+    if (!try_module_get(THIS_MODULE))
+        return 0;
+
+    before = jiffies;
+    after  = before + S2J(4);       // 增加4s
+
+    while (time_before(jiffies, after))
+        cpu_relax();
+
+    len += sprintf(buf + len, "%9li %9li\n", before, after);
+
+    *start = buf;
+    module_put(THIS_MODULE);
+    return len;
+}
+
 static int __init pktime_init(void)
 {
     PDEBUG("%s init\n", DEVICE_NAME);
@@ -82,11 +104,18 @@ static int __init pktime_init(void)
         goto create_proc_fail;
     }
 
+    proc_busy = create_proc_read_entry(PROC_BUSY, 0, NULL, pktime_busy, NULL);
+    if (proc_busy == NULL) {
+        PDEBUG("create %s fail\n", PROC_BUSY);
+        goto create_proc_fail;
+    }
+
     return 0;
 
 create_proc_fail:
     SAFE_REMOVE_PROC_ENTRY(proc_jiffies, PROC_JIFFIES);
     SAFE_REMOVE_PROC_ENTRY(proc_cycles,  PROC_CYCLES);
+    SAFE_REMOVE_PROC_ENTRY(proc_busy,    PROC_BUSY);
     return -1;
 }
 module_init(pktime_init);
@@ -98,6 +127,7 @@ static void __exit pktime_exit(void)
     // 删除proc入口
     SAFE_REMOVE_PROC_ENTRY(proc_jiffies, PROC_JIFFIES);
     SAFE_REMOVE_PROC_ENTRY(proc_cycles,  PROC_CYCLES);
+    SAFE_REMOVE_PROC_ENTRY(proc_busy,    PROC_BUSY);
 }
 module_exit(pktime_exit);
 
