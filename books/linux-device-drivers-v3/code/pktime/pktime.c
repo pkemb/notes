@@ -11,9 +11,8 @@
 
 static int pktime_major = 0;
 static int pktime_minor = 0;
-static int pktime_dev_num = 1;
 
-struct pktime_dev *pktime = NULL;
+struct pktime_dev pktime;
 
 // inode 表示一个唯一的文件，主要关注成员 i_rdev 和 i_cdev
 // filp 表示一个打开的文件，f_mode / f_pos / f_flags / f_op / private_data / f_dentry
@@ -101,39 +100,15 @@ int pktime_cycles(char *buf, char **start, off_t offset, int count, int *eof, vo
     return len;
 }
 
-static void pktime_setup_dev(struct pktime_dev *pktime, int index)
-{
-    dev_t devno = MKDEV(pktime_major, pktime_minor + index);
-    int err = 0;
-
-    PDEBUG("init pktime%d\n", index);
-
-    // 初始化 struct cdev, 需要 fops 结构体
-    cdev_init(&pktime->cdev, &fops);
-    pktime->cdev.owner = THIS_MODULE;
-    init_MUTEX(&pktime->sem);
-
-    // 注册cdev
-    err = cdev_add(&pktime->cdev, devno, 1);
-    if (err < 0) {
-        PDEBUG("add cdev %x fail, err = %d\n", devno, err);
-    }
-}
-
 static int __init pktime_init(void)
 {
     dev_t devno = 0;
     int ret = 0;
-    int i = 0;
-    struct proc_dir_entry *proc_entry = NULL;
+
     PDEBUG("%s init\n", DEVICE_NAME);
 
     // 申请设备号，0 正确，小于0 错误
-    ret = alloc_chrdev_region(
-        &devno,         // 设备号
-        0,              // 第一个子设备
-        pktime_dev_num,  // 设备总数
-        DEVICE_NAME);   // 设备名
+    ret = alloc_chrdev_region(&devno, 0, 1, DEVICE_NAME);
     if (ret < 0) {
         PDEBUG("dev number alloc fail, ret = %d\n", ret);
         goto alloc_devno_fail;
@@ -143,40 +118,41 @@ static int __init pktime_init(void)
     pktime_minor = MINOR(devno);
     PDEBUG("devno = %x, major = %x, minor = %x\n", devno, pktime_major, pktime_minor);
 
-    // 申请设备结构体
-    pktime = kmalloc(sizeof(*pktime) * pktime_dev_num, GFP_KERNEL);
-    if (pktime == NULL) {
-        PDEBUG("kmalloc fail\n");
-        goto kmalloc_fail;
-    }
-    memset(pktime, 0, sizeof(*pktime) * pktime_dev_num);
+    memset(&pktime, 0, sizeof(pktime));
 
-    // 初始化 pktime 变量
-    for (i = 0; i < pktime_dev_num; i++) {
-        pktime_setup_dev(pktime + i, i);
+    // 初始化 pktime_dev 结构体
+    cdev_init(&pktime.cdev, &fops);
+    pktime.cdev.owner = THIS_MODULE;
+    init_MUTEX(&pktime.sem);
+
+    // 注册cdev
+    ret = cdev_add(&pktime.cdev, devno, 1);
+    if (ret < 0) {
+        PDEBUG("add cdev %x fail, ret = %d\n", devno, ret);
+        goto cdev_add_fail;
     }
 
-    // 在 /proc 根目录创建pktime_length入口
-    proc_entry = create_proc_read_entry(PROC_JIFFIES, 0, NULL, pktime_jiffies, NULL);
-    if (proc_entry == NULL) {
+    // 在 /proc 根目录创建入口
+    pktime.proc_jiffies = create_proc_read_entry(PROC_JIFFIES, 0, NULL, pktime_jiffies, NULL);
+    if (pktime.proc_jiffies == NULL) {
         PDEBUG("create %s fail\n", PROC_JIFFIES);
-        goto create_proc_jiffies_fail;
+        goto create_proc_fail;
     }
 
-    proc_entry = create_proc_read_entry(PROC_CYCLES, 0, NULL, pktime_cycles, NULL);
-    if (proc_entry == NULL) {
+    pktime.proc_cycles = create_proc_read_entry(PROC_CYCLES, 0, NULL, pktime_cycles, NULL);
+    if (pktime.proc_cycles == NULL) {
         PDEBUG("create %s fail\n", PROC_CYCLES);
-        goto create_proc_cycles_fail;
+        goto create_proc_fail;
     }
 
     return ret;
 
-create_proc_cycles_fail:
-    remove_proc_entry(PROC_JIFFIES, NULL);
-create_proc_jiffies_fail:
-    kfree(pktime);
-kmalloc_fail:
-    unregister_chrdev_region(devno, pktime_dev_num);
+create_proc_fail:
+    SAFE_REMOVE_PROC_ENTRY(pktime.proc_jiffies, PROC_JIFFIES);
+    SAFE_REMOVE_PROC_ENTRY(pktime.proc_cycles,  PROC_CYCLES);
+    cdev_del(&pktime.cdev);
+cdev_add_fail:
+    unregister_chrdev_region(devno, 1);
 alloc_devno_fail:
     return -1;
 }
@@ -185,21 +161,17 @@ module_init(pktime_init);
 static void __exit pktime_exit(void)
 {
     dev_t dev = MKDEV(pktime_major, pktime_minor);
-    int i = 0;
-    PDEBUG("pk char device exit\n");
+
+    PDEBUG("%s exit\n", DEVICE_NAME);
     // 删除字符设备
-    if (pktime) {
-        for (i = 0; i < pktime_dev_num; i++) {
-            cdev_del(&pktime[i].cdev);
-        }
-        kfree(pktime);
-    }
+    cdev_del(&pktime.cdev);
+
     // 删除设备号
-    unregister_chrdev_region(dev, pktime_dev_num);
+    unregister_chrdev_region(dev, 1);
 
     // 删除proc入口
-    remove_proc_entry(PROC_JIFFIES, NULL);
-    remove_proc_entry(PROC_CYCLES, NULL);
+    SAFE_REMOVE_PROC_ENTRY(pktime.proc_jiffies, PROC_JIFFIES);
+    SAFE_REMOVE_PROC_ENTRY(pktime.proc_cycles,  PROC_CYCLES);
 }
 module_exit(pktime_exit);
 
