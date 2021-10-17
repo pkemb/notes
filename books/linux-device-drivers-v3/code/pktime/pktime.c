@@ -36,6 +36,13 @@ int pktime_jiffies(char *buf, char **start, off_t offset, int count, int *eof, v
                     timeval.tv_sec, timeval.tv_usec);
     len += sprintf(buf + len, "timespec: tv_sec = %ld, tv_nsec = %ld\n",
                     timespec.tv_sec, timespec.tv_nsec);
+
+    do_gettimeofday(&timeval);
+    timespec = current_kernel_time();
+    len += sprintf(buf + len, "do_gettimeofday: %ld.%ld\n",
+                              timeval.tv_sec, timeval.tv_usec);
+    len += sprintf(buf + len, "current_kernel_time: %ld.%ld\n",
+                              timespec.tv_sec, timespec.tv_nsec);
     *start = buf;
     module_put(THIS_MODULE);
 
