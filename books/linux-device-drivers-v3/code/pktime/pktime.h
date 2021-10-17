@@ -9,17 +9,17 @@
 
 #define DEVICE_NAME     "pktime"
 
-struct pktime_dev {
-    struct cdev cdev;
-    // 设备自定义数据
-    // 信号量用于保护pktime_dev结构体
-    struct semaphore sem;
-};
-
-
 // proc name
 #define PROC_JIFFIES               "pktime_jiffies"
 #define PROC_CYCLES                "pktime_cycles"
+
+#define SAFE_REMOVE_PROC_ENTRY(entry, path)       \
+     do {                                         \
+          if (entry != NULL) {                    \
+               remove_proc_entry(path, NULL);     \
+               entry = NULL;                      \
+          }                                       \
+     } while(0)
 
 #define DEBUG
 
