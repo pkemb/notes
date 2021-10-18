@@ -16,6 +16,7 @@ struct proc_dir_entry *proc_busy    = NULL;
 struct proc_dir_entry *proc_sched   = NULL;
 struct proc_dir_entry *proc_queue   = NULL;
 struct proc_dir_entry *proc_schedto = NULL;
+struct proc_dir_entry *proc_timer   = NULL;
 
 int pktime_jiffies(char *buf, char **start, off_t offset, int count, int *eof, void *data)
 {
@@ -112,6 +113,64 @@ int pktime_delay(char *buf, char **start, off_t offset, int count, int *eof, voi
     return len;
 }
 
+#define TIMER_DELAY     S2J(1)
+
+typedef struct {
+    long prev_jiffies;
+    int  loops;
+    char *buf;
+    wait_queue_head_t wait;
+    struct timer_list timer;
+} timer_data_t;
+
+void pktime_timer_fn(unsigned long data)
+{
+    timer_data_t *timer_data = (timer_data_t *)data;
+    long j = jiffies;
+    timer_data->buf += sprintf(timer_data->buf,
+                               "%li %li\n", timer_data->prev_jiffies, j);
+    PDEBUG("loops = %d\n", timer_data->loops);
+    if (--timer_data->loops) {
+        timer_data->timer.expires += TIMER_DELAY;
+        timer_data->prev_jiffies = j;
+        add_timer(&timer_data->timer);
+    } else {
+        wake_up_interruptible(&timer_data->wait);
+    }
+}
+
+static timer_data_t timer_data;
+
+int pktime_timer(char *buf, char **start, off_t offset, int count, int *eof, void *data)
+{
+    long j = 0;
+    char *buf2 = buf;
+    memset(&timer_data, 0, sizeof(timer_data));
+
+    // 初始化结构体
+    init_waitqueue_head(&timer_data.wait);
+    init_timer(&timer_data.timer);
+    j = jiffies;
+    timer_data.prev_jiffies = j;
+    timer_data.loops = 5;
+    timer_data.buf   = buf2;     // 打印数据
+
+    timer_data.timer.expires  = j + TIMER_DELAY;
+    timer_data.timer.function = pktime_timer_fn;
+    timer_data.timer.data     = (unsigned long)&timer_data;
+
+    PDEBUG("j = %ld\n", j);
+    // 启动定时器
+    add_timer(&timer_data.timer);
+
+    // 等待缓冲区
+    wait_event_interruptible(timer_data.wait, !timer_data.loops);
+    PDEBUG("loops = %d\n", timer_data.loops);
+    *eof = 1;
+    buf2 = timer_data.buf;
+    return buf2 - buf;
+}
+
 static void __exit pktime_exit(void)
 {
     PDEBUG("%s exit\n", DEVICE_NAME);
@@ -123,6 +182,7 @@ static void __exit pktime_exit(void)
     SAFE_REMOVE_PROC_ENTRY(proc_sched,   PROC_SCHED);
     SAFE_REMOVE_PROC_ENTRY(proc_queue,   PROC_QUEUE);
     SAFE_REMOVE_PROC_ENTRY(proc_schedto, PROC_SCHEDTO);
+    SAFE_REMOVE_PROC_ENTRY(proc_timer,   PROC_TIMER);
 }
 module_exit(pktime_exit);
 
@@ -148,6 +208,9 @@ static int __init pktime_init(void)
 
     proc_schedto = create_proc_read_entry(PROC_SCHEDTO, 0, NULL, pktime_delay, (void *)SCHEDTO);
     CHECK_POINT(proc_schedto, create_proc_fail);
+
+    proc_timer = create_proc_read_entry(PROC_TIMER, 0, NULL, pktime_delay, NULL);
+    CHECK_POINT(proc_timer, create_proc_fail);
 
     return 0;
 

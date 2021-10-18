@@ -16,6 +16,7 @@
 #define PROC_SCHED                 "pktime_sched"
 #define PROC_QUEUE                 "pktime_queue"
 #define PROC_SCHEDTO               "pktime_schedto"
+#define PROC_TIMER                 "pktime_timer"
 
 #define SAFE_REMOVE_PROC_ENTRY(entry, path)       \
      do {                                         \
