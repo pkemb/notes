@@ -57,4 +57,14 @@ enum {
 #  define PDEBUG(fmt, args...) /* not debugging: nothing */
 #endif
 
+#define CHECK_POINT(point, label)                 \
+     do {                                         \
+          if (point == NULL) {                    \
+               PDEBUG("%s is NULL\n", #point);    \
+               goto label;                        \
+          }                                       \
+     } while(0)
+
+
+
 #endif // __PKTIME_H__

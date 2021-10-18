@@ -112,60 +112,6 @@ int pktime_delay(char *buf, char **start, off_t offset, int count, int *eof, voi
     return len;
 }
 
-static int __init pktime_init(void)
-{
-    PDEBUG("%s init\n", DEVICE_NAME);
-
-    // 在 /proc 根目录创建入口
-    proc_jiffies = create_proc_read_entry(PROC_JIFFIES, 0, NULL, pktime_jiffies, NULL);
-    if (proc_jiffies == NULL) {
-        PDEBUG("create %s fail\n", PROC_JIFFIES);
-        goto create_proc_fail;
-    }
-
-    proc_cycles = create_proc_read_entry(PROC_CYCLES, 0, NULL, pktime_cycles, NULL);
-    if (proc_cycles == NULL) {
-        PDEBUG("create %s fail\n", PROC_CYCLES);
-        goto create_proc_fail;
-    }
-
-    proc_busy = create_proc_read_entry(PROC_BUSY, 0, NULL, pktime_delay, (void *)BUSY);
-    if (proc_busy == NULL) {
-        PDEBUG("create %s fail\n", PROC_BUSY);
-        goto create_proc_fail;
-    }
-
-    proc_sched = create_proc_read_entry(PROC_SCHED, 0, NULL, pktime_delay, (void *)SCHED);
-    if (proc_sched == NULL) {
-        PDEBUG("create %s fail\n", PROC_SCHED);
-        goto create_proc_fail;
-    }
-
-    proc_queue = create_proc_read_entry(PROC_QUEUE, 0, NULL, pktime_delay, (void *)QUEUE);
-    if (proc_queue == NULL) {
-        PDEBUG("create %s fail\n", PROC_QUEUE);
-        goto create_proc_fail;
-    }
-
-    proc_schedto = create_proc_read_entry(PROC_SCHEDTO, 0, NULL, pktime_delay, (void *)SCHEDTO);
-    if (proc_schedto == NULL) {
-        PDEBUG("create %s fail\n", PROC_SCHEDTO);
-        goto create_proc_fail;
-    }
-
-    return 0;
-
-create_proc_fail:
-    SAFE_REMOVE_PROC_ENTRY(proc_jiffies, PROC_JIFFIES);
-    SAFE_REMOVE_PROC_ENTRY(proc_cycles,  PROC_CYCLES);
-    SAFE_REMOVE_PROC_ENTRY(proc_busy,    PROC_BUSY);
-    SAFE_REMOVE_PROC_ENTRY(proc_sched,   PROC_SCHED);
-    SAFE_REMOVE_PROC_ENTRY(proc_queue,   PROC_QUEUE);
-    SAFE_REMOVE_PROC_ENTRY(proc_schedto, PROC_SCHEDTO);
-    return -1;
-}
-module_init(pktime_init);
-
 static void __exit pktime_exit(void)
 {
     PDEBUG("%s exit\n", DEVICE_NAME);
@@ -179,6 +125,37 @@ static void __exit pktime_exit(void)
     SAFE_REMOVE_PROC_ENTRY(proc_schedto, PROC_SCHEDTO);
 }
 module_exit(pktime_exit);
+
+static int __init pktime_init(void)
+{
+    PDEBUG("%s init\n", DEVICE_NAME);
+
+    // 在 /proc 根目录创建入口
+    proc_jiffies = create_proc_read_entry(PROC_JIFFIES, 0, NULL, pktime_jiffies, NULL);
+    CHECK_POINT(proc_jiffies, create_proc_fail);
+
+    proc_cycles = create_proc_read_entry(PROC_CYCLES, 0, NULL, pktime_cycles, NULL);
+    CHECK_POINT(proc_cycles, create_proc_fail);
+
+    proc_busy = create_proc_read_entry(PROC_BUSY, 0, NULL, pktime_delay, (void *)BUSY);
+    CHECK_POINT(proc_busy, create_proc_fail);
+
+    proc_sched = create_proc_read_entry(PROC_SCHED, 0, NULL, pktime_delay, (void *)SCHED);
+    CHECK_POINT(proc_sched, create_proc_fail);
+
+    proc_queue = create_proc_read_entry(PROC_QUEUE, 0, NULL, pktime_delay, (void *)QUEUE);
+    CHECK_POINT(proc_queue, create_proc_fail);
+
+    proc_schedto = create_proc_read_entry(PROC_SCHEDTO, 0, NULL, pktime_delay, (void *)SCHEDTO);
+    CHECK_POINT(proc_schedto, create_proc_fail);
+
+    return 0;
+
+create_proc_fail:
+    pktime_exit();
+    return -1;
+}
+module_init(pktime_init);
 
 MODULE_AUTHOR("pkemb");
 MODULE_LICENSE("GPLv2");
