@@ -8,6 +8,7 @@
 #include <linux/timex.h>
 #include <linux/sched.h>
 #include <linux/hardirq.h>
+#include <linux/interrupt.h>
 
 #include "pktime.h"
 
@@ -18,6 +19,7 @@ struct proc_dir_entry *proc_sched   = NULL;
 struct proc_dir_entry *proc_queue   = NULL;
 struct proc_dir_entry *proc_schedto = NULL;
 struct proc_dir_entry *proc_timer   = NULL;
+struct proc_dir_entry *proc_tasklet = NULL;
 
 int pktime_jiffies(char *buf, char **start, off_t offset, int count, int *eof, void *data)
 {
@@ -186,6 +188,69 @@ int pktime_timer(char *buf, char **start, off_t offset, int count, int *eof, voi
     return buf2 - buf;
 }
 
+typedef struct {
+    long prev_jiffies;
+    int  loops;
+    char *buf;
+    wait_queue_head_t wait;
+    struct tasklet_struct tasklet;
+} tasklet_data_t;
+
+void pktime_tasklet_fn(unsigned long arg)
+{
+    tasklet_data_t *data = (tasklet_data_t *)arg;
+    long j = jiffies;
+    data->buf += sprintf(data->buf,
+                        "%-10li %-10li %-6d %-10d %-4d %-10s\n",
+                        data->prev_jiffies,
+                        j,
+                        in_interrupt() ? 1 : 0,
+                        current->pid,
+                        smp_processor_id(),
+                        current->comm);
+    if (data->loops) {
+        data->loops--;
+        data->prev_jiffies = j;
+        tasklet_schedule(&data->tasklet);
+    } else {
+        wake_up_interruptible(&data->wait);
+    }
+}
+
+int pktime_tasklet(char *buf, char **start, off_t offset, int count, int *eof, void *data)
+{
+    static tasklet_data_t tasklet_data;
+    char *buf2 = buf;
+    int j = 0;
+
+    buf2 += sprintf(buf2, "%-10s %-10s %-6s %-10s %-4s %-10s\n",
+                        "pre",
+                        "current",
+                        "inirq",
+                        "pid",
+                        "cpu",
+                        "command");
+
+    memset(&tasklet_data, 0, sizeof(tasklet_data));
+    init_waitqueue_head(&tasklet_data.wait);
+
+    j = jiffies;
+
+    tasklet_data.loops = 5;
+    tasklet_data.buf = buf2;
+    tasklet_data.prev_jiffies = j;
+    tasklet_init(&tasklet_data.tasklet, pktime_tasklet_fn, (unsigned long)&tasklet_data);
+
+    // 启动tasklet的调用，kernel会选择一个合适的时间调用。程序不能指定时间。
+    tasklet_schedule(&tasklet_data.tasklet);
+
+    wait_event_interruptible(tasklet_data.wait, !tasklet_data.loops);
+
+    buf2 = tasklet_data.buf;
+    *eof = 1;
+    return buf2 - buf;
+}
+
 static void __exit pktime_exit(void)
 {
     PDEBUG("%s exit\n", DEVICE_NAME);
@@ -198,6 +263,7 @@ static void __exit pktime_exit(void)
     SAFE_REMOVE_PROC_ENTRY(proc_queue,   PROC_QUEUE);
     SAFE_REMOVE_PROC_ENTRY(proc_schedto, PROC_SCHEDTO);
     SAFE_REMOVE_PROC_ENTRY(proc_timer,   PROC_TIMER);
+    SAFE_REMOVE_PROC_ENTRY(proc_tasklet, PROC_TASKLET);
 }
 module_exit(pktime_exit);
 
@@ -226,6 +292,9 @@ static int __init pktime_init(void)
 
     proc_timer = create_proc_read_entry(PROC_TIMER, 0, NULL, pktime_timer, NULL);
     CHECK_POINT(proc_timer, create_proc_fail);
+
+    proc_tasklet = create_proc_read_entry(PROC_TASKLET, 0, NULL, pktime_tasklet, NULL);
+    CHECK_POINT(proc_tasklet, create_proc_fail);
 
     return 0;
 
