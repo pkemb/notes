@@ -7,6 +7,7 @@
 #include <linux/jiffies.h>
 #include <linux/timex.h>
 #include <linux/sched.h>
+#include <linux/hardirq.h>
 
 #include "pktime.h"
 
@@ -113,7 +114,7 @@ int pktime_delay(char *buf, char **start, off_t offset, int count, int *eof, voi
     return len;
 }
 
-#define TIMER_DELAY     S2J(1)
+#define TIMER_DELAY     30
 
 typedef struct {
     long prev_jiffies;
@@ -128,7 +129,13 @@ void pktime_timer_fn(unsigned long data)
     timer_data_t *timer_data = (timer_data_t *)data;
     long j = jiffies;
     timer_data->buf += sprintf(timer_data->buf,
-                               "%li %li\n", timer_data->prev_jiffies, j);
+                               "%-10li %-10li %-6d %-10d %-4d %-10s\n",
+                               timer_data->prev_jiffies,
+                               j,
+                               in_interrupt() ? 1 : 0,
+                               current->pid,
+                               smp_processor_id(),
+                               current->comm);
     PDEBUG("loops = %d\n", timer_data->loops);
     if (--timer_data->loops) {
         timer_data->timer.expires += TIMER_DELAY;
@@ -145,6 +152,14 @@ int pktime_timer(char *buf, char **start, off_t offset, int count, int *eof, voi
 {
     long j = 0;
     char *buf2 = buf;
+
+    buf2 += sprintf(buf2, "%-10s %-10s %-6s %-10s %-4s %-10s\n",
+                            "pre",
+                            "current",
+                            "inirq",
+                            "pid",
+                            "cpu",
+                            "command");
     memset(&timer_data, 0, sizeof(timer_data));
 
     // 初始化结构体
@@ -209,7 +224,7 @@ static int __init pktime_init(void)
     proc_schedto = create_proc_read_entry(PROC_SCHEDTO, 0, NULL, pktime_delay, (void *)SCHEDTO);
     CHECK_POINT(proc_schedto, create_proc_fail);
 
-    proc_timer = create_proc_read_entry(PROC_TIMER, 0, NULL, pktime_delay, NULL);
+    proc_timer = create_proc_read_entry(PROC_TIMER, 0, NULL, pktime_timer, NULL);
     CHECK_POINT(proc_timer, create_proc_fail);
 
     return 0;
