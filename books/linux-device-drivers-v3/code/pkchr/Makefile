@@ -8,10 +8,10 @@ default:
 endif
 
 install:
-	./install.sh
+	insmod ./pkchr.ko
 
 uninstall:
-	./uninstall.sh
+	rmmod pkchr
 
 clean:
 	rm -rf *.o *.order *.ko *.mod.c *.markers *.symvers .*.o.cmd .*.ko.cmd .tmp_versions

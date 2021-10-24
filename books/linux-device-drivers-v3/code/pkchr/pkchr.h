@@ -16,6 +16,7 @@ struct pkchr_dev {
     // 信号量用于保护pkchr结构体
     struct semaphore sem;
     char mem[MEM_SIZE];
+    struct device *device;
 };
 
 // ioctl 相关的定义

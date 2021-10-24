@@ -5,6 +5,7 @@
 #include <linux/slab.h>
 #include <linux/proc_fs.h>
 #include <linux/seq_file.h>
+#include <linux/device.h>
 #include "pkchr.h"
 
 static int pkchr_major = 0;
@@ -12,6 +13,7 @@ static int pkchr_minor = 0;
 static int pkchr_dev_num = 4;
 
 struct pkchr_dev *pkchr = NULL;
+static struct class *pkchr_class = NULL;
 
 // inode 表示一个唯一的文件，主要关注成员 i_rdev 和 i_cdev
 // filp 表示一个打开的文件，f_mode / f_pos / f_flags / f_op / private_data / f_dentry
@@ -256,7 +258,7 @@ static struct file_operations pkchr_seq_proc_ops = {
     .release = seq_release, // seq_release 是kernel定义的函数
 };
 
-static void pkchr_setup_dev(struct pkchr_dev *pkchr, int index)
+static void pkchr_setup_dev(struct class *class, struct pkchr_dev *pkchr, int index)
 {
     dev_t devno = MKDEV(pkchr_major, pkchr_minor + index);
     int err = 0;
@@ -273,6 +275,7 @@ static void pkchr_setup_dev(struct pkchr_dev *pkchr, int index)
     if (err < 0) {
         PDEBUG("add cdev %x fail, err = %d\n", devno, err);
     }
+    pkchr->device = device_create(class, NULL, devno, NULL, "%s%d", DEVICE_NAME, index);
 }
 
 static int __init pkchr_init(void)
@@ -308,9 +311,12 @@ static int __init pkchr_init(void)
     }
     memset(pkchr, 0, sizeof(*pkchr) * pkchr_dev_num);
 
+    // 初始化class
+    pkchr_class = class_create(THIS_MODULE, DEVICE_NAME);
+
     // 初始化 pkchr 变量
     for (i = 0; i < pkchr_dev_num; i++) {
-        pkchr_setup_dev(pkchr + i, i);
+        pkchr_setup_dev(pkchr_class, pkchr + i, i);
     }
 
     // 在 /proc 根目录创建pkchr_length入口
@@ -344,9 +350,11 @@ static void __exit pkchr_exit(void)
     if (pkchr) {
         for (i = 0; i < pkchr_dev_num; i++) {
             cdev_del(&pkchr[i].cdev);
+            device_destroy(pkchr_class, MKDEV(pkchr_major, i));
         }
         kfree(pkchr);
     }
+    class_destroy(pkchr_class);
     // 删除设备号
     unregister_chrdev_region(dev, pkchr_dev_num);
 
@@ -357,4 +365,4 @@ static void __exit pkchr_exit(void)
 module_exit(pkchr_exit);
 
 MODULE_AUTHOR("pkemb");
-MODULE_LICENSE("GPLv2");
+MODULE_LICENSE("GPL");
