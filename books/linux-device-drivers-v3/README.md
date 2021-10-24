@@ -1210,17 +1210,17 @@ void finish_wait(wait_queue_head_t *queue, wait_queue_t *wait)
 `wait_event()`宏的内部实现也是上述步骤。
 
 ```c
-#define __wait_event(wq, condition) 					\
-do {									\
-	DEFINE_WAIT(__wait);						\
-									\
-	for (;;) {							\
-		prepare_to_wait(&wq, &__wait, TASK_UNINTERRUPTIBLE);	\
-		if (condition)						\
-			break;						\
-		schedule();						\
-	}								\
-	finish_wait(&wq, &__wait);					\
+#define __wait_event(wq, condition)                     \
+do {                                    \
+    DEFINE_WAIT(__wait);                        \
+                                    \
+    for (;;) {                            \
+        prepare_to_wait(&wq, &__wait, TASK_UNINTERRUPTIBLE);    \
+        if (condition)                        \
+            break;                        \
+        schedule();                        \
+    }                                \
+    finish_wait(&wq, &__wait);                    \
 } while (0)
 ```
 
@@ -2463,3 +2463,189 @@ USB设备驱动主要使用`USB核心`提供的接口来访问和控制USB设备
 ## 编写USB驱动程序
 
 ## 不使用urb的USB传输
+
+# 第十四章 Linux设备模型
+
+Linux设备模型提供了对系统结构的一般性抽象描述。内核使用该抽象支持了以下任务：
+* 电源管理和系统关机
+* 与用户空间通信
+* 热拔插设备
+* 设备类型
+* 对象生命周期
+
+对驱动程序来说，设备模型隐藏在交互背后，与设备模型的直接交互通常由总线级逻辑和其他内核子系统来处理。
+
+## kobject
+
+`kobject`是组成设备模型的基本结构，能处理如下的任务：
+* 对象的引用计数，引用计数为0时，该对象即可删除
+* sysfs表述
+* 数据结构关联
+* 热拔插事件处理
+
+linux2.6.4中，`kobject`的定义如下。`kobject`是一个复杂结构的结论，需要一点点的去理解。
+
+```c
+#include <linux/kobject.h>
+struct kobject {
+    const char          * k_name;
+    struct kref         kref;
+    struct list_head    entry;
+    struct kobject      * parent;
+    struct kset         * kset;
+    struct kobj_type    * ktype;
+    struct sysfs_dirent * sd;
+};
+```
+
+### 嵌入的kobject
+
+`kobject`对自身并不感兴趣，它的意义在于把更高级的对象连接到设备模型上。所以`kobject`对象被嵌入到其他结构中。例如`struct cdev`的定义：
+
+```c
+struct cdev {
+    struct kobject                  kobj;
+    struct module                   *owner;
+    const struct file_operations    *ops;
+    struct list_head                list;
+    dev_t                           dev;
+    unsigned int                    count;
+};
+```
+
+可以使用`container_of`宏，通过`kobject`结构指针获取`cdev`结构指针。
+
+```c
+struct kobject *kp = ...;
+struct cdev *device = container_of(kp, struct cdev, kobj);
+```
+
+### kobject的初始化
+
+无论如何使用`kobject`，下面的初始化步骤都是必需的。
+1. `kobject`结构体清0。一般使用memset()。
+2. 调用init()函数，初始化引用计数为1
+   * `void kobject_init(struct kobject *kobj)`
+3. 设置`kobject`的名字，该函数可能会失败，需要检查返回值。
+   * `int kobject_set_name(struct kobject *kobj, const char *format, ...)`
+
+`kobject`的创建者需要直接或间接设置的成员有：
+* ktype
+* kset
+* parent
+
+### 对引用计数的操作
+
+```c
+// 增加引用计数并返回kobj
+// 如果处于销毁过程中，则返回NULL
+struct kobject *kobject_get(struct kobject *kobj);
+// 减少引用计数
+void kobject_put(struct kobject *kobj);
+```
+
+### release函数和kobject类型
+
+当kobject引用计数为0的时候，需要调用release函数，异步的通知驱动程序释放相关的资源。release函数的原型如下。
+
+```c
+void my_object_release(struct kobject *kobj)
+{
+    struct my_object *mine = container_of(kobj, struct my_object, kobj);
+    // 在该对象上执行清除工作
+    kfree(mine);
+}
+```
+
+release函数并没有包含在kobject，而是在ktype成员中。ktype成员的类型如下：
+
+```c
+struct kobj_type {
+    void (*release)(struct kobject *);
+    struct sysfs_ops    * sysfs_ops;
+    struct attribute    ** default_attrs;
+};
+```
+
+可以同时在kobject和kset中找到ktype，会优先使用kset中的ktype。可以使用如下函数获取kobject的kobj_type。
+
+```c
+struct kobj_type *get_type(struct kobject *kobj);
+```
+
+## kobject层次结构、kset和子系统
+
+`kobject`结构中的parent指针指向另一个`kobject`指针，这个结构表示了分层结构中的上一层的节点。对parent指针最重要的用途是在sysfs分层结构中定位对象。
+
+### kset
+
+**kset是嵌入相同类型结构的kobject集合**。`kobj_type`关心的是对象的类型，而`kset`关心的是对象的聚集与集合。
+
+> 例如kobj嵌入到`struct cdev`，cdev实例化出cdev1、cdev2、cdev3。那么这些实例化cdev中包含的kobj属于同一个kset。
+
+kset也内嵌了一个`kobject`，可以用多种处理kobj的方法处理kset。一旦将一个kset添加到系统，一定会在sysfs创建一个目录。kset的定义如下。
+
+```c
+struct kset {
+    struct kobj_type        *ktype;
+    struct list_head        list;
+    spinlock_t              list_lock;
+    struct kobject          kobj;
+    struct kset_uevent_ops  *uevent_ops;
+};
+```
+
+添加/删除kset中的kobj的方法如下：
+1. kobj中的kset指向指定kset
+2. 调用如下函数
+
+```c
+// 向kset添加kobj
+int kobject_add(struct kobject *kobj); // 可能会出错
+// kobject_init()和kobject_add()的组合
+int kobject_register(struct kobject *kobj);
+
+// 向kset删除kobj
+int kobject_del(struct kobject *kobj);
+// kobject_del() 和 kobject_put() 的组合
+int kobject_unregister(struct kobject *kobj);
+```
+
+一个简单的kset分层结构。图中的kobject实际上是被嵌入到其他类型中，甚至是其他的kset。
+
+<img src="https://gitee.com/pkemb/pic/raw/master/image/20211024172544.png"/>
+
+### kset上的操作
+
+kset拥有与kobject类似的初始化和设置接口。
+
+```c
+void kset_init(struct kset *kset);
+int kset_add(struct kset *kset);
+int kset_register(struct kset *kset);
+void kset_unregister(struct kset *kset);
+```
+
+kset引用计数
+
+```c
+struct kset *kset_get(struct kset *kset);
+void kset_put(struct kset *kset);
+```
+
+kset的名字：直接使用内嵌的kobj的名字。
+
+kset中的ktype成员（kobj_type类型）用来描述它所包含的kobject，该成员的使用优于kobject中的ktype。
+
+### 子系统
+
+子系统是对整个系统中一些高级部分的表述。通常出现在sysfs的最顶层。一个子系统其实是对kset和一个信号量的封装。
+
+```c
+struct subsystem {
+    struct kset kset;
+    struct rw_semaphore rwsem;
+};
+```
+
+subsystem相关的操作函数：略。
