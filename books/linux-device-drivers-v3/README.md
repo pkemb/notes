@@ -2725,3 +2725,20 @@ void sysfs_remove_bin_file(struct kobject *kobj, const struct bin_attribute *att
 int sysfs_create_link(struct kobject *kobj, struct kobject *target, const char *name);
 void sysfs_remove_link(struct kobject *kobj, const char *name);
 ```
+
+## 热拔插事件的产生
+
+当调用kobject_add()或kobject_del()时，会产生热拔插事件。kobject所属的kset的`uevent_ops`负责处理热拔插事件。`uevent_ops`的类型定义如下。
+
+```c
+struct kset_uevent_ops {
+    int (* const filter)(struct kset *kset, struct kobject *kobj);
+    const char *(* const name)(struct kset *kset, struct kobject *kobj);
+    int (* const uevent)(struct kset *kset, struct kobject *kobj, struct kobj_uevent_env *env);
+};
+```
+
+当产生热拔插事件时，会调用filter()函数，如果返回0，则不产生热拔插事件。uevent()负责生成环境变量传递到用户空间。
+
+> 书上的内容是hotplug，但最新的kernel代码是uevent。
+
