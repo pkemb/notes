@@ -2649,3 +2649,79 @@ struct subsystem {
 ```
 
 subsystem相关的操作函数：略。
+
+## 底层sysfs操作
+
+sysfs中的每一个目录，都对应一个kobject。每个kobject都输出一个或者多个属性，在kobject对应的sysfs中表现为文件，内容由内核生成。sysfs相关的操作需要包含`linux/sysfs.h`。
+* kobject_add调用将创建一个目录
+* kobject的名字是sysfs中的目录名
+* sysfs入口在目录中的位置对应于kobject的parent指针。
+  * 如果parent为空，则设置为内嵌kset中的kobject
+  * 如果parent和kset同时为空，则在顶层sysfs创建目录
+
+### 默认属性
+
+每个kobject包含若干个默认属性，这些属性保存在`kobj_type`结构中（ktype成员）。下面是该结构的定义。
+
+```c
+struct kobj_type {
+    void (*release)(struct kobject *kobj);
+    const struct sysfs_ops *sysfs_ops;
+    struct attribute **default_attrs;
+};
+```
+
+`default_attrs`指向了一个包含`attribute`结构数组的指针，数组的最后一个元素必需用0填充。`struct attribute`结构中的name是文件名，onwer是指向模块的指针，mode是文件的权限。
+
+```c
+struct attribute {
+    const char          *name;
+    struct module       *owner;
+    mode_t              mode;
+};
+```
+
+`sysfs_ops`负责实现这些成员。当用户读取一个属性时，kernel会调用show方法，该方法将指定的值放入缓冲区，并返回长度。注意不要越界，buf的大小是PAGE_SIZE个字节。当用户写入值时，kernel会调用store方法，该方法解析保存在缓冲区的值，并返回解析的长度。
+
+所有的属性使用同一个`sysfs_ops`，可以通过attr参数来区分不同的属性。
+
+```c
+struct sysfs_ops {
+    ssize_t (*show)(struct kobject *kobj,  struct attribute *attr, char *buf);
+    ssize_t (*store)(struct kobject *kobj, struct attribute *attr, const char *buf, size_t size);
+};
+```
+
+### 非默认属性
+
+使用下面两个函数创建非默认属性。
+
+```c
+int  sysfs_create_file(struct kobject *kobj, const struct attribute *attr);
+void sysfs_remove_file(struct kobject *kobj, const struct attribute *attr);
+```
+
+### 二进制属性
+
+```c
+struct bin_attribute {
+    struct attribute    attr;
+    size_t              size;
+    void                *private;
+    ssize_t (*read)(struct kobject *, struct bin_attribute *, char *, loff_t, size_t);
+    ssize_t (*write)(struct kobject *, struct bin_attribute *, char *, loff_t, size_t);
+    int (*mmap)(struct kobject *, struct bin_attribute *attr, struct vm_area_struct *vma);
+};
+
+int sysfs_create_bin_file(struct kobject *kobj, const struct bin_attribute *attr);
+void sysfs_remove_bin_file(struct kobject *kobj, const struct bin_attribute *attr);
+```
+
+### 符号链接
+
+在kobj下创建符号链接name，指向target。
+
+```c
+int sysfs_create_link(struct kobject *kobj, struct kobject *target, const char *name);
+void sysfs_remove_link(struct kobject *kobj, const char *name);
+```
