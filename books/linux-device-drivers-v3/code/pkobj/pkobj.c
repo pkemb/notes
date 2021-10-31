@@ -57,6 +57,22 @@ struct attribute att = {
     .mode = 0666,
 };
 
+struct attribute att1 = {
+    .name = "att1",
+    .mode = 0666,
+};
+
+struct attribute att2 = {
+    .name = "att2",
+    .mode = 0666,
+};
+
+struct attribute *default_attrs[] = {
+    &att1,
+    &att2,
+    NULL,
+};
+
 struct sysfs_ops att_ops = {
     .show  = att_show,
     .store = att_store,
@@ -73,6 +89,7 @@ static int __init pkobj_init(void)
         goto fail_add;
     }
     parent->ktype->sysfs_ops = &att_ops;
+    parent->ktype->default_attrs = default_attrs;
     parent->ktype->release   = kobj_release;
     ret = sysfs_create_file(parent, &att);
     if (ret != 0) {
