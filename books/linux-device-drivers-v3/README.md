@@ -2742,3 +2742,107 @@ struct kset_uevent_ops {
 
 > 书上的内容是hotplug，但最新的kernel代码是uevent。
 
+## 总线、设备和驱动程序
+
+本小节介绍了非常多的数据结构，先总览关键的数据结构，再详细介绍。
+
+* 设备驱动通过结构体`struct device_driver`描述，内嵌了kobj，成员bus指向设备驱动所属的总线。
+* 设备通过结构体`struct device`描述，内嵌了kobj，成员bus指向设备所属的总线，成员driver指向设备驱动
+* 总线通过结构体`struct bus_type`描述，是kset的实例化。总线上的所有设备驱动组成drivers_kset，所有的设备组成device_kset
+
+下图列出了主要结构体之间的关系，实例化指结构体内嵌。
+
+![](image/Linux设备模型1.png)
+
+### 总线
+
+总线是处理器与一个或多个设备之间的通道。在设备模型中，所有的设备都是通过总线相连，甚至是内部的虚拟“platform”总线。总线可以互相插入，例如USB控制器通常是一个PCI设备。
+
+总线用结构体`struct bus_type`来表示，name是总线的名字，例如pci。成员`p`包含总线自己的子系统`subsys`，还有另外两个kset：drivers_kset和devices_kset，分别表示总线的驱动程序和插入总线的所有设备。
+
+```c
+#include <linux/device.h>
+struct bus_type {
+    const char                  *name;
+    struct bus_attribute        *bus_attrs;
+    struct device_attribute    *dev_attrs;
+    struct driver_attribute    *drv_attrs;
+
+    int (*match)(struct device *dev, struct device_driver *drv);
+    int (*uevent)(struct device *dev, struct kobj_uevent_env *env);
+    int (*probe)(struct device *dev);
+    int (*remove)(struct device *dev);
+    void (*shutdown)(struct device *dev);
+
+    int (*suspend)(struct device *dev, pm_message_t state);
+    int (*resume)(struct device *dev);
+
+    const struct dev_pm_ops *pm;
+
+    struct bus_type_private *p;
+};
+
+struct bus_type_private {
+    struct kset subsys;
+    struct kset *drivers_kset;
+    struct kset *devices_kset;
+    struct klist klist_devices;
+    struct klist klist_drivers;
+    struct blocking_notifier_head bus_notifier;
+    unsigned int drivers_autoprobe:1;
+    struct bus_type *bus;
+};
+```
+
+#### 总线注册
+
+总线注册可能会失败，所以要检查返回值。`bus_type`只有name和一些必要的方法需要初始化，大多数由设备模型控制。
+
+```c
+int bus_register(struct bus_type *bus);
+void bus_unregister(struct bus_type *bus);
+```
+
+#### 总线方法
+
+* int (*match)(struct device *dev, struct device_driver *drv);
+  > 当总线添加一个新设备或新驱动时，此方法会被调用一次或多次。如果执行的驱动能够处理指定的设备，该函数返回非零值。
+* int (*uevent)(struct device *dev, struct kobj_uevent_env *env);
+  > 在为用户空间产生热拔插事件前，这个方法允许总线添加环境变量。与kset的uevent()方法相同。
+
+#### 对设备和驱动程序的迭代
+
+迭代总线上的每一个设备/设备驱动，并执行函数fn()。如果start为NULL，则从第一个开始迭代；否则从start后的第一次开始迭代。如果fn()返回非0值，则停止迭代，这个值也会从bus_for_each函数返回。
+
+这两个函数在工作期间，都会拥有总线子系统的读取、写入信号量。因此同时使用这两个函数会死锁。
+
+```c
+int bus_for_each_dev(struct bus_type *bus, struct device *start,
+                     void *data, int (*fn)(struct device *, void *));
+int bus_for_each_drv(struct bus_type *bus, struct device_driver *start,
+                     void *data, int (*fn)(struct device_driver *, void *));
+```
+
+#### 总线属性
+
+```c
+struct bus_attribute {
+    struct attribute    attr;
+    ssize_t (*show)(struct bus_type *bus, char *buf);
+    ssize_t (*store)(struct bus_type *bus, const char *buf, size_t count);
+};
+```
+
+静态创建`bus_attribute`的宏。
+
+```c
+#define BUS_ATTR(_name, _mode, _show, _store)    \
+struct bus_attribute bus_attr_##_name = __ATTR(_name, _mode, _show, _store)
+```
+
+创建/删除自定义属性。
+
+```c
+int bus_create_file(struct bus_type *bus, struct bus_attribute *attr);
+void bus_remove_file(struct bus_type *bus, struct bus_attribute *attr);
+```
