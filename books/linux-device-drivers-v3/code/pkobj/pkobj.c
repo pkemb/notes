@@ -23,7 +23,7 @@
 
 static struct kobject  *parent = NULL;
 // static struct kobject  *child;
-// static struct kset     *kset;
+static struct kset     *kset   = NULL;
 
 ssize_t att_show(struct kobject *kobj, struct attribute *attr, char *buf)
 {
@@ -81,7 +81,13 @@ struct sysfs_ops att_ops = {
 static int __init pkobj_init(void)
 {
     int ret = 0;
-    parent = kobject_create_and_add("pkobj", NULL);
+    kset = kset_create_and_add("pk", NULL, NULL);
+    if (kset == NULL) {
+        PDEBUG("create kset fail\n");
+        goto kset_fail;
+    }
+
+    parent = kobject_create_and_add("pkobj", &kset->kobj);
     if (parent == NULL)
     {
         PDEBUG("kobject add fail\n");
@@ -97,9 +103,13 @@ static int __init pkobj_init(void)
         goto fail_create_fail;
     }
     return 0;
+
 fail_create_fail:
     kobject_del(parent);
 fail_add:
+    if (kset != NULL)
+        kset_unregister(kset);
+kset_fail:
     return -1;
 }
 module_init(pkobj_init);
@@ -108,6 +118,7 @@ static void __exit pkobj_exit(void)
 {
     sysfs_remove_file(parent, &att);
     kobject_del(parent);
+    kset_unregister(kset);
 }
 module_exit(pkobj_exit);
 
