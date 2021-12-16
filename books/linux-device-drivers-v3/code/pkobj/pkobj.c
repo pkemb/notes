@@ -90,7 +90,7 @@ int pkobj_uevent_filter(struct kset *kset, struct kobject *kobj)
         PDEBUG("kobj name=%s\n", kobj->name);
     else
         PDEBUG("kobj is null\n");
-    return (kobj == parent);
+    return 1;
 }
 
 const char *pkobj_uevent_name(struct kset *kset, struct kobject *kobj)
@@ -102,7 +102,12 @@ const char *pkobj_uevent_name(struct kset *kset, struct kobject *kobj)
 int pkobj_uevent_uevent(struct kset *kset, struct kobject *kobj,
 		                struct kobj_uevent_env *env)
 {
+    int i = 0;
     PDEBUG("pkobj_uevent_uevent\n");
+    while( i < env->envp_idx){
+            PDEBUG("%s\n",env->envp[i]);
+            i++;
+    }
     return 0;
 }
 
@@ -135,14 +140,15 @@ static int __init pkobj_init(void)
     parent->ktype->sysfs_ops = &att_ops;
     parent->ktype->default_attrs = default_attrs;
     parent->ktype->release   = kobj_release;
+    parent->kset             = kset;
 
     kobject_uevent_env(parent, KOBJ_ADD, envp);
 
-    ret = sysfs_create_file(parent, &att);
-    if (ret != 0) {
-        PDEBUG("create file fail, ret = %d\n", ret);
-        goto fail_create_fail;
-    }
+    // ret = sysfs_create_file(parent, &att);
+    // if (ret != 0) {
+    //     PDEBUG("create file fail, ret = %d\n", ret);
+    //     goto fail_create_fail;
+    // }
     return 0;
 
 fail_create_fail:
@@ -158,7 +164,7 @@ module_init(pkobj_init);
 static void __exit pkobj_exit(void)
 {
     PDEBUG("pkobj_exit\n");
-    sysfs_remove_file(parent, &att);
+    // sysfs_remove_file(parent, &att);
     kobject_put(parent);
     kset_unregister(kset);
 }
