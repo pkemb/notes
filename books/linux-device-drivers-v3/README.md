@@ -2846,3 +2846,86 @@ struct bus_attribute bus_attr_##_name = __ATTR(_name, _mode, _show, _store)
 int bus_create_file(struct bus_type *bus, struct bus_attribute *attr);
 void bus_remove_file(struct bus_type *bus, struct bus_attribute *attr);
 ```
+
+### 设备
+
+每一个设备都用`struct device`结构的一个实例来表示。必需设置的成员有parent、bus_id、bus和release。
+
+```c
+struct device {
+    // 该设备所属的设备，通常是某种总线或者是属主控制器
+    // 如果是NULL，表示是顶层设备，这种情况非常少
+    struct device        *parent;
+    // 表示该设备并把它连接到结构体系的kobj
+    // 一般情况下：device->kobj.parent == &device->parent->kobj
+    struct kobject       kobj;
+    // 在总线上唯一标识该设备的字符串，比如PCI设备的PCI ID
+    char                 bus_id[BUS_ID_SIZE];
+    const char           *init_name; /* initial name of the device */
+    struct device_type   *type;
+    unsigned             uevent_suppress:1;
+
+    struct semaphore     sem;     /* semaphore to synchronize calls to its driver. */
+
+    // 标识设备连接到哪一个总线
+    struct bus_type      *bus;
+    // 管理该设备的驱动程序
+    struct device_driver *driver;
+    // 设备驱动程序的私有的
+    void   *driver_data;
+    void   *platform_data;  /* Platform specific data, device core doesn't touch it */
+    struct dev_pm_info    power;
+
+    struct class          *class;
+    dev_t                 devt;    /* dev_t, creates the sysfs "dev" */
+    struct attribute_group    **groups;    /* optional groups */
+    // 引用计数为0时，内核调用该方法。必需实现该方法
+    void    (*release)(struct device *dev);
+    /* 省略了一些成员 */
+};
+```
+
+#### 设备注册
+
+设备注册完毕后，可以在`/sys/devices`目录看到注册的设备。
+
+```c
+// 初始化设备结构体并添加到系统
+int device_register(struct device *dev);
+// 删除设备并减少设备的引用计数
+void device_unregister(struct device *dev);
+```
+
+#### 设备属性
+
+`struct device`没有默认属性，需要通过下面的接口创建或移除属性。可以通过宏`DEVICE_ATTR()`快速创建结构体`device_attribute`。
+
+```c
+int device_create_file(struct device *dev, struct device_attribute *attr);
+void device_remove_file(struct device *dev, struct device_attribute *attr);
+
+struct device_attribute {
+    struct attribute    attr;
+    ssize_t (*show)(struct device *dev, struct device_attribute *attr,
+            char *buf);
+    ssize_t (*store)(struct device *dev, struct device_attribute *attr,
+             const char *buf, size_t count);
+};
+
+#define DEVICE_ATTR(_name, _mode, _show, _store) \
+struct device_attribute dev_attr_##_name = __ATTR(_name, _mode, _show, _store)
+```
+
+#### 设备结构嵌入
+
+通常会在自己的设备结构体中嵌入`struct device`，并添加一些设备的自定义信息。例如：
+
+```c
+struct my_device {
+    char *name;
+    ...
+    struct device dev;
+};
+// 通过标准的struct device，获取my_device的地址
+#define to_my_device(dev)   container_of(dev, struct my_deivce, dev)
+```
