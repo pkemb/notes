@@ -2929,3 +2929,68 @@ struct my_device {
 // 通过标准的struct device，获取my_device的地址
 #define to_my_device(dev)   container_of(dev, struct my_deivce, dev)
 ```
+
+### 设备驱动程序
+
+设备模型跟踪所有的设备，协调`驱动程序`与新设备的关系。驱动程序由如下结构定义。
+
+```c
+struct device_driver {
+    const char        *name;     //驱动程序的名字，将在sysfs显示
+    struct bus_type   *bus;      //驱动程序操作的总线类型
+
+    struct module      *owner;
+    const char         *mod_name;    /* used for built-in modules */
+
+    int (*probe) (struct device *dev);  // 查询特定设备是否存在
+    int (*remove) (struct device *dev); // 当设备从系统移除的时候调用
+    void (*shutdown) (struct device *dev); // 当系统关机的时候调用
+    int (*suspend) (struct device *dev, pm_message_t state);
+    int (*resume) (struct device *dev);
+    struct attribute_group **groups;
+
+    struct pm_ops *pm;
+
+    struct driver_private *p;
+};
+
+struct driver_private {
+    struct kobject kobj;
+    struct klist klist_devices;  // 当前驱动程序能操作的设备列表
+    struct klist_node knode_bus;
+    struct module_kobject *mkobj;
+    struct device_driver *driver;
+};
+#define to_driver(obj) container_of(obj, struct driver_private, kobj)
+```
+
+注册设备驱动的函数如下：
+
+```c
+int driver_register(struct device_driver *drv);
+void driver_unregister(struct device_driver *drv);
+```
+
+设备驱动的属性结构：
+
+```c
+struct driver_attribute {
+    struct attribute attr;
+    ssize_t (*show)(struct device_driver *driver, char *buf);
+    ssize_t (*store)(struct device_driver *driver, const char *buf,
+             size_t count);
+};
+```
+
+创建属性文件：
+
+```c
+int  driver_create_file(struct device_driver *drv, struct driver_attribute *attr);
+void driver_remove_file(struct device_driver *drv, struct driver_attribute *attr);
+```
+
+`struct bus_type`结构的成员`drv_attrs`，包含该总线为所有设备驱动创建的默认属性。
+
+#### 驱动程序结构的嵌入
+
+`struct device_driver`结构一般会内嵌在自定义的设备结构体中，并且可以加入一些设备的私有信息。
