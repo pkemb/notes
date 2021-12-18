@@ -3,7 +3,6 @@
 #include <linux/kernel.h>
 #include <linux/device.h>
 
-#define DEVICE_NAME "pkbus"
 #define DEBUG
 #include "pkbus.h"
 

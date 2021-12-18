@@ -1,11 +1,14 @@
-ifneq ($(KERNELRELEASE),)
-	obj-m := pkbus.o
-else
-	KERNELDIR ?= /lib/modules/$(shell uname -r)/build
-	PWD := $(shell pwd)
+MODULE_NAME=pkbus
+obj-m += $(MODULE_NAME).o
+
+
+KERNELDIR ?= /lib/modules/$(shell uname -r)/build
+PWD := $(shell pwd)
+
+EXTRA_CFLAGS += -DMODULE_NAME=\"$(MODULE_NAME)\"
+
 default:
 	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules
-endif
 
 i:
 	insmod ./pkbus.ko
