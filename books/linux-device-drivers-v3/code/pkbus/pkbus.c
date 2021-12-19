@@ -57,6 +57,16 @@ static struct bus_type pkbus = {
     .uevent    = pkbus_uevent,
 };
 
+void pkbus_device_release(struct device *dev)
+{
+    PDEBUG("release pkbus_device\n");
+}
+
+static struct device pkbus_device = {
+    .bus_id = "pk0",    // 在总线上唯一标识设备的字符串
+    .release  = pkbus_device_release,
+};
+
 static int __init pkbus_init(void)
 {
     int ret = 0;
@@ -67,8 +77,16 @@ static int __init pkbus_init(void)
         PDEBUG("pkbus register fail, ret = %d\n", ret);
         goto bus_register_fail;
     }
+
+    ret = device_register(&pkbus_device);
+    if (ret) {
+        PDEBUG("register device %s fail, ret = %d\n", pkbus_device.bus_id, ret);
+        goto device_register_fail;
+    }
     return 0;
 
+device_register_fail:
+    bus_unregister(&pkbus);
 bus_register_fail:
     return ret;
 }
@@ -77,6 +95,7 @@ module_init(pkbus_init);
 static void __exit pkbus_exit(void)
 {
     PDEBUG("pkbus exit\n");
+    device_unregister(&pkbus_device);
     bus_unregister(&pkbus);
 }
 module_exit(pkbus_exit);
