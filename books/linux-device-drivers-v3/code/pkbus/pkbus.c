@@ -3,8 +3,8 @@
 #include <linux/kernel.h>
 #include <linux/device.h>
 
-#define DEBUG
 #include "pkbus.h"
+#include "pkdevice.h"
 
 MODULE_AUTHOR("pkemb");
 MODULE_LICENSE("GPL");
@@ -48,7 +48,7 @@ int pkbus_uevent(struct device *dev, struct kobj_uevent_env *env)
     return 0;
 }
 
-static struct bus_type pkbus = {
+struct bus_type pkbus = {
     .name      = "pk",
     .bus_attrs = pkbus_attrs,
     .dev_attrs = pkbus_device_attrs,
@@ -56,15 +56,23 @@ static struct bus_type pkbus = {
     .match     = pkbus_match,
     .uevent    = pkbus_uevent,
 };
+EXPORT_SYMBOL_GPL(pkbus);
 
 void pkbus_device_release(struct device *dev)
 {
     PDEBUG("release pkbus_device\n");
 }
 
-static struct device pkbus_device = {
+struct device pkbus_device = {
     .bus_id = "pk0",    // 在总线上唯一标识设备的字符串
     .release  = pkbus_device_release,
+};
+EXPORT_SYMBOL_GPL(pkbus_device);
+
+/************ pkdevice ***************/
+
+static struct pkdevice pkdev = {
+    .name = "pkdev0",
 };
 
 static int __init pkbus_init(void)
@@ -83,8 +91,16 @@ static int __init pkbus_init(void)
         PDEBUG("register device %s fail, ret = %d\n", pkbus_device.bus_id, ret);
         goto device_register_fail;
     }
+
+    ret = pkdevice_register(&pkdev);
+    if (ret) {
+        PDEBUG("register pkdeivce %s fail, ret = %d\n", pkdev.name, ret);
+        goto pkdev_register_fail;
+    }
     return 0;
 
+pkdev_register_fail:
+    device_unregister(&pkbus_device);
 device_register_fail:
     bus_unregister(&pkbus);
 bus_register_fail:
@@ -95,6 +111,7 @@ module_init(pkbus_init);
 static void __exit pkbus_exit(void)
 {
     PDEBUG("pkbus exit\n");
+    pkdevice_unregister(&pkdev);
     device_unregister(&pkbus_device);
     bus_unregister(&pkbus);
 }
