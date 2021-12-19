@@ -2994,3 +2994,88 @@ void driver_remove_file(struct device_driver *drv, struct driver_attribute *attr
 #### 驱动程序结构的嵌入
 
 `struct device_driver`结构一般会内嵌在自定义的设备结构体中，并且可以加入一些设备的私有信息。
+
+## 类
+
+类是一个设备的高层视图，它抽象出了底层的实现细节。类允许用户空间使用设备所提供的功能，而不关心设备是如何连接的，以及它们是如何工作的。类是相似设备的集合。几乎所有的类都出现在`/sys/class`目录。
+
+### 管理类
+
+类通过结构体`struct class`来表示。
+
+```c
+struct class {
+    const char     *name;  // 显示在/sys/class中的名字
+    struct module  *owner;
+
+    struct class_attribute    *class_attrs; // 类属性
+    struct device_attribute   *dev_attrs;   // 类的设备的属性
+    struct kobject            *dev_kobj;
+    // 添加uevent环境变量
+    int (*dev_uevent)(struct device *dev, struct kobj_uevent_env *env);
+
+    void (*class_release)(struct class *class); // 类释放时调用
+    void (*dev_release)(struct device *dev);    // 删除类中的设备时调用
+
+    int (*suspend)(struct device *dev, pm_message_t state);
+    int (*resume)(struct device *dev);
+
+    struct pm_ops *pm;
+    struct class_private *p;  // 类私有数据
+};
+
+struct class_private {
+    struct kset class_subsys;
+    struct list_head class_devices;
+    struct list_head class_interfaces;
+    struct kset class_dirs;
+    struct mutex class_mutex;
+    struct class *class;
+};
+#define to_class(obj)    \
+    container_of(obj, struct class_private, class_subsys.kobj)
+```
+
+注册类的函数：
+
+```c
+int  class_register(struct class *cls);
+void class_unregister(struct class *cls);
+```
+
+处理类属性的函数：
+
+```c
+struct class_attribute {
+    struct attribute attr;
+    ssize_t (*show)(struct class *class, char *buf);
+    ssize_t (*store)(struct class *class, const char *buf, size_t count);
+};
+#define CLASS_ATTR(_name, _mode, _show, _store)   \
+struct class_attribute class_attr_##_name = __ATTR(_name, _mode, _show, _store)
+
+int class_create_file(struct class *cls, const struct class_attribute *attr);
+void class_remove_file(struct class *cls, const struct class_attribute *attr);
+```
+
+### 类设备
+
+类存在的真正目的是给作为类成员的各个设备提供一个容器。结构体`struct device`表示类的成员。更详细的信息参考[设备](#设备)
+
+### 类接口
+
+设备加入或离开类时指向对应的函数。
+
+```c
+struct class_interface {
+    struct list_head node;
+    struct class     *class;  // 向哪一个类注册接口
+
+    int (*add_dev)     (struct device *, struct class_interface *);
+    void (*remove_dev) (struct device *, struct class_interface *);
+};
+// 注册接口
+int class_interface_register(struct class_interface *intf);
+// 移除接口
+void class_interface_unregister(struct class_interface *intf);
+```
