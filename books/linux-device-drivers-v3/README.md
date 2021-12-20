@@ -2173,11 +2173,50 @@ void ioport_unmap(void *addr);
 
 ## 使用标准C语言类型
 
+标准的C语言类型在不同的平台上大小可能不一样，所以要尽量避免使用。下表列出了不同类型在不同平台上的大小。对于指针类型来说，推荐使用`unsigned long`来表示，因为指针类型和`long`的大小总是相同的。
+
+| arch   | char | short | int | long | ptr | long-long | u8 | u16 | u32 | u64 |
+| -      | - | - | - | - | - | - | - | - | - | - |
+| i386   | 1 | 2 | 4 | 4 | 4 | 8 | 1 | 2 | 4 | 8 |
+| armv4l | 1 | 2 | 4 | 8 | 8 | 8 | 1 | 2 | 4 | 8 |
+| ia64   | 1 | 2 | 4 | 8 | 8 | 8 | 1 | 2 | 4 | 8 |
+| x86_64 | 1 | 2 | 4 | 8 | 8 | 8 | 1 | 2 | 4 | 8 |
+
 ## 为数据项分配确定的空间大小
+
+内核在`lunux/types.h`定义了如下确定空间大小的类型。
+
+| 大小 | 无符号 | 有符号 | 用户空间使用 |
+| - | - | - | - |
+| 1 | u8 | s8 | __u8 |
+| 2 | u16 | s16 | __u16 |
+| 4 | u32 | s32 | __u32 |
+| 8 | u64 | s64 | __u64 |
+
+以上类型是linux特有的，考虑到可移植性，推荐使用C标准类型`uint8_t`、`uint32_t`等。
 
 ## 接口特定的类型
 
+模块使用typedef自定义的数据类型，是为了防止出现移植性的问题。例如`pid_t`。主要问题是printk打印时，不好选择正确的输出格式。一种解决方法是强制转换成可能的最大类型。
+
 ## 其他有关移植性的问题
+
+* 数据类型
+* 避免使用常量，可以使用宏代替
+* 每秒有`HZ`个jiffies，不一定是100个。
+* 内存页的大小为`PAGE_SIZE`字节，不一定是4KB。
+  * 用户空间可以用getpagesize()获取
+  * get_order()获取指数，参数必须是2的幂
+* `asm/byteorder.h`会根据CPU的字节序定义__LITTLE_ENDIAN或__BIG_ENDIAN
+  * u32 cpu_to_le32(u32)
+  * u32 le32_to_cpu(u32)
+* 数据对齐
+  * get_unaligned(ptr)
+  * put_unaligned(val, ptr)
+* 指针和错误值：很多内核接口通过把错误值编码到一个指针值中来返回错误信息
+  * void *ERR_PTR(long error)   通过错误值编码返回值
+  * long IS_ERR(const void *ptr)
+  * long PTR_ERR(const void *ptr)   IS_ERR()返回真才使用PTR_ERR()
 
 ## 链表
 
