@@ -38,39 +38,21 @@ git clone https://github.com.cnpmjs.org/raspberrypi/tools tools-rpi
 apt-get install bison flex libncurses-dev libssl-dev bc
 ```
 
-使用以下命令设置环境变量和编译内核。文件[defconfig](kernel/defconfig)是根据书上说明设置之后的config文件。
-
-
-```shell
-# 工具链的根目录，根据实际情况修改
-TOOLDIR=${HOME}/tools-rpi
-
-export PATH=${TOOLDIR}/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin:$PATH
-export TOOLCHAIN=${TOOLDIR}/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64
-export CROSS_COMPILE=arm-linux-gnueabihf-
-export ARCH=arm
-
-make mrproper
-KERNEL=kernel7
-make ARCH=arm bcm2709_defconfig
-make ARCH=arm menuconfig  # 按照书上的说明设置
-make -j8 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- zImage modules dtbs
-```
+使用脚本[build.sh](kernel/build.sh)一键编译内核。执行脚本之前，需要检查`KERNELDIR`和`TOOLDIR`变量的设置是否正确，`TOOLDIR`定义在脚本[setenv.sh](kernel/setenv.sh)。文件[bcm2709_pk_defconfig](kernel/bcm2709_pk_defconfig)是根据书上说明设置之后的defconfig文件，脚本编译时会使用到此文件。
 
 #### 安装内核
 
-使用下面的命令安装内核。如果后续更改了内核或设备树，更新对应的文件即可。
+使用脚本[deploy.sh](kernel/deploy.sh)安装内核到树莓派。启动脚本之前，需要检查变量`HOST`和`KERNELDIR`的取值，推荐配置好SSH免密登录，不然SCP命令需要输入密码。脚本的使用方法如下：
 
 ```shell
-scp arch/arm/boot/zImage                  root@pi3b.inc:/boot/kernel-rpi-pk.img
-scp arch/arm/boot/dts/bcm2710-rpi-3-b.dtb root@pi3b.inc:/boot/bcm2710-rpi-3-b-pk.dtb
-scp arch/arm/boot/dts/overlays/*.dtb*     root@pi3b.inc:/boot/overlays/
+Usage:  deploy.sh [kernel|dtb|modules|all] [help]
 
-rm -rf modules_install
-mkdir modules_install
-make ARCH=arm INSTALL_MOD_PATH=./modules_install modules_install
-find ./modules_install -type l -exec rm -rf {} \;
-scp -r ./modules_install/*                 root@pi3b.inc:/
+deploy.sh           deploy kernel
+deploy.sh kernel    deploy kernel
+deploy.sh dtb       deploy dtb
+deploy.sh modules   deploy modules
+deploy.sh all       deploy kernel & dtb & modules
+deploy.sh help      print this message
 ```
 
 编辑`/boot/config.txt`，加入如下内容，切换到新版本内核。系统启动成功之后，使用命令`uname -r`查看内核版本是否与内核源代码版本一致。进入内核源代码目录，使用命令`head -n 5 Makefile`可以查看内核源代码的版本。
