@@ -70,6 +70,34 @@ device_tree=bcm2710-rpi-3-b-pk.dtb
 
 下载[Eclipse IDE for C/C++ Developers](https://www.eclipse.org/downloads/packages/)，并按照书上的说明设置即可。
 
+> Ubuntu16.04使用Eclipse最新版本会出错，提示GTK版本太低，使用下面的命令更新即可。
+> ```shell
+> sudo add-apt-repository ppa:gnome3-team/gnome3-staging
+> sudo add-apt-repository ppa:gnome3-team/gnome3
+> sudo apt update
+> sudo apt dist-upgrade
+> ```
+> 如果apt太慢可以参考使用代理
+> ```shell
+> sudo apt-get -o Acquire::http::proxy="http://127.0.0.1:8000" upgrade
+> ```
+
+考虑到Eclipse太复杂了，所以不推荐使用。直接vscode remote + makefile即可。使用如下Makefile，可以实现`make i`安装，`make u`卸载。
+
+```makefile
+deploy:
+	scp $(KO_NAME).ko $(USER)@$(HOST):/root
+
+i: deploy
+	@echo "install $(KO_NAME).ko"
+	@ssh $(USER)@$(HOST) "echo 8 > /proc/sys/kernel/printk"
+	@ssh $(USER)@$(HOST) "insmod /root/$(KO_NAME).ko"
+
+u:
+	@echo "uninstall $(KO_NAME).ko"
+	@ssh $(USER)@$(HOST) "rmmod $(KO_NAME).ko"
+```
+
 #### vscode remote
 
 略。

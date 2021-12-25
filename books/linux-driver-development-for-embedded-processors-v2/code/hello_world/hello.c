@@ -11,13 +11,13 @@ MODULE_ALIAS("helloworld");             // 模块别名
 
 static int __init hello_init(void)
 {
-    pr_info("hello world!\n");
+    pr_debug("hello world!\n");
     return 0;
 }
 module_init(hello_init);
 
 static void __exit hello_exit(void)
 {
-    pr_info("Googbye hello world!\n");
+    pr_debug("Googbye hello world!\n");
 }
 module_exit(hello_exit);

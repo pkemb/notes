@@ -1,29 +1,11 @@
-MODULE_NAME=hello
 KO_NAME=pk
+MODULE_NAME=hello
+# $(KO_NAME)-objs := xxx.o
 
 ifneq ($(KERNELRELEASE),)
-
-obj-m := $(KO_NAME).o
-$(KO_NAME)-objs := $(MODULE_NAME).o
-
-EXTRA_CFLAGS += -DMODULE_NAME=\"$(MODULE_NAME)\"
-EXTRA_CFLAGS += -DDEBUG
-
+# second run
+include $(PWD)/../var.mk
 else
-
-KERNELDIR ?= /lib/modules/$(shell uname -r)/build
-PWD := $(shell pwd)
-
-default:
-	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules
-
-i:
-	insmod ./$(KO_NAME).ko
-
-u:
-	rmmod $(KO_NAME).ko
-
-clean:
-	rm -rf *.o *.order *.ko *.mod.c *.markers *.symvers .*.o.cmd .*.ko.cmd .tmp_versions
-
+# first run
+include ../target.mk
 endif
