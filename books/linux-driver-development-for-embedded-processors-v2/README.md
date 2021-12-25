@@ -107,3 +107,7 @@ ln -s /root/linux-rpi-4.19.y /lib/modules/`uname -r`/source
 
 略。
 
+
+apt切换到国内镜像：https://mirrors.tuna.tsinghua.edu.cn/help/raspbian/
+
+Eclipse IDE for C/C++ Developers下载：https://www.eclipse.org/downloads/packages/
