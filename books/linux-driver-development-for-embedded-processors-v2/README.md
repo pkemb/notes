@@ -18,7 +18,7 @@
 
 #### 编译内核
 
-由于树莓派3B的系统资源太少，所以选择在PC机交叉编译内核。树莓派启动之后，使用命令`uname -a`查看kernel版本号，克隆对应版本的kernel。下面是内核和工具链的仓库地址。如果GitHub太慢，可以选择国内镜像。
+由于树莓派3B的系统资源太少，所以选择在PC机交叉编译内核。树莓派启动之后，使用命令`uname -a`查看kernel版本号，克隆对应版本的kernel。下面是内核和工具链的仓库地址。如果GitHub太慢，可以选择GitHub的国内镜像`github.com.cnpmjs.org`。
 
 > 2019-06-20的内核版本是4.19.y
 
@@ -28,14 +28,14 @@ git clone --depth=1 -b rpi-4.19.y https://github.com/raspberrypi/linux linux-rpi
 git clone https://github.com/raspberrypi/tools tools-rpi
 
 # 国内镜像
-git clone --depth=1 -b rpi-4.19.y https://gitclone.com/github.com/raspberrypi/linux linux-rpi
-git clone https://gitclone.com/github.com/raspberrypi/tools tools-rpi
+git clone --depth=1 -b rpi-4.19.y https://github.com.cnpmjs.org/raspberrypi/linux linux-rpi
+git clone https://github.com.cnpmjs.org/raspberrypi/tools tools-rpi
 ```
 
 编译内核之前，需要安装如下软件包。
 
 ```shell
-apt-get install bison flex libncurses-dev libssl-dev
+apt-get install bison flex libncurses-dev libssl-dev bc
 ```
 
 使用以下命令设置环境变量和编译内核。文件[defconfig](kernel/defconfig)是根据书上说明设置之后的config文件。
@@ -86,7 +86,9 @@ device_tree=bcm2710-rpi-3-b-pk.dtb
 
 #### 内核模块开发环境
 
-内核模块的源文件不多，故在树莓派部署内核模块的开发环境。首先在PC机打包内核目录，并发送到树莓派。
+内核模块的源文件不多，~~故在树莓派部署内核模块的开发环境~~。首先在PC机打包内核目录，并发送到树莓派。
+
+> 在树莓派搭建开发环境，需要在树莓派编译内核。在PC机上编译的内核无法在树莓派使用。
 
 ```shell
 tar -czvf linux-rpi-4.19.y.tgz linux-rpi-4.19.y
