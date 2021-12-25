@@ -86,24 +86,13 @@ device_tree=bcm2710-rpi-3-b-pk.dtb
 
 #### 内核模块开发环境
 
-内核模块的源文件不多，~~故在树莓派部署内核模块的开发环境~~。首先在PC机打包内核目录，并发送到树莓派。
-
-> 在树莓派搭建开发环境，需要在树莓派编译内核。在PC机上编译的内核无法在树莓派使用。
-
-```shell
-tar -czvf linux-rpi-4.19.y.tgz linux-rpi-4.19.y
-scp linux-rpi-4.19.y.tgz root@pi3b.inc:/root
-```
-
-登录树莓派，解压内核，并且创建软链接。
-
-```shell
-tar -xf linux-rpi-4.19.y.tgz
-ln -s /root/linux-rpi-4.19.y /lib/modules/`uname -r`/build
-ln -s /root/linux-rpi-4.19.y /lib/modules/`uname -r`/source
-```
+下载[Eclipse IDE for C/C++ Developers](https://www.eclipse.org/downloads/packages/)，并按照书上的说明设置即可。
 
 #### vscode remote
 
 略。
+
+#### 树莓派3B系统设置
+
+* apt切换到国内镜像：https://mirrors.tuna.tsinghua.edu.cn/help/raspbian/
 
