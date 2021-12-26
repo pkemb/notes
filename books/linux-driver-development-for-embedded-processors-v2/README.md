@@ -106,3 +106,15 @@ u:
 
 * apt切换到国内镜像：https://mirrors.tuna.tsinghua.edu.cn/help/raspbian/
 
+
+## 第02章 Linux设备与驱动模型
+
+### 驱动模型
+
+[第十四章 Linux设备模型](../linux-device-drivers-v3/README.md#第十四章-linux设备模型)
+
+### 设备树
+
+* [设备树标准](https://github.com/devicetree-org/devicetree-specification/releases)
+* [kernel文档](https://www.kernel.org/doc/html/latest/devicetree/)
+
