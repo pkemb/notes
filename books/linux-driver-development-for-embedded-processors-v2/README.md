@@ -121,3 +121,23 @@ u:
 ## 第03章 最简驱动程序
 
 内核模块、模块参数、模块初始化与退出、Makefile等内容，略。
+
+## 第04章 字符设备驱动
+
+* cdev_init
+  * struct cdev
+  * file_operations结构体
+    * kernel space和user space交换数据
+    * struct inode：表示一个唯一的文件
+    * struct file：表示一个打开的文件
+    * 各个成员函数的语义
+* cdev_add
+  * 设备号，dev_t
+    * 动态申请
+    * 静态申请
+* 模块与内核一起构建
+  * Kconfig
+  * Makefile
+* 设备节点
+  * mknod
+  * udev
