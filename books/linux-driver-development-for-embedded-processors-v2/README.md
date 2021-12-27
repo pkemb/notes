@@ -118,3 +118,6 @@ u:
 * [设备树标准](https://github.com/devicetree-org/devicetree-specification/releases)
 * [kernel文档](https://www.kernel.org/doc/html/latest/devicetree/)
 
+## 第03章 最简驱动程序
+
+内核模块、模块参数、模块初始化与退出、Makefile等内容，略。
