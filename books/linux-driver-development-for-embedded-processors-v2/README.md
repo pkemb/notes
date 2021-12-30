@@ -141,3 +141,10 @@ u:
 * 设备节点
   * mknod
   * udev
+* misc字符设备
+  * struct miscdevice
+    * name：会出现在/proc/misc，并且会自动创建设备文件/dev/name
+    * minor：指定的子设备号。如果设置为MISC_DYNAMIC_MINOR则表示动态申请
+    * fops
+  * misc_register()
+  * misc_deregister()
