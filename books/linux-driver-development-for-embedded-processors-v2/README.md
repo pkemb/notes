@@ -158,3 +158,18 @@ u:
   * probe / remove
 * struct of_device_id
 
+### pinctrl子系统
+
+https://www.kernel.org/doc/html/latest/driver-api/pin-control.html
+
+注册引脚：
+* pinctrl子系统核心需要SoC实现
+  * pinctrl_desc
+    * pinctrl_ops
+    * pinmux_ops
+    * pinconf_ops
+  * gpio_chip
+  * irq_chip
+* dts提供引脚配置节点
+
+设备驱动从pinctrl子系统核心请求引脚复用
