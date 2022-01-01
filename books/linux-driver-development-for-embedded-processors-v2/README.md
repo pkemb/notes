@@ -148,3 +148,11 @@ u:
     * fops
   * misc_register()
   * misc_deregister()
+
+## 第05章 平台设备驱动
+
+平台设备用于枚举不可探测的设备。
+* struct platform_driver
+  * probe / remove
+* struct of_device_id
+
