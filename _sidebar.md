@@ -2,3 +2,4 @@
 * [Linux设备驱动程序（第三版）](books/linux-device-drivers-v3/)
 * [深入理解Linux内核（第三版）](books/understanding-the-linux-kernel-v3/notes.md)
 * [汇编语言程序设计](books/professional-assembly-language/)
+* [嵌入式Linux设备驱动程序开发指南（第2版）](books/linux-driver-development-for-embedded-processors-v2/)

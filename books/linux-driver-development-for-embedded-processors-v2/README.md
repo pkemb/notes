@@ -1,6 +1,8 @@
 # 嵌入式Linux设备驱动程序开发指南
 
 在树莓派3B平台，基于内核4.x.y版本，学习驱动开发。
+* [豆瓣](https://book.douban.com/subject/35514232/)
+* [github repo](https://github.com/ALIBERA/linux_book_2nd_edition)
 
 ## 第01章 构建系统
 
