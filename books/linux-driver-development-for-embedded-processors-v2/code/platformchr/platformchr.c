@@ -36,61 +36,27 @@ MODULE_DESCRIPTION("platform char device");
 
 #define log(fmt, ...)   pr_debug("[%s:%d]" fmt, __FUNCTION__, __LINE__, ##__VA_ARGS__)
 
-struct pkmiscdevice {
-    struct miscdevice misc;
-    struct list_head list;
-};
-#define to_pkmiscdevice(list)   container_of(list, struct pkmiscdevice, list)
-
-LIST_HEAD(pkmisc_list);   // 通过链表管理所有的 pkmiscdevice
-DEFINE_MUTEX(pkmisc_mtx); // 访问链表时需要互斥锁
-
 /*************** miscdevice相关的fops函数 ***************************/
-
-int miscchr_open(struct inode *inode, struct file *filp)
-{
-    struct pkmiscdevice *pkmisc = NULL;
-    log("major = %d, minor = %d\n", MAJOR(inode->i_rdev), MINOR(inode->i_rdev));
-
-    mutex_lock(&pkmisc_mtx);
-
-    list_for_each_entry(pkmisc, &pkmisc_list, list) {
-        log("pkmisc name = %s\n", pkmisc->misc.name);
-        if (pkmisc->misc.minor == MINOR(inode->i_rdev)) {
-            log("found pkmisc\n");
-            break;
-        }
-    }
-
-    mutex_unlock(&pkmisc_mtx);
-
-    // 如果不等表示找到了
-    if (&pkmisc_list != &pkmisc->list) {
-        filp->private_data = pkmisc;
-        return 0;
-    }
-
-    return -1;
-}
 
 ssize_t miscchr_read(struct file *filp, char __user *buff, size_t size, loff_t *off)
 {
-    struct pkmiscdevice *pkmisc = (struct pkmiscdevice *)filp->private_data;
-    log("size = %d, name = %s\n", size, pkmisc->misc.name);
+    struct miscdevice *misc = (struct miscdevice *)filp->private_data;
+    log("misc = %p\n", misc);
+    log("size = %d, name = %s\n", size, misc->name);
     return size;
 }
 
 ssize_t miscchr_write(struct file *filp, const char __user *buff, size_t size, loff_t *off)
 {
-    struct pkmiscdevice *pkmisc = (struct pkmiscdevice *)filp->private_data;
-    log("size = %d, name = %s\n", size, pkmisc->misc.name);
+    struct miscdevice *misc = (struct miscdevice *)filp->private_data;
+    log("misc = %p\n", misc);
+    log("size = %d, name = %s\n", size, misc->name);
     return size;
 }
 
 struct file_operations fops = {
     .read  = miscchr_read,
     .write = miscchr_write,
-    .open  = miscchr_open,
 };
 
 // 驱动支持的设备列表
@@ -117,64 +83,42 @@ dts文件如下：
 // 根据dts的内容，probe()会被调用两次。name分别是soc:helloplatform1和soc:helloplatform2
 int my_probe(struct platform_device *device)
 {
-    struct pkmiscdevice *pkmisc = NULL;
+    struct miscdevice *misc = NULL;
     int ret = 0;
-    log("name = %s\n", device->name);
-    log("id = %d\n", device->id);
+    log("name = %s, id = %d\n", device->name, device->id);
 
-    mutex_lock(&pkmisc_mtx);
-
-    pkmisc = (struct pkmiscdevice *)kmalloc(sizeof(*pkmisc), GFP_KERNEL);
-    if (!pkmisc) {
-        log("kmalloc fail\n");
-        mutex_unlock(&pkmisc_mtx);
+    // Memory allocated with this function is automatically freed on driver detach.
+    misc = devm_kzalloc(&device->dev, sizeof(*misc), GFP_KERNEL);
+    log("misc = %p\n", misc);
+    if (!misc) {
+        log("devm_kzalloc fail\n");
         return -1;
     }
-    memset(pkmisc, 0, sizeof(struct pkmiscdevice));
 
-    pkmisc->misc.name = device->name;
-    pkmisc->misc.minor = MISC_DYNAMIC_MINOR;
-    pkmisc->misc.fops = &fops;
+    misc->name  = device->name;
+    misc->minor = MISC_DYNAMIC_MINOR;
+    misc->fops  = &fops;
+    misc->mode  = 0666;
 
-    ret = misc_register(&pkmisc->misc);
+    ret = misc_register(misc);
     if (ret) {
         log("add misc device fail\n");
-        kfree(pkmisc);
-        pkmisc = NULL;
-        mutex_unlock(&pkmisc_mtx);
         return -1;
     }
 
-    list_add(&pkmisc->list, &pkmisc_list);
+    platform_set_drvdata(device, misc);
 
-    mutex_unlock(&pkmisc_mtx);
     return 0;
 }
 
 // 字符设备删除
 int my_remove(struct platform_device *device)
 {
-    struct pkmiscdevice *pkmisc = NULL;
+    struct miscdevice *misc = NULL;
     log("name = %s\n", device->name);
 
-    mutex_lock(&pkmisc_mtx);
-
-    list_for_each_entry(pkmisc, &pkmisc_list, list) {
-        log("pkmisc name = %s\n", pkmisc->misc.name);
-        if (!strcmp(pkmisc->misc.name, device->name)) {
-            break;
-        }
-    }
-
-    // 如果不等表示找到了
-    if (&pkmisc->list != &pkmisc_list) {
-        misc_deregister(&pkmisc->misc);
-        list_del(&pkmisc->list);
-        kfree(pkmisc);
-        pkmisc = NULL;
-    }
-
-    mutex_unlock(&pkmisc_mtx);
+    misc = platform_get_drvdata(device);
+    misc_deregister(misc);
 
     return 0;
 }
