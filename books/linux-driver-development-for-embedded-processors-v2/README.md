@@ -173,3 +173,66 @@ https://www.kernel.org/doc/html/latest/driver-api/pin-control.html
 * dts提供引脚配置节点
 
 设备驱动从pinctrl子系统核心请求引脚复用
+
+### gpiod接口
+
+**获取和释放gpio描述符**
+
+```c
+// 通过 IS_ERR() 检查返回值是否出错
+struct gpio_desc *devm_gpiod_get(
+    struct device *dev, const char *con_id, enum gpiod_flags flags);
+struct gpio_desc *devm_gpiod_get_index(
+    struct device *dev, const char *con_id, unsigned int idx, enum gpiod_flags flags);
+void devm_gpiod_put(struct device *dev, struct gpio_desc *desc);
+```
+
+参数说明如下：
+* dev：可以从probe()函数的参数获取device结构体
+* con_id：设备树中GPIO映射定义的属性名。例如属性是`led-gpios=<&gpio 26 GPIO_ACTIVE_HIGH>;`，则`con_id="led"`
+* idx：同一个属性可以包含多个GPIO映射定义，通过idx来区分
+* flags：可以取如下值
+  * GPIOD_ASIS或0：不初始化GPIO，后续需要使用API设置GPIO的方向。
+  * GPIOD_IN：GPIO设置为输入
+  * GPIOD_OUT_LOW：GPIO设置为输出，初值设置为0
+  * GPIOD_OUT_HIGHT：GPIO设置为输入，初值设置为1
+
+**GPIO方向**
+
+```c
+int gpiod_get_direction(const struct gpio_desc *desc);
+int gpiod_direction_input(struct gpio_desc *desc);
+int gpiod_direction_output(struct gpio_desc *desc, int value);
+```
+
+**设置GPIO的值**
+
+```c
+int gpiod_get_value(const struct gpio_desc *desc);
+int gpiod_set_value(const struct gpio_desc *desc, int value);
+```
+
+gpiod使用逻辑值，`value=1`表示值有效，`value=0`表示值无效。下表列出了逻辑值和pin脚电平的关系。
+
+| value | 电平有效属性 | pin脚电平 |
+| - | - | - |
+| 0 | 高电平有效 | 低 |
+| 1 | 高电平有效 | 高 |
+| 0 | 低电平有效 | 高 |
+| 1 | 低电平有效 | 低 |
+
+**gpio映射到中断**
+
+`int gpiod_to_irq(const struct gpio_desc *desc)`获取GPIO对应的IRQ号，返回值可以传递到`request_irq()`或`free_irq()`。如果无法完成映射，则`gpiod_to_irq()`返回一个负的错误码。此函数不会阻塞。
+
+**GPIO设备树**
+
+示例如下。属性`led-gpios`定义了gpio映射，可以用逗号分隔映射多个gpio。对于每一个映射，`&gpio`表示gpio控制器，SoC厂家会在dts中给出定义。`27`表示gpio号，`GPIO_ACTIVE_HIGH`表示高电平有效。
+
+```dts
+ledred {
+    compatible = "pk,RGBleds";
+    label = "ledred";
+    led-gpios = <&gpio 27 GPIO_ACTIVE_HIGH>;
+};
+```
