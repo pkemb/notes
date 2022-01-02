@@ -14,3 +14,4 @@ books/linux-device-drivers-v3/ldd3-scull-ch03.si4project
 .*.o.cmd
 *.o.d
 .tmp_versions
+.vscode
