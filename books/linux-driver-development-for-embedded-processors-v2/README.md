@@ -36,6 +36,11 @@
   * of_property_read_string() 获取指定属性的值
   * gpiod_get_value() 获取电平
   * gpiod_set_value() 设置电平
+* [led-pinctrl](code/led-pinctrl/)
+  * 使用pinctrl控制GPIO的状态
+  * DTS文件的编写，GPIO控制器的引脚状态节点，设备驱动结点的pinctrl-name和pinctrl-n节点
+  * ioremap
+  * iowrite / ioread
 
 ## 第01章 构建系统
 
@@ -193,9 +198,13 @@ u:
 
 ### pinctrl子系统
 
-https://www.kernel.org/doc/html/latest/driver-api/pin-control.html
+**学习参考**
 
-注册引脚：
+* https://www.kernel.org/doc/html/latest/driver-api/pin-control.html
+* http://www.wowotech.net/gpio_subsystem/pin-control-subsystem.html
+
+**注册引脚**
+
 * pinctrl子系统核心需要SoC实现
   * pinctrl_desc
     * pinctrl_ops
@@ -206,6 +215,46 @@ https://www.kernel.org/doc/html/latest/driver-api/pin-control.html
 * dts提供引脚配置节点
 
 设备驱动从pinctrl子系统核心请求引脚复用
+
+**dts编写**
+
+首先需要在GPIO控制器节点定义引脚状态。以树莓派3B为例。`brcm,pins`等属性是由`pinctrl-bcm2835.c`定义。
+
+```dts
+&gpio {
+    led_pins: led_pins {
+        brcm,pins = <27 22 26>;
+        brcm,function = <BCM2835_FSEL_GPIO_OUT>;
+        brcm,pull = <BCM2835_PUD_UP BCM2835_PUD_UP BCM2835_PUD_UP>;
+    };
+};
+```
+
+设备驱动节点引用GPIO控制器定义的引脚状态。标准属性`pinctrl-names`定义了引脚状态的名字，标准属性`pinctrl-n`引用引脚状态。
+
+```dts
+&soc {
+    ledred {
+        compatible = "pk,RGBleds";
+        label = "ledred";
+        pinctrl-names = "default";
+        pinctrl-0 = <&led_pins>;
+        pinctrl-1 = <&xxxxxxxx>
+        pins = <27>;
+    };
+};
+```
+
+**设备驱动常用接口**
+
+```c
+// 获取 pinctrl
+struct pinctrl *devm_pinctrl_get(struct device *dev);
+// 查找状态
+struct pinctrl_state *pinctrl_lookup_state(struct pinctrl *p, char *name);
+// 切换到指定状态
+int pinctrl_select_state(struct pinctrl *p, struct pinctrl_state *state);
+```
 
 ### gpiod接口
 
