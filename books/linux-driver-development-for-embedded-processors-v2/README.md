@@ -318,3 +318,31 @@ ledred {
     led-gpios = <&gpio 27 GPIO_ACTIVE_HIGH>;
 };
 ```
+
+### io端口
+
+ARM处理器主存和IO设备使用相同的地址空间，这意味着可以使用常规指令访问IO设备。但是设备驱动无法直接访问物理地址，需要重新映射。
+
+**io端口重映射**
+
+下面是端口重映射和解除重映射的API。推荐使用`devm_`开头的API，因为设备模型会处理好资源的释放。
+
+```c
+void __iomem *ioremap(phys_addr_t offset, size_t size);
+void iounmap(void *address);
+
+void __iomem *devm_ioremap(struct device *dev, resource_size_t offset, resource_size_t size);
+void devm_iounmap(struct device *dev, void __iomem *addr);
+```
+
+**读写io端口**
+
+```c
+u8 ioread8(const volatile void __iomem *addr);
+u16 ioread16(const volatile void __iomem *addr);
+u32 ioread32(const volatile void __iomem *addr);
+
+void iowrite8(u8 value, volatile void __iomem *addr);
+void iowrite16(u16 value, volatile void __iomem *addr);
+void iowrite32(u32 value, volatile void __iomem *addr);
+```
