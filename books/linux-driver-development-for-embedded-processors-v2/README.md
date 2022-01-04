@@ -346,3 +346,35 @@ void iowrite8(u8 value, volatile void __iomem *addr);
 void iowrite16(u16 value, volatile void __iomem *addr);
 void iowrite32(u32 value, volatile void __iomem *addr);
 ```
+
+## 第07章 中断
+
+* 基本概念
+  * 中断是一个信号，可以来自外部，也可以来自内部
+  * 中断运行在中断上下文，不能访问用户进程、不能随眠
+  * 硬件IRQ号
+  * Linux IRQ号
+* 中断处理流程
+  * 顶半部：快，中断处理函数
+    * 清除中断标志
+    * 通知其他模块或启动底半部
+  * 底半部：完成比较耗时的操作
+    * tasklet
+    * work queue
+    * 软中断
+    * threaded_irq
+* 中断编程
+  * 获取硬件IRQ号
+    * 自动或手动探测
+    * 读取寄存器
+    * 通过gpio获取
+    * 通过DTS指定
+  * 申请/释放Linux IRQ号
+    * 申请函数的各个参数说明
+  * IRQ处理函数、参数与返回值
+  * 使能/屏蔽中断
+* 共享中断
+* /proc接口
+  * /proc/interrupts
+  * /proc/stat的intr行
+* 设备树
