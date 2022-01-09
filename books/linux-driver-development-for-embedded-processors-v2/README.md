@@ -378,3 +378,29 @@ void iowrite32(u32 value, volatile void __iomem *addr);
   * /proc/interrupts
   * /proc/stat的intr行
 * 设备树
+
+**获取硬件IRQ号**
+
+```c
+int gpiod_to_irq(const struct gpio_desc *desc);
+```
+
+**申请中断**
+
+```c
+int request_irq(
+    unsigned int irq,
+    irq_handler_t handler,
+    unsigned long flags,
+	const char *name,
+    void *dev);
+int devm_request_irq(
+    struct device *dev,
+    unsigned int irq,
+    irq_handler_t handler,
+	unsigned long irqflags,
+    const char *devname,
+    void *dev_id);
+```
+
+**设备树**
