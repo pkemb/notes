@@ -23,6 +23,10 @@ function deploy_kernel()
 function deploy_dtb()
 {
     scp arch/arm/boot/dts/bcm2710-rpi-3-b.dtb root@${HOST}:/boot/bcm2710-rpi-3-b-pk.dtb
+}
+
+function deploy_dtbs()
+{
     scp arch/arm/boot/dts/overlays/*.dtb*     root@${HOST}:/boot/overlays/
 }
 
@@ -42,6 +46,7 @@ function usage()
     echo "$0           deploy kernel"
     echo "$0 kernel    deploy kernel"
     echo "$0 dtb       deploy dtb"
+    echo "$0 dtbs      deploy dtbs"
     echo "$0 modules   deploy modules"
     echo "$0 all       deploy kernel & dtb & modules"
     echo "$0 help      print this message"
@@ -65,6 +70,7 @@ case "$deploy" in
     all)
         deploy_kernel
         deploy_dtb
+        deploy_dtbs
         deploy_modules
         ;;
     kernel)
@@ -73,6 +79,9 @@ case "$deploy" in
     dtb)
         deploy_dtb
         ;;
+    dtbs)
+        deploy_dtbs
+        ;;
     modules)
         deploy_modules
         ;;
@@ -80,3 +89,5 @@ case "$deploy" in
         usage
         exit -1
 esac
+
+ssh root@${HOST} "sync"
