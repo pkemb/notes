@@ -1,9 +1,48 @@
-# Linux设备驱动程序（第三版）
+# Linux设备驱动
+
+综合以下四本书籍的阅读笔记。开发测试平台为树莓派3B，内核版本4.19。
+
+**Linux设备驱动程序（第三版）**
 
 相关资源：
 * [ldd3英文版PDF](https://lwn.net/Kernel/LDD3/)
 
-# 第一章 设备驱动程序简介
+> 顾名思义，本书是讲述如何编写Linux设备驱动程序的。面对层出不穷的新硬件产品，必须有人不断编写新的驱动程序以便让这些设备能够在Linux下正常工作，从这个意义上讲，讲述驱动程序的编写本身就是一件非常有意义的工作。但本书也涉及到Linux内核的工作原理，同时还讲述如何根据自己的需要和兴趣来定制Linux内核。Linux是一个开放的系统，我们希望借助本书使它能够更加开放，从而能够吸引更多的开发人员。
+
+![](https://img1.doubanio.com/view/subject/s/public/s27318527.jpg)
+
+**嵌入式Linux设备驱动程序开发指南（原书第二版）**
+
+相关资源：
+* [github repo](https://github.com/ALIBERA/linux_book_2nd_edition)
+* [BCM2835-ARM-Peripherals.pdf](BCM2835-ARM-Peripherals.pdf)
+* [豆瓣](https://book.douban.com/subject/35514232/)
+
+> 本书将告诉你如何为设备树嵌入式Linux系统开发设备驱动程序。你将学会如何编写不同类型的Linux驱动程序，以及如何使用适当的API（应用程序接口）实现与内核和用户态的交互。本书内容以实用为主，但也提供重要的理论基础知识。
+> 本书编写了近30个驱动程序，并将其移植到三种不同的处理器上。你可以选择NXP i.MX7D、Microchip SAMA5D2和Broadcom BCM2837三种处理器来开发和测试这些驱动程序，本书的实验部分详细介绍了这些驱动程序的实现。在你开始阅读之前，建议你使用一个开发板，这个开发板需要有一些GPIO，以及至少一个SPI和I2C控制器。本书详细介绍了用于开发驱动程序的不同评估板的硬件配置，其中用于实现驱动程序的单板包括著名的Raspberry Pi 3 Model B。我鼓励你在开始阅读之前，先找到一块这样的单板，因为本书的内容注重实践，用单板做实验将有助于你应用贯穿全书的理论知识。
+> 你将学习如何开发驱动程序，从最简单的不与任何外部硬件交互的驱动程序，到管理不同类型设备（如加速度计、DAC、ADC、RGB LED、多显LED控制器、I/O扩展器和按钮）的驱动程序。你还将开发DMA驱动程序、管理中断的驱动程序，以及通过写入/读取处理器内部寄存器来控制外部设备的驱动程序。为了简化这些驱动程序的开发，你将使用不同类型的框架：杂项框架、LED框架、UIO框架、输入框架和IIO工业框架。
+> 本书是一个学习工具，可以帮助读者在没有任何领域知识的情况下开始开发驱动程序。本书的写作目的是介绍如何开发没有高度复杂性的驱动程序，这既有助于强化主要的驱动程序开发概念，也有助于读者开始开发自己的驱动程序。记住，开发驱动程序的最好方法不是从头开始写。你可以重用与Linux内核主线驱动程序类似的免费代码。本书中所写的所有驱动程序都遵循GPL许可，因此你可以在相同许可证下修改和重新发布它们。
+
+![](https://img2.doubanio.com/view/subject/s/public/s33936982.jpg)
+
+**Linux设备驱动开发**
+
+豆瓣：https://book.douban.com/subject/35375574/
+
+> 本书讲解了Linux驱动开发的基础知识以及所用到的开发环境，全书分为22章，其内容涵盖了各种Linux子系统，包含内存管理、PWM、RTC、IIO和IRQ管理等，还讲解了直接内存访问和网络设备驱动程序的实用方法。在学完本书之后，读者将掌握设备驱动开发环境的概念，并可以从零开始为任何硬件设备编写驱动程序。阅读本书需要具备基本的C语言程序设计能力，且熟悉Linux基本命令。本书主要是为嵌入式工程师、Linux系统管理员、开发人员和内核黑客而设计的。无论是软件开发人员，还是系统架构师或制造商，只要愿意深入研究Linux驱动程序开发，阅读本书后都将有所收获。
+
+![](https://img9.doubanio.com/view/subject/s/public/s33857434.jpg)
+
+**Linux设备驱动开发详解 基于最新的Linux4.0内核**
+
+豆瓣：https://book.douban.com/subject/26600201/
+
+> 对于嵌入式工程师来说，进入更高阶段后，学习Linux设备驱动开发无疑就是职业生涯的一次“重生”。这是因为Linux设备驱动开发不仅仅涉及操作系统的转换，开发方式的转换，更重要的是思维上的转变。对于Linux这样一个复杂系统，如何从复杂的代码中抓住设备驱动开发的关键是任何一个Linux设备驱动开发者入门时需要面对的挑战。除了知识、工具之外，往往还需要思路上的指导。本书不但帮助Linux设备驱动开发的初学者厘清必要的概念，还从具体的实例、设备驱动开发的指导原则循序渐进地引导读者渐入学习佳境。为了让读者能够达到Linux设备驱动开发的至臻境界，作者更是从软件工程的角度抽象出设备驱动开发的一般思想。毫无疑问，本书将成为读者学习Linux设备驱动开发过程中的一座“灯塔”。
+
+![](https://img12.360buyimg.com/n1/jfs/t1/20036/38/12520/67641/5c9885caE59a148a8/cca8e5df82bc52cd.jpg)
+
+
+# 设备驱动程序简介
 
 设备驱动程序：使某个特定硬件响应一个定义良好的内部编程接口，这些接口完全隐藏了设备的工作细节。
 
@@ -14,14 +53,16 @@
 ```
 
 ## 内核功能划分
+
 * 进程管理
 * 内存管理
 * 文件系统
-* 设备控制：本书讨论的主题
+* 设备控制：学习的主题
 * 网络功能
 * ...
 
 ## 可装载模块
+
 Linux内核可以在运行时动态的装载（insmod）或卸载（rmmod）模块。模块由目标代码组成（未链接）。Linux内核支持多种模块类型，`设备驱动程序`是其中一种。
 
 ## 设备和模块的分类
@@ -37,77 +78,149 @@ Linux内核可以在运行时动态的装载（insmod）或卸载（rmmod）模�
 * SCSI模块
 * ...
 
-# 第二章 构造和运行模块
+# 构建开发环境
 
-## 设置测试系统
+## 树莓派3B
 
-编译kernel请参考[自己动手编译Linux内核](https://pkemb.com/2021/09/compile-linux-kenrel/)。根据第四章的内容，需要打开以下config。
-* CONFIG_DEBUG_KERNEL
-* CONFIG_DEBUG_SLAB
-* CONFIG_DEBUG_PAGEALLOC
-* CONFIG_DEBUG_SPINLOCK
-* CONFIG_DEBUG_SPINLOCK_SLEEP
-* CONFIG_INIT_DEBUG
-* CONFIG_DEBUG_INFO
-* CONFIG_MAGIC_SYSRQ
-* CONFIG_DEBUG_STACKOVERFLOW
-* CONFIG_DEBUG_STACK_USAGE
-* CONFIG_KALLSYMS
-* CONFIG_IKCONFIG
-* CONFIG_IKCONFIG_PROC
-* CONFIG_ACPI_DEBUG
-* CONFIG_DEBUG_DRIVER
-* CONFIG_SCSI_CONSTANTS
-* CONFIG_INPUT_EVBUG
-* CONFIG_PROFILING
+> 主要参考了`嵌入式Linux设备驱动程序开发指南（原书第二版）`第1.11小节。
 
-## hello world 模块
+树莓派3B的开发环境搭建主要由以下步骤构成：
+1. [系统安装，SSH/串口登录](#系统安装)
+2. [编译内核](#编译内核)
+3. 安装内核
+4. 内核模块开发环境
 
-以下是hello world模块的[完整代码](code/ch02/hello.c)：
+### 系统安装
+
+树莓派raspbian系统可以从[官方网站](http://downloads.raspberrypi.org/raspbian_lite/images/)下载，推荐下载2018.3.13之后的版本。树莓派安装raspbian系统可以参考博客[树莓派安装raspbian系统](https://blog.csdn.net/qq_34672033/article/details/88389951)。默认登录用户名为pi，该账户默认密码是raspberry。参考博客[树莓派3 B+ 的串口（USART）使用问题](https://www.cnblogs.com/uestc-mm/p/7204429.html)打开串口。
+
+### 编译内核
+
+由于树莓派3B的系统资源太少，所以选择在PC机交叉编译内核。树莓派启动之后，使用命令`uname -a`查看kernel版本号，克隆对应版本的kernel。下面是内核和工具链的仓库地址。如果GitHub太慢，可以选择GitHub的国内镜像`github.com.cnpmjs.org`。
+
+> 2019-06-20的内核版本是4.19.y
+
+```shell
+# github
+git clone --depth=1 -b rpi-4.19.y https://github.com/raspberrypi/linux linux-rpi
+git clone https://github.com/raspberrypi/tools tools-rpi
+
+# 国内镜像
+git clone --depth=1 -b rpi-4.19.y https://github.com.cnpmjs.org/raspberrypi/linux linux-rpi
+git clone https://github.com.cnpmjs.org/raspberrypi/tools tools-rpi
+```
+
+编译内核之前，需要安装如下软件包。
+
+```shell
+apt-get install bison flex libncurses-dev libssl-dev bc
+```
+
+使用脚本[build.sh](rpi-kernel/build.sh)一键编译内核。执行脚本之前，需要检查`KERNELDIR`和`TOOLDIR`变量的设置是否正确，`TOOLDIR`定义在脚本[setenv.sh](rpi-kernel/setenv.sh)。文件[bcm2709_pk_defconfig](rpi-kernel/bcm2709_pk_defconfig)是根据书上说明设置之后的defconfig文件，脚本编译时会使用到此文件。
+
+### 安装内核
+
+使用脚本[deploy.sh](rpi-kernel/deploy.sh)安装内核到树莓派。启动脚本之前，需要检查变量`HOST`和`KERNELDIR`的取值，推荐配置好SSH免密登录，不然SCP命令需要输入密码。脚本的使用方法如下：
+
+```shell
+Usage:  deploy.sh [kernel|dtb|modules|all] [help]
+
+deploy.sh           deploy kernel
+deploy.sh kernel    deploy kernel
+deploy.sh dtb       deploy dtb
+deploy.sh modules   deploy modules
+deploy.sh all       deploy kernel & dtb & modules
+deploy.sh help      print this message
+```
+
+编辑`/boot/config.txt`，加入如下内容，切换到新版本内核。系统启动成功之后，使用命令`uname -r`查看内核版本是否与内核源代码版本一致。进入内核源代码目录，使用命令`head -n 5 Makefile`可以查看内核源代码的版本。
+
+```shell
+dtparam=i2c_arm=on
+dtparam=spi=on
+dtoverlay=spi0=on
+
+kernel=kernel-rpi-pk.img
+device_tree=bcm2710-rpi-3-b-pk.dtb
+```
+
+### 内核模块开发环境
+
+需要在PC机搭建交叉编译环境。考虑到Eclipse太复杂了，不推荐使用。直接`vscode remote + makefile`。[target.mk](code/target.mk)定义了一些常用的目标，如`build`、`deploy`、`i`、`u`、`clean`，同时还指定了kernel的目录。[var.mk](code/var.mk)定义了一些常用的变量，例如参与编译的目标文件、`EXTRA_CFLAGS`等等。
+
+在源代码目录，按照如下模板编写`Makefile`即可。`KO_NAME`指定了编译成功后ko文件的名字，`MODULE_NAME`需要与C文件的名字相同。如果有多个C文件参与编译，则通过`$(KO_NAME)-objs := xxx.o`来指定。
+
+`make i`可一键编译、卸载、并安装ko到树莓派。文件传输和命令的执行是通过SSH来完成，所以要保证树莓派连接到了局域网，开启了SSH服务，并且[target.mk](code/target.mk)指定了正确的`USER`和`HOST`。
+
+```makefile
+KO_NAME=foo
+MODULE_NAME=bar
+# $(KO_NAME)-objs := xxx.o
+
+ifneq ($(KERNELRELEASE),)
+# second run
+include $(PWD)/../var.mk
+else
+# first run
+include ../target.mk
+endif
+```
+
+### 树莓派3B系统设置
+
+* apt切换到国内镜像：https://mirrors.tuna.tsinghua.edu.cn/help/raspbian/
+
+# 设备树
+
+* [设备树标准](https://github.com/devicetree-org/devicetree-specification/releases)
+* [kernel文档](https://www.kernel.org/doc/html/latest/devicetree/)
+
+# 内核模块
+
+以下是一个最简模块的示例代码。
+
 ```c
 #include <linux/init.h>
 #include <linux/module.h>
+
 MODULE_LICENSE("Dual BSD/GPL");
 
-static int hello_init(void)
+static int __init hello_init(void)
 {
     printk(KERN_ALERT "hello world!\n");
+    return 0;
 }
+module_init(hello_init);
 
-static int hello_exit(void)
+static int __exit hello_exit(void)
 {
     printk(KERN_ALERT "Googbye hello world!\n");
 }
-
-module_init(hello_init);
 module_exit(hello_exit);
 ```
 
-最简单的模块包含的内容：
-* MODULE_LICENSE()
-* 模块初始化函数
-* 模块退出函数
-* 模块在运行时不能只用C库函数，可以使用kernel提供的函数（例如printk()）
+最简单的模块包含以下内容，更多内容将在后面介绍。关于模块的编译与安装，请参考[内核模块开发环境](#内核模块开发环境)。
+
+* MODULE_LICENSE()或其他声明
+* 模块初始化函数与退出函数
+* 模块在运行时只可以使用kernel提供的函数（例如printk()），不能使用C库函数。
 * 加载模块的指令：insmod
 * 卸载模块的指令：rmmod
 
-关于模块的构造，请参考[编译和装载](#编译和装载)。
-
 ## 核心模块与应用程序的对比
 
-从编程模式看，应用程序一般从头到尾执行单个任务。模块的初始化函数执行完毕后就直接退出了，相当于告诉内核，我在这，我能提供某些服务。
+| | 内核模块 | 应用程序 |
+| - | - | - |
+| 编程模式 | 初始化函数执行完毕后就直接返回了，相当于告诉内核，我在这，我能提供某些服务。 | 一般从头到尾执行单个任务。 |
+| 退出 | 必须在退出函数仔细的撤销初始化函数做的工作。 | 无需关心资源的释放，因为kernel会帮助完成资源的释放。 |
+| 运行环境 | 会与内核链接起来，但不会和任何函数库链接。<br>所以模块无法使用常见的库和头文件，只能使用kernel提供的函数和头文件。 | 运行在kernel提供的进程环境中，可以使用C库函数。|
+| 出错 | 模块的错误可能会导致整个系统宕机。 | 应用程序的错误一般只会对自己照成影响。|
 
-应用程序退出时，无需关系资源的释放，因为kernel会帮助完成资源的释放。而模块必须在退出函数，必须仔细的撤销初始化函数做的工作。
-
-模块会与内核链接起来，但不会和任何函数库链接。所以模块无法使用常见的库和头文件，只能使用kernel提供的函数和头文件。
-
-应用程序的错误一般只会对自己照成影响，而模块的错误可能会导致整个系统宕机。
-
-### 用户空间和内核空间
+**用户空间和内核空间**
 
 模块运行在内核空间，而应用程序运行在用户空间。这两种模式具有不同的特权等级、不同的地址空间。当发生系统调用或中断时，会从用户空间陷入到内核空间。
 
-### 内核中的并发
+**内核中的并发**
 
 应用程序通常是顺序执行的，无需关心其他事情会改变其运行环境。而模块（内核代码）必须时刻牢记：`同一时刻，可能会有很多事情正在发生`。
 
@@ -121,11 +234,11 @@ module_exit(hello_exit);
 1. Linux内核代码（包括驱动程序的代码）必须是可重入的，必须能同时运行在多个上下文。
 2. 处理并发问题的同时，还要避免竞态。
 
-### 当前进程
+**当前进程**
 
 内核代码可以通过全局项`current`来获取当前进程，此全局指针定义在`<asm/current.h>`中。
 
-### 其他一些细节
+**其他一些细节**
 
 * 内核栈非常小，而且自己的函数和整个内核空间调用链共享栈。对于比较大的数据结构，建议动态分配。
 * 有两个下划线（__）前缀的函数，通常是比较底层的实现。可以使用，后果自负。
@@ -133,17 +246,16 @@ module_exit(hello_exit);
 
 ## 编译和装载
 
-如何编译模块并将其装载到内核。
+如何编译模块并将其装载到内核。还可以参考[内核模块开发环境](#内核模块开发环境)。
 
-### 编译模块
+**编译模块**
 
 在构造模块之前，需要确保环境准备妥当：
 1. 具备了正确版本的编译器、模块工具和其他必要的工具。具体可以看内核源代码的Documentation/Changes文件。
 2. 文件系统需要有内核树，或者配置并构造内核。
 
-关于构造系统更加详细的内容，可以参考内核源代码Documentation/kbuild目录下的文件。
+关于构造系统更加详细的内容，可以参考内核源代码`Documentation/kbuild`目录下的文件。下面是一个示例`makefile`，直接执行`make`指令即可构造`hello world`模块。此makefile会被读取两次，第一次走else分支，第二次走if分支。
 
-下面是hello world模块的[makefile](code/ch02/Makefile)，直接执行`make`指令，即可构造hello world模块。此makefile会被读取两次，第一次走else分支，第二次走if分支。
 ```makefile
 # 如果已定义 KERNELRELEASE，则说明是从内核构造系统调用的，
 # 因此可利用其内建语句。
@@ -160,7 +272,7 @@ default:
 endif
 ```
 
-### 装载和卸载模块
+**装载和卸载模块**
 
 | 命令     | 说明 |
 | -        | - |
@@ -169,32 +281,27 @@ endif
 | rmmod    | 从内核中移除模块。如果模块正在使用，或被内核配置未禁止移除，则无法移除模块。 |
 | lsmod    | 列出当前装载到内核的所有模块。有关装载模块的更多信息，可以查看`/proc/modules`文件和`/sys/module`目录。 |
 
-### 版本依赖
+**版本依赖**
 
-模块可以和内核中的vermagic.o链接，此目标文件包含了大量有关内核的信息。在装载时，可用来检查模块和内核的兼容性。如果不匹配，则拒绝装载模块。
+模块可以和内核中的`vermagic.o`链接，此目标文件包含了大量有关内核的信息。在装载时，可用来检查模块和内核的兼容性。如果不匹配，则拒绝装载模块。如果要为特定内核版本构造模块，则需要该特定版本对应的构造系统和源代码树。可以使用条件编译，编写基于特定内核版本的代码。
 
-如果要为特定内核版本构造模块，则需要该特定版本对应的构造系统和源代码树。
-
-一些与版本检查相关的弘：
+一些与版本检查相关的宏：
 * UTS_RELEASE   描述内核版本的字符串，例如"2.6.10"。
 * LINUX_VERSION_CODE    内核版本的二进制表示，2.6.10对应的是0x02060a。
 * KERNEL_VERSION(major,minor,release)   利用版本号的三个部分，创建整数版本号。
 
-可以使用条件编译，编写基于特定内核版本的代码。
+**平台依赖**
 
-### 平台依赖
-
-内核和模块可以针对特定的CPU平台进行特殊的优化，充分利用目标平台的特性。这需要针对目标平台定制编译后才能达到。利用vermagic.o，在装载模块时，内核会检查处理器的相关配置选项以确保匹配运行中的内核。如果不符合，则会拒绝装载。
+内核和模块可以针对特定的CPU平台进行特殊的优化，充分利用目标平台的特性。这需要针对目标平台定制编译后才能达到。利用`vermagic.o`，在装载模块时，内核会检查处理器的相关配置选项以确保匹配运行中的内核。如果不符合，则会拒绝装载。
 
 如果打算编写一个通用的驱动程序，最好考虑一下，如何支持可能的不同CPU平台。
 
 ## 内核符号表
 
-装载模块时，insmod会使用公共内核符号表解析未定义的符号。同时，模块也可以导出自己的符号到内核符号表，供其他的模块使用。
-
-新模块可以使用已插入模块的符号，这种技术称为叠层技术。通过叠层技术，可以将模块划分为多个层，通过简化每个层可以缩短开发时间。
+装载模块时，`insmod`会使用公共内核符号表解析未定义的符号。同时，模块也可以导出自己的符号到内核符号表，供其他的模块使用。新模块可以使用已插入模块的符号，这种技术称为叠层技术。通过叠层技术，可以将模块划分为多个层，通过简化每个层可以缩短开发时间。
 
 使用下列宏，可以方便的将符号导出，可以有效的避免名字空间污染。符号必须在模块的全局部分导出，该符号也必须是全局的。
+
 ```c
 EXPORT_SYMBOL(name);
 EXPORT_SYMBOL_GPL(name);    // 只能被GPL许可证下的模块使用
@@ -224,6 +331,7 @@ MODULE_LICENSE("GPL");
 </table>
 
 可在模块中包含的其他描述性定义：
+
 ```c
 MODULE_AUTHOR(描述模块作者);
 MODULE_DESCRIPTION(用来说明模块用途的简短描述);
@@ -236,22 +344,25 @@ MODULE_DEVICE_TABLE(用来告诉用户空间模块所支持的设备);
 
 ## 初始化和关闭
 
-模块初始化函数负责注册模块所提供的任何`设施`。对于每种设施，对应有具体的内核函数用来完成注册。
+模块初始化函数负责注册模块所提供的任何`设施`。对于每种设施，对应有具体的内核函数用来完成注册。初始化函数的典型定义如下。
 
-初始化函数的典型定义如下：
+`__init`标记用来告诉内核，此函数仅在初始化期间使用。模块初始化完毕之后，此函数会被丢弃，释放内存空间。类似的标记还有`__initdata`、`__devinit`、`__devinitdata`。如果一个函数在初始化完毕之后还想使用，则不能使用`__init`标记。
+
 ```c
 static int __init initialization_function(void)
 {
     // 这是初始化代码
+    return 0;
 }
 module_init(initialization_function); // 必须使用 moudle_init() 注册初始化函数
 ```
 
-`__init`标记用来告诉内核，此函数仅在初始化期间使用。模块初始化完毕之后，此函数会被丢弃，释放内存空间。类似的标记还有`__initdata`、`__devinit`、`__devinitdata`。如果一个函数在初始化完毕之后还想使用，则不能使用`__init`标记。
+**清除函数**
 
-### 清除函数
+清除函数负责在模块被移除前注销接口，并向系统返回所有资源。典型定义如下。
 
-清除函数负责在模块被移除前注销接口，并向系统返回所有资源。典型定义如下：
+`__exit`标记表示函数仅用于卸载。如果模块直接内嵌到内核，或禁止卸载，此函数会被丢弃。如果模块没有注册清除函数，则禁止卸载。
+
 ```c
 static void __exit cleanup_function(void)
 {
@@ -260,19 +371,18 @@ static void __exit cleanup_function(void)
 module_exit(cleanup_function);
 ```
 
-`__exit`标记表示函数仅用于卸载。如果模块直接内嵌到内核，或禁止卸载，此函数会被丢弃。如果模块没有注册清除函数，则禁止卸载。
-
-### 初始化过程中的错误处理
+**初始化过程中的错误处理**
 
 向内核注册任何设施时，都有可能会失败，所以必须要检查返回值。如果注册设施失败，模块应尽可能的向前初始化，通过降低功能来继续运转。如果遇到致命错误，初始化函数需要将已注册的设施释放，并返回一个错误码。
 
-### 模块装载竞争
+**模块装载竞争**
 
 初始化函数还在运行的时候，刚刚注册好的设施可能会被其他模块调用。也就是说，在用来支持某个设施的所有内部初始化完成之前，不要注册任何设施。注册某个设施失败的时候，之前注册好的设施可能真正使用。如果要初始化失败，需要小心处理内核其他部分正在进行的操作，并等待这些操作完成。
 
 ## 模块参数
 
-模块可以使用`module_param()`来声明参数。module_param()必须放在任何函数之外，通常在源文件的头部。下面是示例代码，声明了一个整型参数，和一个字符串参数。参数必须要有一个默认值，如果没有指定参数，则使用默认值。
+模块可以使用`module_param()`来声明参数。`module_param()`必须放在任何函数之外，通常在源文件的头部。下面是示例代码，声明了一个整型参数和一个字符串参数。参数必须要有一个默认值，如果没有指定参数，则使用默认值。
+
 ```c
 #include <moduleparam.h>
 static char *whom = "world";
@@ -281,12 +391,13 @@ module_param(howmany, int, S_IRUGO);
 module_param(whom, charp, S_IRUGP);
 ```
 
-可以使用以下命令更改参数：
+可以使用以下命令指定参数的值。
+
 ```shell
 insmod modname howmany=10 whom="Mom"
 ```
 
-module_param()的第一个参数是变量名称，第二个参数是变量类型，第三个参数是sysfs入口项的访问许可掩码。
+module_param()的第一个参数是变量名称，第二个参数是变量类型，第三个参数是`sysfs`入口项的访问许可掩码。
 
 内核支持的模块参数类型
 <table>
@@ -305,30 +416,36 @@ module_param()的第一个参数是变量名称，第二个参数是变量类型
 
 编写一个用户进程作为驱动程序，有很多好处，但是也有很多限制，具体参考书籍。通常，用户空间驱动程序被实现为一个服务器进程，替代内核作为硬件控制的唯一代理。
 
-# 第三章 字符设备驱动程序
+# 字符设备驱动
 
-本章的目的是编写一个完整的字符设备驱动程序scull，Simple Character Utility for Loading Localities，区域装载的简单字符工具。
-
-## scull 的设计
-
-编写驱动程序的第一步就是定义驱动程序为用户程序提供的能力（机制）。
-
-scull实现了以下类型的设备，本章主要关注最简单的`scull[0-3]`。
-
-| 类型 | 说明 |
-| - | - |
-| scull0 ~ scull3 | 维护一个全局且持久的内存区域。 |
-| scullpipe0 ~ scullpipe3 | 类似于管道，一个进程写入，另一个进程读取。 |
-| scullsingle | 一次只允许一个进程使用 |
-| scullpriv | 对每个控制台是私有的 |
-| sculluid | 只能被一个用户打开 |
-| scullwuid | 实现了阻塞式的open |
-
-> scull 的设计其实是很复杂的，对于初学者来说不太好掌握。为了把握字符设备的关键所在，编写了一个简单版本的[pkchr](code/pkchr)，维护一个内存buff，支持读写。
+* cdev_init
+  * struct cdev
+  * file_operations结构体
+    * kernel space和user space交换数据
+    * struct inode：表示一个唯一的文件
+    * struct file：表示一个打开的文件
+    * 各个成员函数的语义
+* cdev_add
+  * 设备号，dev_t
+    * 动态申请
+    * 静态申请
+* 模块与内核一起构建
+  * Kconfig
+  * Makefile
+* 设备节点
+  * mknod
+  * udev
+* misc字符设备
+  * struct miscdevice
+    * name：会出现在/proc/misc，并且会自动创建设备文件/dev/name
+    * minor：指定的子设备号。如果设置为MISC_DYNAMIC_MINOR则表示动态申请
+    * fops
+  * misc_register()
+  * misc_deregister()
 
 ## 字符设备的注册
 
-字符设备的关键是结构体`struct cdev`，无需关心结构体的内部成员。结构体可以静态分配也可以动态申请（cdev_alloc()）
+字符设备的关键是结构体`struct cdev`，无需关心结构体的内部成员。结构体可以静态分配也可以动态申请（cdev_alloc()）。
 
 在设备的初始化函数中，需要初始化`cdev`。`cdev_init()`会将`cdev`和`file_operations`关联起来，后者实现了文件操作的函数。有关`file_operations`的更多信息请参考[一些重要的数据结构](#一些重要的数据结构)。`cdev_add()`负责将设备添加到系统中，有关`dev_t`的更多信息请参考[主设备号和次设备号](#主设备号和次设备号)。
 
@@ -347,11 +464,9 @@ void cdev_del(struct cdev *cdev);
 
 ## 主设备号和次设备号
 
-对字符设备的访问是通过文件系统内的设备名称进行的，简单来说是文件系统树的节点，通常位于/dev目录。可通过`ls -l`的第一个字符`c`，来识别字符设备。
+对字符设备的访问是通过文件系统内的设备名称进行的，简单来说是文件系统树的节点，通常位于/dev目录。可通过`ls -l`的第一个字符`c`，来识别字符设备。每个设备都有一个主设备号和次设备号。主设备号标识设备对应的驱动程序，次设备号由内核使用，用于正确确定设备文件所指的设备。
 
-每个设备都有一个主设备号和次设备号。主设备号标识设备对应的驱动程序，次设备号由内核使用，用于正确确定设备文件所指的设备。
-
-### 设备号的内部表达
+**设备号的内部表达**
 
 在内核中，`dev_t`类型用来保存设备号，包括主设备号和次设备号。
 ```c
@@ -361,7 +476,11 @@ MINOR(dev_t dev);   // 获取次设备号
 MKDEV(int major, int minor);  // 构造 dev_t
 ```
 
-### 分配和释放设备编号
+**分配和释放设备编号**
+
+推荐动态分配主设备号。`Documentation/devices.txt`列出了静态分配的设备号。如果需要静态分配设备号，应该要避免已经分配的设备号。可以通过读取文件`/proc/devices`来获取设备号，然后再创建设备节点。考虑到可移植性，使用[打印设备编号](#打印设备编号)小节提到的API来打印设备编号。
+
+> 最新的内核抛弃了devfs，而使用udev。udevd可以根据rules文件自动创建设备节点。
 
 ```c
 #include <linux/fs.h>
@@ -369,12 +488,6 @@ int register_chrdev_region(dev_t first, unsigned int count, char *name);
 int alloc_chrdev_region(dev_t *dev, unsigned int firstminor, unsigned int count, char *name);
 void unregister_chrdev_region(dev_t first, unsigned int count);
 ```
-
-推荐动态分配主设备号。`Documentation/devices.txt`列出了静态分配的设备号。如果需要静态分配设备号，应该要避免已经分配的设备号。可以通过读取文件`/proc/devices`来获取设备号，然后再创建设备节点。
-
-> 最新的内核抛弃了devfs，而使用udev。udevd可以根据rules文件自动创建设备节点。
-
-考虑到可移植性，使用[打印设备编号](#打印设备编号)小节提到的API来打印设备编号。
 
 ## 一些重要的数据结构
 
@@ -388,14 +501,16 @@ filp表示了一个打开的文件，filp的`private_data`可用来跨系统调�
 
 inode用来表示一个文件。与filp不同，多个打开的filp，可能对应同一个inode。inode包含了大量有关文件的信息。对于字符设备来说，以下两个字段非常有用：
 ```c
-dev_t i_rdev;           // 对表示设备文件的inode结构，该字段包含了真正的设备编号
-struct cdev *i_cdev;    // inode 指向一个字符设备文件时，包含了指向 struct cdev 结构的指针
+struct inode {
+    dev_t i_rdev;        // 对表示设备文件的inode结构，该字段包含了真正的设备编号
+    struct cdev *i_cdev; // inode 指向一个字符设备文件时，包含了指向 struct cdev 结构的指针
+};
 ```
 
 注：对于i_rdev来说，由于类型有发生变化，不建议直接操作，建议使用以下两个宏：
 ```c
 unsigned int imajor(struct inode *inode);
-unsigned int imonor(struct inode *inode);
+unsigned int iminor(struct inode *inode);
 ```
 
 ## open 和 release
@@ -406,12 +521,11 @@ open方法提供给驱动程序以初始化的能力，主要完成以下工作�
 * 如有必要，更新 f_op 指针
 * 分配并填写 filp->private_data
 
-open方法的原型：
+open方法的原型如下，inode参数的`i_cdev`字段，包含了先前设置的`cdev`结构。
+
 ```c
 int (*open)(struct inode *inode, struct file *filp);
 ```
-
-inode参数的i_cdev字段，包含了先前设置的cdev结构。
 
 release方法与open方法正好相反。不是所有的close调用都会调用release方法，只有`filp`引用计数为零时才会调用这个方法。主要完成以下工作：
 * 释放由open分配的、保存在filp->private_data中的所有内容
@@ -432,15 +546,16 @@ ssize_t write(struct file *filp, const char __user *buff, size_t count, loff_t *
 
 filp是文件指针，count是请求传输的数据长度，buff是指向用户空间的缓冲区，offp指明用户在文件中进行存取操作的位置。
 
-buff是用户空间的指针。为了安全的访问用户空间，必须使用专用的函数：
+buff是用户空间的指针。为了安全的访问用户空间，必须使用专用的函数。
+
+如果指针无效，会拒绝拷贝。返回值是还需要拷贝的内存数量，如果出错则返回负值。被寻址的内存空间可能不在内存中，会导致当前进程被转入睡眠状态。这就要求访问用户空间的任何函数都必须是可重入的，必须能和其他驱动程序函数并发执行。无论传输了多少数据，都应该更新offp所表示的文件位置。
+
 ```c
 // 拷贝数据到用户空间
 unsigned long copy_to_user(void __user *to, const void *from, unsigned long count);
 // 从用户空间拷贝数据
 unsigned long copy_from_user(void *to, const void __user *from, unsigned long count);
 ```
-
-如果指针无效，会拒绝拷贝。返回值是还需要拷贝的内存数量，如果出错则返回负值。被寻址的内存空间可能不在内存中，会导致当前进程被转入睡眠状态。这就要求访问用户空间的任何函数都必须是可重入的，必须能和其他驱动程序函数并发执行。无论传输了多少数据，都应该更新offp所表示的文件位置。
 
 read方法和write方法的返回值：略。
 
@@ -450,11 +565,31 @@ read方法和write方法的返回值：略。
 2. 在`open`函数，使用container_of宏，从`inode->i_cdev`获取自定义设备结构体的地址。
 3. 在`open`函数，将`filp->private_data`指向自定义设备结构体，其他函数则可以通过`filp`获取自定义的设备结构体。
 
-# 第四章 调试技术
+## misc字符设备
+
+# 调试技术
 
 ## 内核中的调试支持
 
-一些用于调试的内核选项。略。
+一些用于调试的内核选项。
+* CONFIG_DEBUG_KERNEL
+* CONFIG_DEBUG_SLAB
+* CONFIG_DEBUG_PAGEALLOC
+* CONFIG_DEBUG_SPINLOCK
+* CONFIG_DEBUG_SPINLOCK_SLEEP
+* CONFIG_INIT_DEBUG
+* CONFIG_DEBUG_INFO
+* CONFIG_MAGIC_SYSRQ
+* CONFIG_DEBUG_STACKOVERFLOW
+* CONFIG_DEBUG_STACK_USAGE
+* CONFIG_KALLSYMS
+* CONFIG_IKCONFIG
+* CONFIG_IKCONFIG_PROC
+* CONFIG_ACPI_DEBUG
+* CONFIG_DEBUG_DRIVER
+* CONFIG_SCSI_CONSTANTS
+* CONFIG_INPUT_EVBUG
+* CONFIG_PROFILING
 
 ## 通过打印调试
 
@@ -496,11 +631,53 @@ printk(KERN_CRIT"xxxxx\n"); // 临界信息
 8       4       1       7
 ```
 
+不推荐直接使用`printk()`，而是使用下面的宏。
+
+```c
+#define pr_emerg(fmt, ...)   printk(KERN_EMERG pr_fmt(fmt), ##__VA_ARGS__)
+#define pr_alert(fmt, ...)   printk(KERN_ALERT pr_fmt(fmt), ##__VA_ARGS__)
+#define pr_crit(fmt, ...)    printk(KERN_CRIT pr_fmt(fmt), ##__VA_ARGS__)
+#define pr_err(fmt, ...)     printk(KERN_ERR pr_fmt(fmt), ##__VA_ARGS__)
+#define pr_warning(fmt, ...) printk(KERN_WARNING pr_fmt(fmt), ##__VA_ARGS__)
+#define pr_warn pr_warning
+#define pr_notice(fmt, ...)  printk(KERN_NOTICE pr_fmt(fmt), ##__VA_ARGS__)
+#define pr_info(fmt, ...)    printk(KERN_INFO pr_fmt(fmt), ##__VA_ARGS__)
+// 需要打开宏DEBUG
+#define pr_debug(fmt, ...)   printk(KERN_DEBUG pr_fmt(fmt), ##__VA_ARGS__)
+```
+
 ### 重定向控制台消息
 
 内核可以将消息发送到一个指定的虚拟控制台，使用下面的程序可以完成此问题。程序的参数是控制台的编号。如果使用虚拟机，需要进入`tty1~tty6`执行（Ctrl + Shift + F[1-6]）。
 
-[setconsole.c](code/ch04/setconsole.c ':include')
+```c
+/*
+ *  将kernel log重定位到指定console，只支持/dev/tty[1-6]
+ */
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/ioctl.h>
+#include <errno.h>
+#include <stdlib.h>
+
+int main(int argc, char *argv[])
+{
+    char bytes[2] = {11, 0};
+
+    if (argc == 2) {
+        bytes[1] = atoi(argv[1]);
+    } else {
+        fprintf(stderr, "%s: need a single arg\n", argv[0]);
+        exit(1);
+    }
+    if (ioctl(STDIN_FILENO, TIOCLINUX, bytes) < 0) {
+        fprintf(stderr, "%s: ioctl(stdin, TIOCLINUX): %s\n",
+                argv[0], strerror(errno));
+        exit(1);
+    }
+    exit(0);
+}
+```
 
 ### 速度限制
 
@@ -524,21 +701,20 @@ if (printk_ratelimit())
 int print_dev_t(char *buffer, dev_t dev);    // 返回打印的字节数
 char *format_dev_t(cahr *buffer, dev_t dev); // 返回缓冲区
 ```
+
 ## 通过查询调试
 
-使用`printk`打印大量日志会使系统的性能显著下降。在多数情况下，获取相关信息的最好方法是需要的时候才去查询系统信息。本小节介绍`proc`文件系统和`ioctl`系统调用。`sysfs`将在[第十四章](#第十四章-Linux设备模型)介绍。
+使用`printk`打印大量日志会使系统的性能显著下降。在多数情况下，获取相关信息的最好方法是需要的时候才去查询系统信息。本小节介绍`proc`文件系统和`ioctl`系统调用。`sysfs`将在[Linux设备模型](#Linux设备模型)介绍。
 
-### 使用proc文件系统
+### proc文件系统
 
 `/proc`文件系统是一种特殊的、由软件创建的文件系统，内核使用它向外界导出信息。`/proc`下面的每个文件都绑定于一个内核函数，用户读取其中的文件时，该函数动态的生成文件的内容。`/proc`文件不仅可以用户读出数据，也可以用于写入数据。本小节只介绍只读的情况。
 
 [procfs-guide.pdf](https://www.cs.cmu.edu/afs/grand.central.org/archive/twiki/pub/Main/SumitKumar/procfs-guide.pdf)对`proc`文件系统的API进行了详细的介绍。
 
-#### 在proc中实现文件
+**在proc中实现文件**
 
-使用`proc`文件系统需要包含头文件`linux/proc_fs.h`。
-
-为创建一个`proc`文件，需要实现一个读取文件生成数据的函数。函数的原型如下：
+使用`proc`文件系统需要包含头文件`linux/proc_fs.h`。为创建一个`proc`文件，需要实现一个读取文件生成数据的函数。函数的原型如下：
 
 ```c
 int (*read_proc)(
@@ -564,7 +740,7 @@ int (*read_proc)(
 
 如果返回大于`PAGE_SIZE`的数据，则需要自己申请内存，`offset`表示本次读取的偏移，`*start`指向`offset`指定的偏移量处的数据，`*eof`置1表示没有数据可供继续读取。
 
-#### 创建自己的`proc`文件
+**创建自己的proc文件**
 
 `create_proc_read_entry()`把`read_proc()`和一个`proc`入口项链接起来。
 
@@ -596,7 +772,7 @@ void remove_proc_entry(const char *name, struct proc_dir_entry *base);
   * try_module_get() / module_put() 可以解决此问题
 * 使用同一名字注册两个入口项。
 
-#### seq_file接口
+### seq_file接口
 
 `seq_file`接口为大的内核虚拟文件提供了一组简单的函数。`seq_file`假定创建的虚拟文件要顺序遍历一个项目序列。每前进一步，输出该序列中的一个项目。如果`proc`文件包含大量的输出行，建议使用`seq_file`。
 
@@ -635,7 +811,7 @@ strace指令，略。strace指令的使用方法请参考[使用strace监控系�
 * Linux跟踪工具包LTT
 * 动态探测 Dprobes
 
-# 第五章 并发和竞态
+# 并发和竞态
 
 对共享数据的并发访问会导致竞态。
 
@@ -659,7 +835,7 @@ strace指令，略。strace指令的使用方法请参考[使用strace监控系�
 
 初始值为1的信号量，又被称为互斥体。在任意给定时刻，只能被单个线程拥有。
 
-### Linux信号量接口
+**Linux信号量接口**
 
 头文件和数据类型：
 ```c
@@ -698,7 +874,7 @@ void up(struct semaphore *sem);
 
 在等待信号量时被中断，先撤销用户可见的任何修改，然后返回`-ERESTARTSYS`。如果无法撤销，则返回`-EINTR`。
 
-### 读取者写入者信号量
+**读取者写入者信号量**
 
 对共享数据的访问分为只读和写入。我们可以接收并发读取。
 
@@ -735,7 +911,7 @@ rwsem的特点：
 * 写入者具有更高的优先级
 * 适用于很少需要写访问，且写入者只会短期拥有。
 
-### completion
+## completion
 
 驱动编程的一个常见模型：在当前线程之外初始化一个活动，然后等待该活动结束。信号量可以完成此项工作，但是不是最适合的。
 
@@ -775,7 +951,7 @@ completion通常是一个单次设备，使用一次后被丢弃。小心处理�
 
 自旋锁通常用于不能休眠的代码。
 
-### 自旋锁API
+**自旋锁API**
 
 ```c
 // 头文件
@@ -790,14 +966,14 @@ void spin_lock(spinlock_t *lock);
 void spin_unlock(spinlock_t *lock);
 ```
 
-### 自旋和原子上下文
+**自旋和原子上下文**
 
 在使用自旋锁时，要注意以下规则，避免系统响应时间过长，或进入死锁。
 1. 任何拥有自旋锁的代码都必须是原子的，不能休眠。
 2. 在拥有自旋锁时需要禁止中断（仅本地CPU）
 3. 自旋锁必须在可能的最短时间内拥有。
 
-### 自旋锁函数
+**自旋锁函数**
 
 ```c
 // 不关闭任何中断
@@ -824,7 +1000,7 @@ void spin_unlock_irq(spinklock_t *lock);
 void spin_unlock_bh(spinlock_t *lock);
 ```
 
-### 读取者/写入者自旋锁
+**读取者/写入者自旋锁**
 
 类似于读取者写入者信号量。定义：
 
@@ -988,7 +1164,7 @@ RCU的原理：在需要修改数据时，写入线程首先复制，然后修�
 
 RCU相关API和使用示例：略。
 
-# 第六章 高级字符驱动程序操作
+# 高级字符驱动程序操作
 
 本章主要讲述了编写全功能字符设备驱动程序的几个概念，均会通过对scull驱动程序的修改来说明。
 * [ioctl系统调用，设备控制的公共接口](#ioctl)
@@ -1037,7 +1213,7 @@ _IOC_DIR(cmd);      // direction 字段
 _IOC_SIZE(cmd);     // size 字段
 ```
 
-除了少量预定义命令之后，内核并未使用ioctl的cmd参数的值。
+除了少量预定义命令之外，内核并未使用ioctl的cmd参数的值。
 
 ### ioctl返回值
 
@@ -1409,15 +1585,14 @@ loff_t (*llseek)(struct file *filp, loff_t off, int whence);
 
 代码请参考书籍。
 
-# 第七章 时间、延迟及延缓操作
+
+# 时间、延迟及延缓操作
 
 ## 度量时间差
 
-内核通过定时器中断来跟踪时间。其频率是常数`HZ`，默认值一般是50~1200。
+内核通过定时器中断来跟踪时间。其频率是常数`HZ`，默认值一般是50~1200。定时器中断会增加时钟滴答数`jiffies_64`，通常会使用`jiffies`变量，要么和`jiffies_64`相同，要么是`jiffies_64`的低32位。不建议直接访问`jiffies_64`，因为不能保证在所有架构上都是原子的。
 
-定时器中断会增加时钟滴答数`jiffies_64`，通常会使用`jiffies`变量，要么和`jiffies_64`相同，要么是`jiffies_64`的低32位。不建议直接访问`jiffies_64`，因为不能保证在所有架构上都是原子的。
-
-### 使用jiffies计数器
+**使用jiffies计数器**
 
 `jiffies`和`jiffies_64`都应该看作只读变量。
 
@@ -1447,6 +1622,9 @@ unsigned long timespec_to_jiffies(struct timespec *value);
 void jiffies_to_timespec(unsigned long jiffies, struct timespec *value);
 unsigned long timeval_to_jiffies(struct timeval *value);
 void jiffies_to_timeval(unsigned long jiffies, struct timeval *value);
+
+unsigned int jiffies_to_msecs(const unsigned long j);
+unsigned long msecs_to_jiffies(const unsigned int m);
 ```
 
 读取64位计数器：
@@ -1454,7 +1632,7 @@ void jiffies_to_timeval(unsigned long jiffies, struct timeval *value);
 u64 get_jiffies_64(void);
 ```
 
-### 处理器特定的寄存器
+**处理器特定的寄存器**
 
 绝大多数现代处理器都包含一个随时钟周期不断递增的计数寄存器，通过此寄存器可以完成高分辨率计时。在x86的平台，是TSC寄存器（timestamp count，时间戳计数器）。
 
@@ -1493,7 +1671,7 @@ struct timespec current_kernel_time(void);
 
 ### 长延迟
 
-#### 忙等待
+**忙等待**
 
 实现忙等待最简单的方法是监视jiffies计数器。例如以下代码：
 ```c
@@ -1503,7 +1681,7 @@ while (time_before(jiffies, j1))
 
 不建议使用这种方法，这会严重降低系统的性能。如果在进入循环之前关闭了中断，那么jiffies的值将永远不会得到更新。
 
-#### 让出处理器
+**让出处理器**
 
 在不需要CPU时主动释放CPU：
 ```c
@@ -1511,11 +1689,9 @@ while (time_before(jiffies, t1))
     schedule();
 ```
 
-让出CPU后，当前进程还在运行队列中。如果系统只有一个可运行的进程，那么此进程会不断的让出CPU-调度-让出CPU....。
+让出CPU后，当前进程还在运行队列中。如果系统只有一个可运行的进程，那么此进程会不断的让出CPU-调度-让出CPU。同时不能确定下次调度此进程的时间，相比目标时间点，有可能已经过去很久了。
 
-同时不能确定下次调度此进程的时间，相比目标时间点，有可能已经过去很久了。
-
-#### 超时
+**超时**
 
 利用超时等待队列来延迟。进程会在指定的队列上休眠，超时到期时返回。时间使用jiffies表示，是相对时间而不是绝对时间。
 ```c
@@ -1560,9 +1736,7 @@ void ssleep(unsigned int seconds); // 秒级延迟
 
 ## 内核定时器
 
-内核定时器是一种数据结构，告诉内核在指定的时间，使用指定的参数，执行指定的函数。
-
-定时器将会在中断上下文中运行，而不是注册定时器的进程上下文。在中断上下文中有以下限制：
+内核定时器是一种数据结构，告诉内核在指定的时间，使用指定的参数，执行指定的函数。定时器将会在中断上下文中运行，而不是注册定时器的进程上下文。在中断上下文中有以下限制：
 * 不能访问用户空间。
 * current指针没有意义。
 * 不能执行休眠（wait_event）或调度（schedule）。
@@ -1574,7 +1748,9 @@ void ssleep(unsigned int seconds); // 秒级延迟
 * 在SMP系统中，定时器会在注册它的CPU上执行。
 * 定时器是竞态的来源，即使是单处理器系统。
 
-### 定时器API
+**定时器API**
+
+> TODO: 需要更新API
 
 ```c
 #include <linux/timer.h>
@@ -1597,7 +1773,7 @@ int  del_timer_sync(struct timer_list *timer); // 确保返回时没有任何CPU
 int  timer_pending(const struct timer_list *timer); // 返回定时器是否在被调度运行。
 ```
 
-### 内核定时器的实现
+**内核定时器的实现**
 
 根据到期时间的长短，将定时器散列到不同的链表。
 
@@ -1704,7 +1880,7 @@ int schedule_delayed_work(struct work_struct *work);
 void flush_shceduled_work(void);
 ```
 
-# 第八章 分配内存
+# 分配内存
 
 本章将会介绍设备驱动程序中使用内存的一些其他方法，还会介绍如何最好地利用系统内存资源。
 
@@ -1721,15 +1897,13 @@ void flush_shceduled_work(void);
 void *kmalloc(size_t size, int flags);
 ```
 
-### size参数
+**size参数**
 
-由于Linux的内存管理方法，`kmalloc()`只能分配一些预定义的、固定大小的字节数组。如果申请任意数量的内存，那么得到的很可能会多一些。
-
-kmalloc()能够处理的最小内存块是32或64，取决于体系结构使用的页面大小。kmalloc()能够分配的最大内存块取决于体系结构和内核配置选项。
+由于Linux的内存管理方法，`kmalloc()`只能分配一些预定义的、固定大小的字节数组。如果申请任意数量的内存，那么得到的很可能会多一些。kmalloc()能够处理的最小内存块是32或64，取决于体系结构使用的页面大小。kmalloc()能够分配的最大内存块取决于体系结构和内核配置选项。
 
 如果想代码具有可移植性，size最好不要超过128KB。
 
-### flags参数
+**flags参数**
 
 `flags`参数用于控制`kmalloc()`的行为。
 
@@ -1751,13 +1925,13 @@ kmalloc()能够处理的最小内存块是32或64，取决于体系结构使用�
 
 注：双下划线开头的标志，可以“或”起来使用。
 
-#### 内存区段
+**内存区段**
 
 Linux把内核分为三个区段：可用于DMA的内存，常规内存，以及高端内存。
 
 可用于DMA的内存指存在于特别地址范围内的内存，外设可以利用这些内存执行DMA访问。
 
-高端内存时32位平台为了访问（相对）大量的内存而存在的一种进制。如果不首先完成一些特殊的映射，我们就无法从内核中直接访问这些内存。
+高端内存是32位平台为了访问（相对）大量的内存而存在的一种进制。如果不首先完成一些特殊的映射，我们就无法从内核中直接访问这些内存。
 
 如果指定了__GFP_DMA标志，则只有DMA区段会被搜索。如果不指定任何标志，则常规区段和DMA区段都会被搜索。如果指定了__GFP_HIGHMEM标志，三个区段都会被搜索。
 
@@ -1941,28 +2115,23 @@ DECLARE_PER_CPU(type, name);
 
 ## 获取大的缓冲区
 
-# 第九章 与硬件通信
+# 与硬件通信
 
 本章介绍驱动程序在Linux平台之上如何保持可移植性的前提下访问IO端口和IO内存。
 
 ## IO端口和IO内存
 
-每种外设都通过读写寄存器进行控制，这些寄存器可以位于内存地址空间或IO地址空间。取决于处理器。
+每种外设都通过读写寄存器进行控制，这些寄存器可以位于内存地址空间或IO地址空间。取决于处理器。如果寄存器位于内存地址空间，则称为IO内存；如果位于IO地址空间，则称为IO端口。IO内存通常是首先的方案，因为不需要特殊的处理器指令。
 
-如果寄存器位于内存地址空间，则称为IO内存；如果位于IO地址空间，则称为IO端口。IO内存通常是首先的方案，因为不需要特殊的处理器指令。
-
-### IO寄存器和常规内存
+**IO寄存器和常规内存**
 
 IO寄存器和常规内存非常类似，但是IO操作有边际效应（side effect），而内存操作没有。所以为了提升内存的访问速度，可以用多种方法优化，例如高速缓存、重新排序读写指令。但对IO操作来说，这些优化可能照成致命的错误。
-```
-边际效应（side effect）：写入寄存器的值可能被外设修改；从寄存器读取的值不一定是最后一次写入的值。
-```
+
+> 边际效应（side effect）：写入寄存器的值可能被外设修改；从寄存器读取的值不一定是最后一次写入的值。
 
 驱动程序在读写IO寄存器的时候，必须确保不使用高速缓存，并且不发生读或写指令的重新排序。
-
-不使用高速缓存：把底层硬件配置成在访问IO区域（不管是内存还是端口）时禁止硬件缓存。
-
-指令重新排序：对必须以特定顺序执行的操作之间设置内存屏障。
+* 不使用高速缓存：把底层硬件配置成在访问IO区域（不管是内存还是端口）时禁止硬件缓存。
+* 指令重新排序：对必须以特定顺序执行的操作之间设置内存屏障。
 
 编译器优化引起的指令重新排序：
 ```c
@@ -1995,7 +2164,7 @@ void smp_mb(void);
 
 本节讲解了使用IO端口的不同函数。
 
-### IO端口分配
+**IO端口分配**
 
 ```c
 #include <linux/ioport.h>
@@ -2009,7 +2178,7 @@ void release_region(unsigned long start, unsigned long n);
 int check_region(unsigned long first, unsigned long n);
 ```
 
-### 操作IO端口
+**操作IO端口**
 
 读取或写入这些端口。注意，大多数硬件都会把8位、16位和32位端口区分开来，因此C语言程序必须调用不同的函数来访问大小不同的端口。
 
@@ -2027,7 +2196,7 @@ void outl(unsigned long word, unsigned port);
 
 注意：没有定义64位的IO操作。即使在64位的体系架构上，端口地址空间也只使用最大32位的数据通路。
 
-### 在用户空间访问IO端口
+**在用户空间访问IO端口**
 
 GNU的C库`<sys/io.h>`中定义了这些函数，如果要使用，需要满足以下条件：
 * 编译程序时必须带有 -O 选项来强制展开内联函数。
@@ -2038,7 +2207,7 @@ GNU的C库`<sys/io.h>`中定义了这些函数，如果要使用，需要满足�
 
 如果平台没有ioperm和iopl系统调用，可以使用/dev/port设备文件访问端口。注意，该设备文件的含义与平台密切相关，并且除PC平台以外，几乎没有什么用处。
 
-### 串操作
+**串操作**
 
 有些处理器上实现了一次传输一个数据序列的特殊指令，序列中的数据单位可以是字节、字或双字。而且速度比一个C语言编写的循环语句快得多。
 
@@ -2056,9 +2225,9 @@ void outsl(unsigned port, void *addr, unsigned long count);
 
 串IO操作函数是直接将字节流从端口中读取或写入。所以，当端口与主机系统具有不同的字节序时，将导致不可预期的结果。需要在必要时交换字节。
 
-### 暂停式IO
+**暂停式IO**
 
-### 平台相关性
+**平台相关性**
 
 大部分与IO端口有关的源代码都是平台相关。平台相关性主要来自于：
 * 数据类型
@@ -2076,7 +2245,7 @@ IO内存，映射到内存的寄存器或设备内存。如果使用IO内存来�
 
 强烈不建议直接使用指向IO内存的指针，而是使用包装函数访问IO内存。这些函数是安全的，而且经过优化。
 
-### IO内存分配和映射
+**IO内存分配和映射**
 
 在使用之前，必须首先分配IO内存区域。
 
@@ -2104,7 +2273,7 @@ void *ioremap_nocache(unsigned long phys_addr, unsigned long size);
 void iounmap(void *addr);
 ```
 
-### 访问IO内存
+**访问IO内存**
 
 ```c
 #include <asm/io.h>
@@ -2140,7 +2309,7 @@ void writew(address);
 void writel(address);
 ```
 
-### 像IO内存一样使用端口
+**像IO内存一样使用端口**
 
 ```c
 // 重映射count个IO端口，使其看起来像IO内存
@@ -2150,7 +2319,63 @@ void *ioport_map(unsigned long port, unsigned int count);
 void ioport_unmap(void *addr);
 ```
 
-# 第十章 中断处理
+# 中断
+
+* 基本概念
+  * 中断是一个信号，可以来自外部，也可以来自内部
+  * 中断运行在中断上下文，不能访问用户进程、不能随眠
+  * 硬件IRQ号
+  * Linux IRQ号
+* 中断处理流程
+  * 顶半部：快，中断处理函数
+    * 清除中断标志
+    * 通知其他模块或启动底半部
+  * 底半部：完成比较耗时的操作
+    * tasklet
+    * work queue
+    * 软中断
+    * threaded_irq
+* 中断编程
+  * 获取硬件IRQ号
+    * 自动或手动探测
+    * 读取寄存器
+    * 通过gpio获取
+    * 通过DTS指定
+  * 申请/释放Linux IRQ号
+    * 申请函数的各个参数说明
+  * IRQ处理函数、参数与返回值
+  * 使能/屏蔽中断
+* 共享中断
+* /proc接口
+  * /proc/interrupts
+  * /proc/stat的intr行
+* 设备树
+
+**获取硬件IRQ号**
+
+```c
+int gpiod_to_irq(const struct gpio_desc *desc);
+```
+
+**申请中断**
+
+```c
+int request_irq(
+    unsigned int irq,
+    irq_handler_t handler,
+    unsigned long flags,
+	const char *name,
+    void *dev);
+int devm_request_irq(
+    struct device *dev,
+    unsigned int irq,
+    irq_handler_t handler,
+	unsigned long irqflags,
+    const char *devname,
+    void *dev_id);
+```
+
+**设备树**
 
 ## 安装中断处理例程
 
@@ -2162,7 +2387,7 @@ void ioport_unmap(void *addr);
 
 ## 中断驱动的IO
 
-# 第十一章 内核的数据类型
+# 内核的数据类型
 
 绝大多数的移植问题都和不正确的数据类型有关。坚持使用严格的数据类型，并且使用`-Wall -Wstrict-prototypes`选项编译可以防止大多数的代码缺陷。
 
@@ -2220,7 +2445,7 @@ void ioport_unmap(void *addr);
 
 ## 链表
 
-# 第十二章 PCI驱动程序
+# PCI驱动程序
 
 Peripheral Component Interconnect，外围设别互联。
 
@@ -2233,7 +2458,7 @@ PCI架构被设计为ISA标准的替代品，主要有三个目标：
 * 平台无关：PCI广泛应用于IA-32、Alpha、PowerPC、SPARC64、IA-64等。
 * 简化系统中增加和删除外设的工作：PCI设备可在引导阶段自动配置。
 
-### PCI寻址
+**PCI寻址**
 
 * PCI域：16位，每个PCI域最多可以有256个PCI总线
 * PCI总线：8位，每个PCI总线最多可以有32个设备
@@ -2261,7 +2486,7 @@ PCI硬件地址（总线、设备、功能）存储在数据结构`struct pci_de
 
 PCI配置空间中每个PCI功能由256个字节组成，配置寄存器的布局是标准话的。从配置空间中可以读取到设备ID。更多信息请看[配置寄存器和初始化](#配置寄存器和初始化)。
 
-### 引导阶段
+**引导阶段**
 
 PCI设备上电时，处于未激活的状态。即改设备只会对配置事务做出响应，设备上不会有内存和IO端口映射到计算机的地址空间，其他设备功能也被禁止。
 
@@ -2276,7 +2501,7 @@ PCI设备相关的文件：
   * irq：分配给该PCI设备的当前IRQ
   * resource：该设备所分配的当前内存资源
 
-### 配置寄存器和初始化
+**配置寄存器和初始化**
 
 每个PCI设备至少有256字节的配置寄存器，其中前64字节是标准的，其余是设备无关的。下图显示了设备无关的配置空间布局。配置寄存器分为必需和可选。必需的寄存器一定要包含有效值，可选的寄存器依赖于设备的实际功能。注意：PCI寄存器始终是小头的。
 
@@ -2311,7 +2536,7 @@ PCI_DEVICE_CLASS(class, class_mask);
 
 使用宏定义驱动程序支持的设备类型的例子：略
 
-### MODULE_DEVICE_TABLE
+**MODULE_DEVICE_TABLE**
 
 ```c
 // 将pci_device_id结构体导出到用户空间
@@ -2319,7 +2544,7 @@ MODULE_DEVICE_TABLE(pci, pci_device_id_table);
 ```
 该语句会创建名为`__mod_pci_device_table`的局部变量，指向数组`pci_device_id_table`。`depmod`程序会把所有模块中的`__mod_pci_device_table`添加到`/lib/modules/KENRNEL_VERSION/modules.pcimap`中。当PCI设备插入时，会在modules.pcimap文件中寻找恰当的驱动程序。
 
-### 注册PCI驱动程序
+**注册PCI驱动程序**
 
 使用结构体`struct pci_driver`向PCI核心描述PCI驱动程序，主要字段如下：
 * const char *name;
@@ -2353,7 +2578,7 @@ int pci_register_driver(struct pci_driver *pci_driver);
 int pci_unregister_driver(struct pci_driver *pci_driver);
 ```
 
-### 老式PCI探测
+**老式PCI探测**
 
 通过下列的函数，可以用来查找特定PCI设备。
 
@@ -2384,14 +2609,14 @@ struct pci_dev *pci_get_slot(
 
 以上函数均不能在中断上下文中被调用。
 
-### 激活PCI设备
+**激活PCI设备**
 
 在PCI驱动程序的`probe()`函数中，访问任何PCI设备的资源（IO区域或中断）之前，必须调用下列函数激活设备：
 ```c
 int pci_enable_device(struct pci_dev *dev);
 ```
 
-### 访问配置空间
+**访问配置空间**
 
 处理器没有任何直接访问配置空间的途径，因此计算机厂商必须提供一个方法。由于各个厂商提供的方法不同，所以Linux提供了访问配置空间的标准接口。
 
@@ -2421,7 +2646,7 @@ int pci_bus_write_config_word(struct pci_bus *bus, unsigned int devfn, int where
 int pci_bus_write_config_dword(struct pci_bus *bus, unsigned int devfn, int where, u32 val);
 ```
 
-### 访问IO和内存空间
+**访问IO和内存空间**
 
 每个PCI设备可以实现多达6个IO区域，每个区域可以是内存也可以是IO。大多数设备在内存区域实现IO寄存器。
 
@@ -2443,7 +2668,7 @@ unsigned long pci_resource_flags(struct pci_dev *dev, int bar);
 * IORESOURCE_READONLY
   * 表明内存区域是否可预取或是写保护的。
 
-### PCI中断
+**PCI中断**
 
 在计算机的引导阶段，固件就为PCI设备分配了中断号。借助以下两个寄存器，可以很容易的处理PCI中断。
 * 60，PCI_INTERRUPT_LINE，中断号
@@ -2451,7 +2676,7 @@ unsigned long pci_resource_flags(struct pci_dev *dev, int bar);
 
 书上还有一些关于PCI中断的扩展内容，略。
 
-### 硬件抽象
+**硬件抽象**
 
 用于实现硬件抽象的机制，就是包含方法的普通结构（结构体就 + 函数指针）。
 
@@ -2477,7 +2702,7 @@ struct pci_ops {
 
 ## 外部总线
 
-# 第十三章 USB驱动程序
+# USB驱动程序
 
 USB，通用串行总线，是为了替代许多不同的低速总线。从拓扑结构看，USB是一颗由几个点对点的连接构成的树。主控制器询问设备是否有数据要传输，如果没有主控制器，设备无法传输数据。
 
@@ -2503,7 +2728,7 @@ USB设备驱动主要使用`USB核心`提供的接口来访问和控制USB设备
 
 ## 不使用urb的USB传输
 
-# 第十四章 Linux设备模型
+# Linux设备模型
 
 Linux设备模型提供了对系统结构的一般性抽象描述。内核使用该抽象支持了以下任务：
 * 电源管理和系统关机
@@ -2537,7 +2762,7 @@ struct kobject {
 };
 ```
 
-### 嵌入的kobject
+**嵌入的kobject**
 
 `kobject`对自身并不感兴趣，它的意义在于把更高级的对象连接到设备模型上。所以`kobject`对象被嵌入到其他结构中。例如`struct cdev`的定义：
 
@@ -2559,7 +2784,7 @@ struct kobject *kp = ...;
 struct cdev *device = container_of(kp, struct cdev, kobj);
 ```
 
-### kobject的初始化
+**kobject的初始化**
 
 无论如何使用`kobject`，下面的初始化步骤都是必需的。
 1. `kobject`结构体清0。一般使用memset()。
@@ -2573,7 +2798,7 @@ struct cdev *device = container_of(kp, struct cdev, kobj);
 * kset
 * parent
 
-### 对引用计数的操作
+**对引用计数的操作**
 
 ```c
 // 增加引用计数并返回kobj
@@ -2583,7 +2808,7 @@ struct kobject *kobject_get(struct kobject *kobj);
 void kobject_put(struct kobject *kobj);
 ```
 
-### release函数和kobject类型
+**release函数和kobject类型**
 
 当kobject引用计数为0的时候，需要调用release函数，异步的通知驱动程序释放相关的资源。release函数的原型如下。
 
@@ -2698,7 +2923,7 @@ sysfs中的每一个目录，都对应一个kobject。每个kobject都输出一�
   * 如果parent为空，则设置为内嵌kset中的kobject
   * 如果parent和kset同时为空，则在顶层sysfs创建目录
 
-### 默认属性
+**默认属性**
 
 每个kobject包含若干个默认属性，这些属性保存在`kobj_type`结构中（ktype成员）。下面是该结构的定义。
 
@@ -2731,7 +2956,7 @@ struct sysfs_ops {
 };
 ```
 
-### 非默认属性
+**非默认属性**
 
 使用下面两个函数创建非默认属性。
 
@@ -2740,7 +2965,7 @@ int  sysfs_create_file(struct kobject *kobj, const struct attribute *attr);
 void sysfs_remove_file(struct kobject *kobj, const struct attribute *attr);
 ```
 
-### 二进制属性
+**二进制属性**
 
 ```c
 struct bin_attribute {
@@ -2756,7 +2981,7 @@ int sysfs_create_bin_file(struct kobject *kobj, const struct bin_attribute *attr
 void sysfs_remove_bin_file(struct kobject *kobj, const struct bin_attribute *attr);
 ```
 
-### 符号链接
+**符号链接**
 
 在kobj下创建符号链接name，指向target。
 
@@ -2833,7 +3058,7 @@ struct bus_type_private {
 };
 ```
 
-#### 总线注册
+**总线注册**
 
 总线注册可能会失败，所以要检查返回值。`bus_type`只有name和一些必要的方法需要初始化，大多数由设备模型控制。
 
@@ -2842,14 +3067,14 @@ int bus_register(struct bus_type *bus);
 void bus_unregister(struct bus_type *bus);
 ```
 
-#### 总线方法
+**总线方法**
 
 * int (*match)(struct device *dev, struct device_driver *drv);
   > 当总线添加一个新设备或新驱动时，此方法会被调用一次或多次。如果执行的驱动能够处理指定的设备，该函数返回非零值。
 * int (*uevent)(struct device *dev, struct kobj_uevent_env *env);
   > 在为用户空间产生热拔插事件前，这个方法允许总线添加环境变量。与kset的uevent()方法相同。
 
-#### 对设备和驱动程序的迭代
+**对设备和驱动程序的迭代**
 
 迭代总线上的每一个设备/设备驱动，并执行函数fn()。如果start为NULL，则从第一个开始迭代；否则从start后的第一次开始迭代。如果fn()返回非0值，则停止迭代，这个值也会从bus_for_each函数返回。
 
@@ -2862,7 +3087,7 @@ int bus_for_each_drv(struct bus_type *bus, struct device_driver *start,
                      void *data, int (*fn)(struct device_driver *, void *));
 ```
 
-#### 总线属性
+**总线属性**
 
 ```c
 struct bus_attribute {
@@ -2924,7 +3149,7 @@ struct device {
 };
 ```
 
-#### 设备注册
+**设备注册**
 
 设备注册完毕后，可以在`/sys/devices`目录看到注册的设备。
 
@@ -2935,7 +3160,7 @@ int device_register(struct device *dev);
 void device_unregister(struct device *dev);
 ```
 
-#### 设备属性
+**设备属性**
 
 `struct device`没有默认属性，需要通过下面的接口创建或移除属性。可以通过宏`DEVICE_ATTR()`快速创建结构体`device_attribute`。
 
@@ -2955,7 +3180,7 @@ struct device_attribute {
 struct device_attribute dev_attr_##_name = __ATTR(_name, _mode, _show, _store)
 ```
 
-#### 设备结构嵌入
+**设备结构嵌入**
 
 通常会在自己的设备结构体中嵌入`struct device`，并添加一些设备的自定义信息。例如：
 
@@ -3030,7 +3255,7 @@ void driver_remove_file(struct device_driver *drv, struct driver_attribute *attr
 
 `struct bus_type`结构的成员`drv_attrs`，包含该总线为所有设备驱动创建的默认属性。
 
-#### 驱动程序结构的嵌入
+**驱动程序结构的嵌入**
 
 `struct device_driver`结构一般会内嵌在自定义的设备结构体中，并且可以加入一些设备的私有信息。
 
@@ -3038,7 +3263,7 @@ void driver_remove_file(struct device_driver *drv, struct driver_attribute *attr
 
 类是一个设备的高层视图，它抽象出了底层的实现细节。类允许用户空间使用设备所提供的功能，而不关心设备是如何连接的，以及它们是如何工作的。类是相似设备的集合。几乎所有的类都出现在`/sys/class`目录。
 
-### 管理类
+**管理类**
 
 类通过结构体`struct class`来表示。
 
@@ -3097,11 +3322,11 @@ int class_create_file(struct class *cls, const struct class_attribute *attr);
 void class_remove_file(struct class *cls, const struct class_attribute *attr);
 ```
 
-### 类设备
+**类设备**
 
 类存在的真正目的是给作为类成员的各个设备提供一个容器。结构体`struct device`表示类的成员。更详细的信息参考[设备](#设备)
 
-### 类接口
+**类接口**
 
 设备加入或离开类时指向对应的函数。
 
@@ -3117,4 +3342,164 @@ struct class_interface {
 int class_interface_register(struct class_interface *intf);
 // 移除接口
 void class_interface_unregister(struct class_interface *intf);
+```
+
+# 平台设备驱动
+
+平台设备用于枚举不可探测的设备。
+* struct platform_driver
+  * probe / remove
+* struct of_device_id
+
+> TODO：将以下内容移动到对应的章节。本节着重介绍平台驱动的注册、dts的编写。
+
+## pinctrl子系统
+
+**学习参考**
+
+* https://www.kernel.org/doc/html/latest/driver-api/pin-control.html
+* http://www.wowotech.net/gpio_subsystem/pin-control-subsystem.html
+
+**注册引脚**
+
+* pinctrl子系统核心需要SoC实现
+  * pinctrl_desc
+    * pinctrl_ops
+    * pinmux_ops
+    * pinconf_ops
+  * gpio_chip
+  * irq_chip
+* dts提供引脚配置节点
+
+设备驱动从pinctrl子系统核心请求引脚复用
+
+**dts编写**
+
+首先需要在GPIO控制器节点定义引脚状态。以树莓派3B为例。`brcm,pins`等属性是由`pinctrl-bcm2835.c`定义。
+
+```dts
+&gpio {
+    led_pins: led_pins {
+        brcm,pins = <27 22 26>;
+        brcm,function = <BCM2835_FSEL_GPIO_OUT>;
+        brcm,pull = <BCM2835_PUD_UP BCM2835_PUD_UP BCM2835_PUD_UP>;
+    };
+};
+```
+
+设备驱动节点引用GPIO控制器定义的引脚状态。标准属性`pinctrl-names`定义了引脚状态的名字，标准属性`pinctrl-n`引用引脚状态。
+
+```dts
+&soc {
+    ledred {
+        compatible = "pk,RGBleds";
+        label = "ledred";
+        pinctrl-names = "default";
+        pinctrl-0 = <&led_pins>;
+        pinctrl-1 = <&xxxxxxxx>
+        pins = <27>;
+    };
+};
+```
+
+**设备驱动常用接口**
+
+```c
+// 获取 pinctrl
+struct pinctrl *devm_pinctrl_get(struct device *dev);
+// 查找状态
+struct pinctrl_state *pinctrl_lookup_state(struct pinctrl *p, char *name);
+// 切换到指定状态
+int pinctrl_select_state(struct pinctrl *p, struct pinctrl_state *state);
+```
+
+## gpiod接口
+
+**获取和释放gpio描述符**
+
+```c
+// 通过 IS_ERR() 检查返回值是否出错
+struct gpio_desc *devm_gpiod_get(
+    struct device *dev, const char *con_id, enum gpiod_flags flags);
+struct gpio_desc *devm_gpiod_get_index(
+    struct device *dev, const char *con_id, unsigned int idx, enum gpiod_flags flags);
+void devm_gpiod_put(struct device *dev, struct gpio_desc *desc);
+```
+
+参数说明如下：
+* dev：可以从probe()函数的参数获取device结构体
+* con_id：设备树中GPIO映射定义的属性名。例如属性是`led-gpios=<&gpio 26 GPIO_ACTIVE_HIGH>;`，则`con_id="led"`
+* idx：同一个属性可以包含多个GPIO映射定义，通过idx来区分
+* flags：可以取如下值
+  * GPIOD_ASIS或0：不初始化GPIO，后续需要使用API设置GPIO的方向。
+  * GPIOD_IN：GPIO设置为输入
+  * GPIOD_OUT_LOW：GPIO设置为输出，初值设置为0
+  * GPIOD_OUT_HIGHT：GPIO设置为输入，初值设置为1
+
+**GPIO方向**
+
+```c
+int gpiod_get_direction(const struct gpio_desc *desc);
+int gpiod_direction_input(struct gpio_desc *desc);
+int gpiod_direction_output(struct gpio_desc *desc, int value);
+```
+
+**设置GPIO的值**
+
+```c
+int gpiod_get_value(const struct gpio_desc *desc);
+int gpiod_set_value(const struct gpio_desc *desc, int value);
+```
+
+gpiod使用逻辑值，`value=1`表示值有效，`value=0`表示值无效。下表列出了逻辑值和pin脚电平的关系。
+
+| value | 电平有效属性 | pin脚电平 |
+| - | - | - |
+| 0 | 高电平有效 | 低 |
+| 1 | 高电平有效 | 高 |
+| 0 | 低电平有效 | 高 |
+| 1 | 低电平有效 | 低 |
+
+**gpio映射到中断**
+
+`int gpiod_to_irq(const struct gpio_desc *desc)`获取GPIO对应的IRQ号，返回值可以传递到`request_irq()`或`free_irq()`。如果无法完成映射，则`gpiod_to_irq()`返回一个负的错误码。此函数不会阻塞。
+
+**GPIO设备树**
+
+示例如下。属性`led-gpios`定义了gpio映射，可以用逗号分隔映射多个gpio。对于每一个映射，`&gpio`表示gpio控制器，SoC厂家会在dts中给出定义。`27`表示gpio号，`GPIO_ACTIVE_HIGH`表示高电平有效。
+
+```dts
+ledred {
+    compatible = "pk,RGBleds";
+    label = "ledred";
+    led-gpios = <&gpio 27 GPIO_ACTIVE_HIGH>;
+};
+```
+
+## io端口
+
+ARM处理器主存和IO设备使用相同的地址空间，这意味着可以使用常规指令访问IO设备。但是设备驱动无法直接访问物理地址，需要重新映射。
+
+**io端口重映射**
+
+下面是端口重映射和解除重映射的API。推荐使用`devm_`开头的API，因为设备模型会处理好资源的释放。
+
+```c
+void __iomem *ioremap(phys_addr_t offset, size_t size);
+void iounmap(void *address);
+
+void __iomem *devm_ioremap(struct device *dev, resource_size_t offset, resource_size_t size);
+void devm_iounmap(struct device *dev, void __iomem *addr);
+```
+
+**读写io端口**
+
+```c
+u8 ioread8(const volatile void __iomem *addr);
+u16 ioread16(const volatile void __iomem *addr);
+u32 ioread32(const volatile void __iomem *addr);
+
+void iowrite8(u8 value, volatile void __iomem *addr);
+void iowrite16(u16 value, volatile void __iomem *addr);
+void iowrite32(u32 value, volatile void __iomem *addr);
 ```
