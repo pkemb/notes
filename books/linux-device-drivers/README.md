@@ -2321,6 +2321,7 @@ void ioport_unmap(void *addr);
 
 # 中断
 
+* https://www.kernel.org/doc/html/latest/core-api/genericirq.html
 * 基本概念
   * 中断是一个信号，可以来自外部，也可以来自内部
   * 中断运行在中断上下文，不能访问用户进程、不能随眠
@@ -2351,33 +2352,77 @@ void ioport_unmap(void *addr);
   * /proc/stat的intr行
 * 设备树
 
-**获取硬件IRQ号**
+**设备树**
 
-```c
-int gpiod_to_irq(const struct gpio_desc *desc);
-```
+## 安装中断处理例程
 
-**申请中断**
+可以使用`request_irq()`或`devm_request_irq()`为中断申请一个中断通道。使用完毕后通过`free_irq()`释放。`devm_request_irq()`可以不手动释放，设备驱动模型会在设备卸载时自动释放。
 
 ```c
 int request_irq(
     unsigned int irq,
     irq_handler_t handler,
     unsigned long flags,
-	const char *name,
-    void *dev);
+    const char *name,
+    void *dev_id);
 int devm_request_irq(
     struct device *dev,
     unsigned int irq,
     irq_handler_t handler,
-	unsigned long irqflags,
+    unsigned long irqflags,
     const char *devname,
     void *dev_id);
+
+void free_irq(unsigned int irq, void *dev_id);
+// 查询IRQ是否可用
+int can_request_irq(unsigned int irq, void *dev_id);
 ```
 
-**设备树**
+函数的参数说明如下。
 
-## 安装中断处理例程
+| 参数 | 说明 |
+| - | - |
+| dev | |
+| irq | 要申请的硬件IRQ号 |
+| handler | 中断处理函数指针，更多内容参考[实现中断处理例程](#实现中断处理例程)。 |
+| flags | 中断管理的位掩码 |
+| name | 用来显示在/proc/interrupters |
+| dev_id | 用于共享的中断信号线，也可以用于给中断处理函数传递参数。 |
+
+**`flags`参数**
+
+| flags | 说明 |
+| - | - |
+| IRQF_SHARED | 允许在不同的设备中共享IRQ |
+| IRQF_ONESHOT |  |
+| IRQF_NO_THREAD | Interrupt cannot be threaded |
+| IRQF_TRIGGER_RISING | 上升沿触发 |
+| IRQF_TRIGGER_FALLING | 下降沿触发 |
+| IRQF_TRIGGER_HIGH | 高电平触发 |
+| IRQF_TRIGGER_LOW | 低电平触发 |
+
+> 1. 2.6内核的flags与上表不同
+> 2. 更多flags可以参考文件`include/linux/interrupt.h`
+
+**获取硬件IRQ号**
+
+硬件IRQ号取决于设备使用哪一条IRQ信号线。一般来说有如下方法：
+1. 程序写死
+2. 从设备的寄存器中读取，例如PCI设备
+3. 探测IRQ
+4. 通过gpiod获取IRQ：`int gpiod_to_irq(const struct gpio_desc *desc)`
+5. 平台设备获取IRQ：`int platform_get_irq(struct platform_device *dev, unsigned int num)`
+
+**探测IRQ**
+
+```c
+// 启动探测，返回一个位掩码，需要传递给probe_irq_off()
+unsigned long probe_irq_on(void);
+// 通知设备驱动产生一次中断
+// 停止探测。返回0表示没有探测到，大于0表示探测到的IRQ号
+// 小于0表示探测到了多个IRQ
+int probe_irq_off(unsigned long)
+```
 
 ## 实现中断处理例程
 
