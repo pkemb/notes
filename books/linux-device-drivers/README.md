@@ -2451,6 +2451,40 @@ irqreturn_t irq_handler_t(int irq, void *dev_id)
 }
 ```
 
+## 启用和禁用中断
+
+有时希望禁用中断。例如必须在拥有自旋锁的时候阻塞中断，以免死锁系统。
+
+**禁用单个中断**
+
+```c
+#include <asm/irq.h>
+void disable_irq(int irq);        // 等待当前正在执行的中断处理函数完成
+void disable_irq_nosync(int irq); // 不等待，直接放回
+void enable_irq(int irq);
+```
+
+说明：
+1. 这些函数是可嵌套的。如果调用两次`disable_irq()`，则需要执行两次`enable_irq()`
+2. 这些函数会在所有的处理器禁用或启用IRQ。
+
+**禁用所有中断**
+
+```c
+#include <asm/system.h>
+// 将当前中断状态保存到flags中，然后禁用当前处理器上的中断
+// flags是传值而不是指针
+void local_irq_save(unsigned long flags);
+// 恢复中断
+void local_irq_restore(unsigned long flags);
+
+// 不存储状态，直接禁用中断
+void local_irq_disable(void);
+void local_irq_enable(void);
+```
+
+> 2.6内核没有办法禁用所有处理器的中断。后续高版本内核还不清楚。
+
 ## 顶半部和低半部
 
 ## 中断共享
