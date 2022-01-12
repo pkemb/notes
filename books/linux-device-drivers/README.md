@@ -2384,7 +2384,7 @@ int can_request_irq(unsigned int irq, void *dev_id);
 | - | - |
 | dev | |
 | irq | 要申请的硬件IRQ号 |
-| handler | 中断处理函数指针，更多内容参考[实现中断处理例程](#实现中断处理例程)。 |
+| handler | 中断处理函数指针，更多内容参考[实现中断处理函数](#实现中断处理函数)。 |
 | flags | 中断管理的位掩码 |
 | name | 用来显示在/proc/interrupters |
 | dev_id | 用于共享的中断信号线，也可以用于给中断处理函数传递参数。 |
@@ -2424,7 +2424,32 @@ unsigned long probe_irq_on(void);
 int probe_irq_off(unsigned long)
 ```
 
-## 实现中断处理例程
+## 实现中断处理函数
+
+中断处理函数运行在中断上下文，这意味着有如下限制：
+* 不能向用户空间发送或者接收数据
+* 不能做任何可能发生休眠的操作。例如wait_event、不带GFP_ATOMIC标志的内存分配操作
+* 不能调用`schdule()`函数
+
+中断处理函数的功能：
+1. 清除中断标志位。可能在最后执行，也可能不需要。
+2. 通过等待的进程事件已经发生
+
+中断处理函数执行的时间应该尽可能的短。一般情况下，中短处理函数只设置相关的标志位，而实际的处理放在底半部来完成。有关更多内容参考[顶半部和底半部](#顶半部和底半部)。
+
+**中断处理函数原型**
+
+中断处理函数的原型如下。返回值的类型是`irqreturn_t`，有3种可能的取值。第一次个参数是中断号，第二个参数是`dev_id`，来自于`request_irq()`的最后一个参数。通常使用`dev_id`来传递设备结构体的地址。
+
+```c
+// IRQ_NONE：不是此设备的中断，或中断没有被处理
+// IRQ_HANDLED：中断已经被此设备处理
+// IRQ_WAKE_THREAD：handler requests to wake the handler thread
+irqreturn_t irq_handler_t(int irq, void *dev_id)
+{
+    return IRQ_NONE;
+}
+```
 
 ## 顶半部和低半部
 
