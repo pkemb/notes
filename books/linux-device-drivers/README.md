@@ -2497,6 +2497,49 @@ void local_irq_enable(void);
 
 ## 中断共享
 
+通常，一个IRQ信号线只能为一个设备服务。Linux内核支持所有总线的中断共享，这样一个IRQ信号线可以服务多个设备。当然，对应的设备也要支持中断共享，设备才能正常工作。
+
+**安装共享的处理例程**
+
+共享中断也是通过`request_irq()`安装，但有以下不同：
+* 必须指定`flags`参数中的`IRQF_SHARED`位
+* `dev_id`参数必须是唯一的，不能为NULL。任何指向模块地址空间的指针都可以。
+
+满足下面的条件之一，`request_irq()`成功：
+* 中断信号线空闲
+* 任何已经注册了该中断信号线的处理例程也标识了IRQ是共享的
+
+在释放共享的中断时，必须传递`dev_id`参数给`free_irq()`，其值与传递给`request_irq()`的参数值一样。
+
+**运行处理例程**
+
+当中断发生时，注册在同一个中断信号线的所有处理例程都会被调用，并且会传递各自的`dev_id`。所以中断处理例程必须能够识别属于自己的中断，并在没有中断的时候快速退出。
+
+> 显然，不能通过dev_id来识别。
+
+```c
+irqreturn_t foo_interrupt(int irq, void *dev_id)
+{
+    if (!is_my_device_irq) {
+        // 非此设备产生的中断，快速返回
+        return IRQ_NONE;
+    }
+
+    // 处理中断
+    return IRQ_HANDLED;
+}
+```
+
+**/proc接口和共享的中断**
+
+共享的中断处理例程不会对`/proc/stat`有任何影响，但`/proc/interrupt`会有些许改变。例如下面的例子，中断56用于`dwc_otg`、`dwc_otg_pcd`和`dwc_otg_hcd:usb1`。
+
+```
+root@raspberrypi:~# cat /proc/interrupts
+           CPU0  CPU1  CPU2  CPU3
+ 56:     360296     0     0     0  ARMCTRL-level  64 Edge  dwc_otg, dwc_otg_pcd, dwc_otg_hcd:usb1
+```
+
 ## 中断驱动的IO
 
 # 内核的数据类型
