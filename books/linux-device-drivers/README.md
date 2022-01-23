@@ -3667,6 +3667,112 @@ start-end perm offset major:minor inode image
 
 ## mmap设备操作
 
+对于驱动程序来说，内存映射可以提供给用户程序直接访问设备内存的能力，能够显著的提升性能。但有以下的限制：
+1. 不是所有的设置都能mmap抽象。例如串口和其他面向流的设备。
+2. 被映射的区域必须是PAGE_SIZE的整数倍，物理内存的起始地址也必须是PAGE_SIZE的整数倍。
+
+设备使用mmap的例子：
+1. X服务器将图形显示映射到用户空间
+2. PCI设备的控制寄存器映射到用户空间，直接访问寄存器而不是调用ioctl
+
+`mmap`方法是`file_operations`结构的一部分，执行`mmap()`系统调用时将调用该方法。`mmap`方法的定义如下：
+
+```c
+int (*mmap) (struct file *filp, struct vm_area_struct *vma);
+```
+
+在执行mmap方法之前，内核会完成大量的工作。设备驱动程序需要完成以下动作：
+1. 为VMA的地址范围建立合适的页表
+2. 将`vma->vm_ops`替换为一系列的新操作
+
+有两种建立页表的方法：
+1. 使用remap_pfn_range()函数一次全部建立
+2. 使用nopage方法每次建立一个页表
+
+> mmap() 系统调用手册：https://www.man7.org/linux/man-pages/man2/mmap.2.html
+> void *mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset);
+> * addr 映射的目标虚拟地址。如果为NULL，则kernel会选择合适的
+> * length 映射的长度
+> * prot 映射内存的保护位，PROT_EXEC / PROT_READ / PROT_WRITE / PROT_NONE
+> * flags MAP_SHARED / MAP_SHARED_VALIDATE / MAP_PRIVATE
+> * fd 指向需要映射的文件
+> * offset 需要映射的第一个字节在文件中的偏移
+
+### 使用remap_pfn_range
+
+`remap_pfn_range()`和`io_remap_page_range()`负责为一段物理地址建立新的页表。原型如下。返回值是0，或者是个负的错误码。
+
+```c
+int remap_pfn_range(struct vm_area_struct *vma, unsigned long phys_addr,
+        unsigned long pfn, unsigned long size, pgprot_t prot);
+// 当phys_addr指向IO内存时，应当使用io版本
+int io_remap_page_range(struct vm_area_struct *vma, unsigned long phys_addr,
+        unsigned long pfn, unsigned long size, pgprot_t prot);
+```
+
+参数的含义如下：
+* vma：在一定范围内的页将被映射到该区域内。
+* phys_addr：重新映射时的起始用户虚拟地址。该函数为addr ~ addr+size时间的虚拟地址建立页表
+* pfn：与物理内存对于的页帧号，虚拟地址将被映射到改物理内存上。
+* size：以字节为单位，重新映射的区域大小。
+* prot：新VMA的保护属性。应该使用`vma->vm_page_prot`。
+
+mmap方法的示例实现如下。
+
+```c
+// drivers/char/mem.c
+static int mmap_mem(struct file *file, struct vm_area_struct *vma)
+{
+    size_t size = vma->vm_end - vma->vm_start;
+    // vm_pgoff 等于 mmap() 系统调用的offset >> PAGE_SHIFT
+    phys_addr_t offset = (phys_addr_t)vma->vm_pgoff << PAGE_SHIFT;
+
+    // 删除了参数检查
+
+    vma->vm_ops = &mmap_mem_ops;
+
+    /* Remap-pfn-range will mark the range VM_IO */
+    if (remap_pfn_range(vma,
+                vma->vm_start,
+                vma->vm_pgoff,
+                size,
+                vma->vm_page_prot)) {
+        return -EAGAIN;
+    }
+    return 0;
+}
+```
+
+### 使用nopage映射内存
+
+> 4.19版本的内核没有nopage()函数。而有mremap()函数
+
+### 重新映射特定的IO区域
+
+将`vma->vm_pgoff << PAGE_SHIFT`解释为IO区域内的偏移。注意要检查映射的地址范围是否过大。
+
+例如将起始于物理地址`simple_region_start`、大小为`simple_region_size`字节的区域进行映射：
+
+```c
+unsigned long off = vma->vm_pgoff << PAGE_SHIFT;
+unsigned long physical = simple_region_start + off; // 映射的起始地址
+unsigned long vsize = vma->vm_end - vma->vm_start;
+unsigned long psize = simple_region_size - off; // 剩余的空间
+
+if (vsize > psize)
+    return -EINVAL;
+
+remap_pfn_range(vma, vma->vm_start, physical, vsize, vma->vm_page_prot);
+```
+
+### 重新映射RAM
+
+> 新版内核无nopage()函数，需要重新找资料。
+
+### 重新映射内核虚拟地址
+
+> 新版内核无nopage()函数，需要重新找资料。
+
 ## 执行直接IO访问
 
 ## 直接内存访问DMA
