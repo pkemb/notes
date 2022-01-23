@@ -3528,6 +3528,143 @@ void class_interface_unregister(struct class_interface *intf);
 
 ## Linux的内存管理
 
+主要关注Linux内存管理实现的主要特性、内核用来管理内存的数据结构。
+
+**地址类型**
+
+Linux是一个虚拟内存系统，与硬件使用的物理地址是不同的。
+
+| 地址类型 | 说明 |
+| - | - |
+| 用户虚拟地址 | 用户空间程序所能看到的常规地址，每个进程都有自己的虚拟地址空间。32位或64位。|
+| 物理地址 | 处理器和系统内存之间使用。物理地址可以是32位或64位。 |
+| 总线地址 | 外围总线和内存之间使用，通常与物理地址相同，也可以不同 |
+| 内核逻辑地址 | 内核的常规地址空间，映射了部分或全部物理地址。通常来说，与物理地址仅相差一个固定的偏移量。<br>例如kmalloc()的返回值。通常保存在`unsigned long`或`void *`。|
+| 内核虚拟地址 | 与内核逻辑地址类似，都是内核地址到物理地址的映射。但内核虚拟地址和物理地址的映射不必是线性的和一对一的。<br>所有的内核逻辑地址都是内核虚拟地址，但内核虚拟地址不一定是内核逻辑地址。<br>例如vmalloc()的返回值。虚拟地址通常保存在指针变量中。|
+
+**物理地址和页**
+
+物理内存被分隔为一个个固定大小的页，内核对内存的很多操作都是基于单个页。每页的大小由常量`PAGE_SIZE`指定，通常是4096字节。每个内存地址（包括虚拟和物理）都由`页号`和`页内偏移`组成。以每页4096为例，低12位是页内偏移，剩余的高位是页号。将除去偏移量的剩余位移到右端，称该结果为`页帧号 page frame number`。宏`PAGE_SHIFT`指定了需要移动多少位，才能完成地址和页帧号的转换。
+
+**高端与低端内存**
+
+在32位Linux系统中，将4GB虚拟地址分割为用户空间和内核空间，典型分割是3GB+1GB。占内核地址空间最大的部分是物理内存的虚拟映射。内核对任何物理地址的访问，都必须使用内核空间的地址。所以内核能处理的最大物理内存数量，是内核空间大小减去内核代码所占的空间。
+
+处理器厂家为他们的产品添加了`地址扩展`的特性，使得32位处理器可以在大于4GB的物理地址空间寻址。但是只有内存的低端部分拥有逻辑地址，在访问高端内存时，必须建立的虚拟映射，使该页可以在内核地址空间中被使用。所以内核数据结构倾向于放在低端内存，高端内存一般给用户程序使用。
+
+低端内存和高端内存的定义：
+* 低端内存：存在于内核空间上的逻辑地址内存
+* 高端内存：不存在逻辑地址的内存，处于内核虚拟地址之上
+
+内核可以配置低端内存和高端内存的界限，一般设置为小于1GB。
+
+**地址类型和物理内存的关系**
+
+![](image/memory-space.png)
+
+**内存映射和页结构**
+
+由于高端内存无法使用逻辑地址，所以内核处理内存的函数倾向于使用指向`struct page`结构的指针。该结构保存了内核需要知道的所有物理内存信息。对于每个物理页，都有一个对应的`struct page`结构。内核维护了一个或多个page结构数组，用来跟踪系统中的物理内存。
+
+| 成员 | 说明 |
+| - | - |
+| atomic_t count; | 对该页的访问计数。当计数值为0时，该页将返回给空闲链表。 |
+| void *virtual; | 页面被映射后的虚拟地址，如果未映射则为NULL。低端内存总是被映射，高端内存通常不被映射。<br>此成员可能不被编译，所以推荐使用`page_address()`宏。|
+| unsigned long flags; | 描述页状态的标志。<br>PG_locked：页已经被锁住。<br>PG_reserved：禁止内存管理系统访问。|
+| ... | 其他成员驱动程序不必关心。 |
+
+用来转换page结构指针和虚拟地址的宏和函数：
+
+```c
+// 内核逻辑地址 -> page结构指针，不能操作vmalloc()的返回值和高端内存
+struct page *virt_to_page(void *kaddr);
+
+// 页帧号 -> page结构指针，推荐先用pfn_valid()检查页帧号的合法性
+struct page *pfn_to_page(int pfn);
+
+// 如果地址存在的话，返回页的虚拟地址。高端内存被映射后地址才存在。
+// 大多数情况下要使用kmap()
+void *page_address(struct page *page);
+
+// 低端内存：返回页的逻辑地址；高端内存：在专用的内核地址空间创建特殊的映射
+// kmap() 会维护一个计数，所以多个函数对同一个page调用也是正常的。
+void *kmap(struct page *page);
+// 解除由kmap()创建的映射。映射是有限的，所以不要长时间保持映射。
+void kunmap(struct page *page);
+
+// kmap()的高性能版本。拥有kmap_atomic()时，不能休眠
+// KM_USER0 / KM_USER1 针对在用户空间中直接运行的代码
+// KM_IRQ0 / KM_IRQ1   针对中断处理程序
+void *kmap_atomic(struct page *page, enum km_type type);
+void *kunmap_atomic(struct page *page, enum km_type type);
+```
+
+**页表**
+
+多层树形结构，将虚拟地址转换为物理地址。驱动程序不需要直接处理。
+
+**虚拟内存区**
+
+虚拟内存区（VMA）用于管理进程地址空间中不同区域的内核数据结构。一个VMA表示在进程的虚拟内存中的一个同类区域：拥有同样权限标志位和被同样对象备份的一个连续的虚拟内存地址范围（类似与`段`）。进程的内存映射至少包含：
+* 可执行代码，text
+* 多个数据区：data、bss、heap、stack
+* 与每个活动的内存映射对应的区域
+
+查看文件`/proc/<pid>/maps`就能了解进程的内存区域。
+
+```
+root@localhost:~# cat /proc/1/maps
+004a2000-005b1000 r-xp 00000000 b3:02 8214       /lib/systemd/systemd
+005c0000-005e0000 r--p 0010e000 b3:02 8214       /lib/systemd/systemd
+005e0000-005e1000 rw-p 0012e000 b3:02 8214       /lib/systemd/systemd
+01c5b000-01d2c000 rw-p 00000000 00:00 0          [heap]
+```
+
+每一行的格式如下：
+
+```
+start-end perm offset major:minor inode image
+```
+
+除`image`外，每一个都与`struct vm_area_struct`结构中的一个成员相对应：
+
+| item | 说明 |
+| - | - |
+| start | 起始虚拟地址 |
+| end | 结束虚拟地址 |
+| perm | 读、写、执行权限的位掩码。最后一个字母或者是p（私有），或者是s（共享）。|
+| offset | 在映射文件中的起始位置。 |
+| major, minor | 拥有映射文件的设备的主设备号和次设备号。 |
+| inode | 被映射文件的索引节点号 |
+| image | 被映射文件的名称 |
+
+**vm_area_struct结构**
+
+当用户程序调用`mmap()`映射内存时，系统通过创建一个表示该映射的VMA作为响应。支持mmap的驱动程序需要协助完成VMA的初始化。`struct vm_area_struct`的主要成员如下：
+
+| 成员 | 说明 |
+| - | - |
+| unsigned long vm_start; | VMA的开始地址 |
+| unsigned long vm_end; | VMA的结束地址 |
+| struct file *vm_file; | 与该区域相关联的file结构指针 |
+| unsigned long vm_pgoff; | 以页为单位，文件中该区域的偏移量。当映射一个文件或设备时，它是该区域中被映射的第一页在文件中的位置 |
+| unsigned long vm_flags; | 描述VMA的标志。<br>VM_IO：内存映射IO区域，VMA不会包含在进程的核心转储文件中。<br>VM_RESERVED：不要将该VMA交换出去。|
+| struct vm_operations_struct *vm_ops; | 内核能调用的一套函数，用来对该内存区进行操作。 |
+| void *vm_private_data; | 驱动程序用来保存自身信息的成员。 |
+
+结构体`struct vm_operations_struct`的成员如下
+
+| 成员 | 说明 |
+| - | - |
+| void (*open)(struct vm_area_struct *vma); | 内核调用open()函数初始化该VMA。VMA产生一个新的引用时会调用open()。mmap()第一次创建VMA时，内核不会调用open()。|
+| void (*close)(struct vm_area_struct *vma); | 销毁一个区域时，会调用close。每个VMA只能open和close一次。|
+| struct page * (*nopage)<br>(struct vm_area_struct *vma, unsigned long address, int *type) | 进程访问合法的VMA页，但该页不在内存中时，则为相关VMA调用nopage。如果没有定义，则内核分配一个空页。 |
+| int (*populate)<br>(struct vm_area_struct *vma, unsigned long address, unsigned long len, <br>pgprot_t prot, unsigned long pgoff, int nonblock); | 在用户空间访问页前，该函数允许内核将这些页预先装入内存。 |
+
+**内存映射处理**
+
+`struct mm_struct`负责整合所有的数据结构。每个进程都拥有一个`struct mm_struct`结构，其中包含了VMA链表、页表、以及其他大量内存管理信息。在task结构中能找到该结构的指针。驱动程序一般通过`current->mm`来访问。多个进程可以共享同一个`mm_struct`，Linux通过这种方式来实现线程。
+
 ## mmap设备操作
 
 ## 执行直接IO访问
