@@ -3522,6 +3522,18 @@ int class_interface_register(struct class_interface *intf);
 void class_interface_unregister(struct class_interface *intf);
 ```
 
+# 内存映射和DMA
+
+主要关注编写驱动程序时需要用到的虚拟内存子系统的知识。
+
+## Linux的内存管理
+
+## mmap设备操作
+
+## 执行直接IO访问
+
+## 直接内存访问DMA
+
 # 平台设备驱动
 
 平台设备用于枚举不可探测的设备。
