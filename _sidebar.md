@@ -2,3 +2,6 @@
 * [Linux设备驱动](books/linux-device-drivers/)
 * [深入理解Linux内核（第三版）](books/understanding-the-linux-kernel-v3/notes.md)
 * [汇编语言程序设计](books/professional-assembly-language/)
+* [UNIX环境高级编程](books/apue/README.md)
+  * [排版错误](books/apue/layout_err.md)
+  * [函数列表](books/apue/func.md)
