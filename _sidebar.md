@@ -12,3 +12,5 @@
   * [排版错误](books/apue/layout_err.md)
   * [函数列表](books/apue/func.md)
   * [豆瓣](https://book.douban.com/subject/25900403/)
+* [深入理解Android内核设计思想](books/深入理解Android内核设计思想/README.md)
+  * [豆瓣](https://book.douban.com/subject/25921329/)
