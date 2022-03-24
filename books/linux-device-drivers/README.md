@@ -412,6 +412,11 @@ module_param()的第一个参数是变量名称，第二个参数是变量类型
 
 可以使用`module_param_array(name,type,num,perm)`声明数组参数。name是数组名，type是数组元素的类型，num是用户提供的值的个数。
 
+TODO:
+1. 增加module_param_named、module_param_array_named的说明
+2. 增加/sys/module/module_name/parameters文件夹的说明
+3. module_param_cb
+
 ## 在用户空间编写驱动程序
 
 编写一个用户进程作为驱动程序，有很多好处，但是也有很多限制，具体参考书籍。通常，用户空间驱动程序被实现为一个服务器进程，替代内核作为硬件控制的唯一代理。
