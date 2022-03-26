@@ -1,5 +1,5 @@
 # first run, in current dir
-KERNELDIR ?= $(HOME)/linux-rpi-4.19.y
+KERNELDIR ?= /devspace/rpi/linux-rpi-4.19.y
 PWD := $(shell pwd)
 
 USER=root

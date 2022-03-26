@@ -1,5 +1,5 @@
 # 工具链根目录
-TOOLDIR=${HOME}/tools-rpi
+TOOLDIR=/devspace/rpi/tools-rpi
 
 function main()
 {

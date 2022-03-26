@@ -2,7 +2,7 @@
 
 HOST=pi3b.inc
 # kernel源代码根目录
-KERNELDIR=${HOME}/linux-rpi-4.19.y
+KERNELDIR=/devspace/rpi/linux-rpi-4.19.y
 
 function checkdir()
 {
