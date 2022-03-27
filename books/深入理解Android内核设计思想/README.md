@@ -40,3 +40,19 @@
     * binder驱动会在进程A找到文件描述符对应的`struct file`
     * 在进程B找一个空闲的文件描述符并绑定到`struct file`，然后返回B进程的文件描述符给接收者
   * 进程B调用mmap()在自己的虚拟地址空间映射同一块内存
+
+## JNI
+
+Java Native Interface，允许运行于JVM的Java程序去调用（反向亦然）本地代码（C、C++或汇编编写的程序）的编程框架。以下三种情况可能用到JNI：
+* 实现平台相关的功能，但Java无法实现
+* 复用老旧、非Java编写的库
+* 高性能
+
+实现步骤如下，demo可以参考[示例代码TestJNI](code/jni/jni.md)
+1. 需要本地实现的Java方法加上`native`声明
+2. javac编译
+3. javah生成头文件
+4. 在本地代码实现`native`方法，并编译成动态链接库
+5. 在Java类中加载动态库并调用`native`方法
+
+关于JNI的更多内容，例如JNIEnv、jni数据类型、类型签名、本地代码调用Java函数等，可以参考[官方文档](https://docs.oracle.com/javase/8/docs/technotes/guides/jni/spec/jniTOC.html)。
