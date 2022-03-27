@@ -56,3 +56,15 @@ Java Native Interface，允许运行于JVM的Java程序去调用（反向亦然�
 5. 在Java类中加载动态库并调用`native`方法
 
 关于JNI的更多内容，例如JNIEnv、jni数据类型、类型签名、本地代码调用Java函数等，可以参考[官方文档](https://docs.oracle.com/javase/8/docs/technotes/guides/jni/spec/jniTOC.html)。
+
+# 第05章 Android进程线程和程序内存优化
+
+## Android进程和线程
+
+* 四大组件不是进程的全部，而是进程的零件。从`AndroidManifest.xml`看，四大组件定义在application标签下面。
+* 主进程由`Zygote`创建，然后会创建主线程`ActivityThread`。
+* 同一个包中的组件将运行在相同的进程空间中。
+* 不同包中的组件可以通过一定的方式运行在同一个进程空间中。
+  * 在`AndroidManifest.xml`中，可以为`<application>`、`<activity>`、`<service>`、`<reciver>`、`<provider>`指定`android:process`属性，指明想要依存的进程环境。
+* 一个Activity应用启动后至少有三个线程：一个主线程和两个Binder线程。
+
