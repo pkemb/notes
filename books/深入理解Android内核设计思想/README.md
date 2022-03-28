@@ -68,3 +68,116 @@ Java Native Interface，允许运行于JVM的Java程序去调用（反向亦然�
   * 在`AndroidManifest.xml`中，可以为`<application>`、`<activity>`、`<service>`、`<reciver>`、`<provider>`指定`android:process`属性，指明想要依存的进程环境。
 * 一个Activity应用启动后至少有三个线程：一个主线程和两个Binder线程。
 
+## Handler、MessageQueue、Runnable与Looper
+
+Looper不断获取MessgaeQueue中的一个Messgae，然后由Handler来处理。这些对象的对应关系如下：
+* 每个线程只有一个Looper
+* 每个Looper只有一个MessageQueue
+* 每个MessageQueue中有N个Message
+* 每个Message中最多指定一个Handler来处理事件。
+
+**Handler**
+
+源代码：frameworks/base/core/java/android/os/Handler.java。关键成员如下。
+
+```java
+public class Handler {
+    final Looper mLooper;       // 当前线程的Looper
+    final MessageQueue mQueue;  // mLooper.mQueue
+    final Callback mCallback;
+
+    // 处理Message
+    public void dispatchMessage(Message msg);   // 对消息进行分发
+    public void handleMessage(Message msg);     // 对消息进行处理，子类需要实现
+
+    // 发送消息
+    // post系列
+    final boolean post(Runnable r);
+    final boolean postAtTime(Runnable r, long uptimeMillis);
+    // send系列
+    public final boolean sendEmptyMessage(int what);
+    public final boolean sendEmptyMessageDelayed(int what, long delayMillis);
+}
+```
+
+Handler主要有两个功能：
+* 处理Message
+* 将某个Messgae压入MessageQueue中
+
+`Handler.dispatchMessage()`根据实际情况，调用不同的函数处理消息，按优先级排列是：
+1. Message.callback -> Runnable对象
+2. Handler.mCallback
+3. Handler.handleMessage
+
+**MessageQueue**
+
+源代码：frameworks/base/core/java/android/os/MessageQueue.java。主要成员如下。
+
+```java
+public final class MessageQueue {
+    // 构造函数，创建队列。会调用nativeInit()创建一个NativeMessageQueue对象
+    MessageQueue(boolean quitAllowed);
+    private native static long nativeInit();
+    // 元素入队
+    boolean enqueueMessage(Message msg, long when);
+    // 元素出队
+    Message next();
+    // 删除元素
+    void removeMessages(Handler h, int what, Object object);
+    void removeMessages(Handler h, Runnable r, Object object);
+    // 销毁队列
+    private native static void nativeDestroy(long ptr);
+}
+```
+
+**Looper**
+
+源代码：frameworks/base/core/java/android/os/Looper.java。Looper的关键成员如下：
+
+```java
+public final class Looper {
+    // 线程局部变量，存储了当前线程的Looper对象。黑魔法的关键所在。
+    static final ThreadLocal<Looper> sThreadLocal = new ThreadLocal<Looper>();
+    // ActivityThread线程的Looper对象
+    private static Looper sMainLooper;
+
+    // 创建Looper对象并保存到 sThreadLocal
+    public static void prepare();
+    private static void prepare(boolean quitAllowed);
+    // ActivityThread线程专属成员函数
+    public static void prepareMainLooper();
+
+    // 获取当前线程的Looper对象
+    public static @Nullable Looper myLooper();
+    // 获取ActivityThread线程的Looper对象
+    public static Looper getMainLooper()
+
+    // 死循环，获取消息并处理
+    public static void loop();
+}
+```
+
+使用`Looper`的典型代码如下。
+
+```java
+class LooperThread extends Thread {   // Thread是Runnable对象
+    public Handler mHandler;
+    public void run() {
+        // 1. 创建Looper对象并保存到 sThreadLocal
+        Looper.prepare();
+        // 2. 重写 Handler.handleMessage() 函数
+        mHandler = new Handler() {
+            public void handleMessage(Message msg) {
+                // 处理消息的地方
+            }
+        };
+        // 3. 开始运行Looper
+        Looper.run();
+    }
+}
+```
+
+`Handler`有一个`mLooper`成员，但是在以上三步中，并没有看赋值。关键点就在于`Looper.sThreadLocal`。这是一个`ThreadLocal`，意味着只有本线程的代码才能够访问。在`Handler`的构造函数中，会调用`Looper.myLooper()`获取当前线程的Looper。
+
+Looper将每个线程特有的Looper对象隐藏了起来，并提供了若干`static`函数方便开发人员调用。
+
