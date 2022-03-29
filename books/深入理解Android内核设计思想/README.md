@@ -181,3 +181,47 @@ class LooperThread extends Thread {   // Thread是Runnable对象
 
 Looper将每个线程特有的Looper对象隐藏了起来，并提供了若干`static`函数方便开发人员调用。
 
+## UI主线程——ActivityThread
+
+`ActivityThread`的主要启动代码如下。与普通线程相比，差异主要在`Looper.prepareMainLooper()`。这个函数会在内部调用`Looper.prepare()`，同时将生成的线程局部变量`sThreadLocal`保存到`sMainLooper`。这样其他线程可以通过`Looper.getMainLooper()`获取`ActivityThread`线程的Looper。
+
+```java
+// 创建Looper对象并保存到sThreadLocal和sMainLooper
+Looper.prepareMainLooper();
+...
+// 生成ActivityThread()对象，内部同时会生成 final H mH = new H()
+ActivityThread thread = new ActivityThread();
+thread.attach(false, startSeq);
+
+if (sMainThreadHandler == null) {
+    // 放回 mH
+    sMainThreadHandler = thread.getHandler();
+}
+Looper.loop();
+```
+
+`Looper.loop()`的实现大致如下：
+
+```java
+public final class Looper {
+    public static void loop() {
+        // 获取当前线程的Looper对象
+        final Looper me = myLooper();
+        // 获取Looper管理的MsgQueue，这个对象在Looper的构造函数中创建
+        final MessageQueue queue = me.mQueue;
+
+        for (;;) {
+            // 获取一个消息，可能会阻塞
+            Message msg = queue.next();
+            if (msg == null) {
+                // 没有Msg，直接返回
+                return;
+            }
+            // 调用dispatchMessage()处理Msg。msg.target实际上是一个Handler对象
+            msg.target.dispatchMessage(msg);
+            // 消息处理完毕，进行回收
+            msg.recycleUnchecked();
+        }
+    }
+}
+```
