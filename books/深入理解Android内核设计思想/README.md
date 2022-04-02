@@ -305,3 +305,68 @@ t2.start();
 public static void sleep(long millis);
 public static void sleep(long millis, int nanos);
 ```
+
+
+## Android程序的内存管理与优化
+
+**内存使用的限制**
+
+进程申请的heap空间超过`dalvik.vm.heapsize`设定的值，就会触发OOM。
+
+```shell
+# Android 9.0
+console:/$ getprop dalvik.vm.heapsize
+256m
+```
+
+查看某个进程的内存使用情况，可以使用`dumpsys`命令。各列含义如下：
+* PSS：Proportional Set Size，进程独占的内存页 + 按比例分配与其他进程共享的内存页
+* Private RAM：进程独占的内存页
+  * Private Dirty：必须常驻内存的页面
+  * Private Clean：可能被Page Out的页面
+
+```shell
+console:/$ dumpsys meminfo 1
+Applications Memory Usage (in Kilobytes):
+Uptime: 208504 Realtime: 208504
+                   Pss  Private  Private  SwapPss     Heap     Heap     Heap
+                 Total    Dirty    Clean    Dirty     Size    Alloc     Free
+                ------   ------   ------   ------   ------   ------   ------
+  Native Heap      732      732        0        0        0        0        0
+  Dalvik Heap        0        0        0        0        0        0        0
+        Stack       20       20        0        0
+    Other dev      240      192        0        0
+   Other mmap      469        4       68        0
+      Unknown       56       56        0        0
+        TOTAL     1517     1004       68        0        0        0        0
+
+ App Summary
+                       Pss(KB)
+                        ------
+           Java Heap:        0
+         Native Heap:      732
+                Code:        0
+               Stack:       20
+            Graphics:        0
+       Private Other:      320
+              System:      445
+
+               TOTAL:     1517       TOTAL SWAP PSS:        0
+```
+
+**Android中的内存泄露与内存监测**
+
+在Android Studio的`Profiler`窗口下，可以为调试的APP新建一个SESSIONS，看到CPU、MEMORY、NETWORK、ENERGY的实时使用率。
+
+![](pic/as-profiler.png)
+
+点击`Memory`，则可以看到一个记录按钮，可以记录heap的转储，或`java/Kotlin`的分配情况。
+
+![](pic/as-profiler-memory.png)
+
+记录的HEAP可以保存为`HPROF`文件，通过`hprof-conv`（在platform-tools文件夹下）工具转化为标准的`J2SE HPROF`文件后，可以用`Memory Analyzer Tool（mat）`打开。
+
+参考：
+* https://www.eclipse.org/mat/
+* https://blog.csdn.net/shulianghan/article/details/106958491
+
