@@ -225,3 +225,83 @@ public final class Looper {
     }
 }
 ```
+
+## Thread类
+
+线程是操作系统分配CPU资源的调度单位。从Thread类的定义看，Thread实现了Runnable，也就是说Thread是可执行代码。
+
+```java
+// libcore/ojluni/src/main/java/java/lang/Thread.java
+public class Thread implements Runnable {
+    ...
+}
+
+// libcore/ojluni/src/main/java/java/lang/Runnable.java
+@FunctionalInterface
+public interface Runnable {
+    public abstract void run();
+}
+```
+
+使用Thread的两种方法。
+
+**从Thread继承**
+
+定义一个`MyThread`继承自`Thread`，重写`run()`方法，然后调用`start()`。
+
+```java
+MyThread thr = new MyThread(...); // MyThread重写run()方法
+thr.start()
+```
+
+**直接实现Runnable**
+
+用Runnable对象构造出一个Thread对象。
+
+```java
+Thread thr = new Thread(new Runnable() {
+    @Override
+    public void run() {
+        // code
+    }
+});
+thr.start();
+```
+
+**Thread休眠和唤醒**
+
+控制进程休眠和唤醒的函数有：
+* `wait()`
+* `notify()`
+* `notifyAll()`
+* `interrupt()`
+* `join()`
+* `sleep()`
+
+`wait()`和`notify()`、`notifyAll()`是由`Object()`类定义的，也就是说任何类都有这三个成员函数。调用`wait()`会导致调用线程睡眠，直到其他线程调用`notify()`或`notifyAll()`，wait和notify必须使用同一个Object来调用。官方文档对`wait()`的解释如下。
+
+> Causes the calling thread to wait until another thread calls the notify() or notifyAll() method of the object.
+
+`interrupt()`会中断线程的执行，根据不同的情况，Thread可能会收到exception。
+
+`join()`用来等待指定线程执行完毕。默认一直等待，也可以指定超时时间。
+
+```java
+public final void join();
+public final void join(long millis, int nanos);
+public final void join(long millis);
+
+// 示例
+Thread t1 = new Thread(...);
+Thread t2 = new Thread(...);
+t1.start();
+t1.join();   // 等待t1执行完毕
+t2.start();
+```
+
+`sleep()`用来睡眠指定时间。
+
+```java
+public static void sleep(long millis);
+public static void sleep(long millis, int nanos);
+```
