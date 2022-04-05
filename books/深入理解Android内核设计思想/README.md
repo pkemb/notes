@@ -370,3 +370,64 @@ Uptime: 208504 Realtime: 208504
 * https://www.eclipse.org/mat/
 * https://blog.csdn.net/shulianghan/article/details/106958491
 
+# 第06章 进程间通信——Binder
+
+`Binder`是Android系统的一种进程间通信方式。类似于网络通信，Binder客户端在与Binder服务器通信之前，需要知道Binder服务器的ID。`ServiceManager`是一个特殊的Binder服务器，其ID是0。通过ServiceManager，可以注册、查询等。
+
+Binder涉及到Linux driver、native、framework，理解起来比较困难。
+
+## 智能指针
+
+智能指针是为了彻底解决使用指针的各种问题，包括没有初始化、资源泄露、反复释放、野指针等等。
+
+```c
+// 没有初始化
+void *p;
+/*********************/
+// 资源泄露
+int *p = malloc(10);
+/*********************/
+// 反复释放 / 野指针 1
+int *p = malloc(10);
+// 使用p做一些事情
+free(p);
+// p任然指向原来的内存块，但已经释放
+// 如果再次访问，行为是未知的
+free(p); // 这里会导致程序crash
+/*********************/
+// 野指针 2
+int *p = malloc(10);
+int *m = p;  // m和p指向同一个对象
+free(p);
+p = NULL;
+// m 指向的对象已经释放了，但m不为NULL
+```
+
+观察以上示例代码，指针最主要的问题是：
+* 对象在什么时候释放。
+  * 当有指针指向某一个对象的时候，不能够释放；
+  * 当没有指针指向对象时，必须要释放
+* 释放动作需要程序员手工完成
+
+智能指针的设计思路如下：
+* 被引用的对象维护一个引用计数，当计数为0时释放
+* 智能指针负责增加、减少引用计数
+
+**强指针StrongPointer**
+
+`sp`是一个模板类，可以指向以`LightRefBase`为基类的对象。
+
+* sp：`system/core/libutils/include/utils/StrongPointer.h`
+* 对象：以`system/core/libutils/include/utils/LightRefBase.h`为基类
+
+强指针存在一个问题，如果两个对象互相指向对方，那么这两个对象将永远无法得到释放。
+
+**弱指针wp**
+
+弱指针规定：
+* 强引用计数为0时，不论弱引用计数是否为0，对象都可以释放自己
+* 弱指针必须升级为强指针，才能访问它所指向的目标对象
+
+弱指针`wp`是一个模板类，可以指向以`RefBase`为基类的对象。这两个类都定义在`system/core/libutils/include/utils/RefBase.h`。
+
+> wp的设计过于复杂，具体设计思路参考书籍。
