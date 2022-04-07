@@ -431,3 +431,61 @@ p = NULL;
 弱指针`wp`是一个模板类，可以指向以`RefBase`为基类的对象。这两个类都定义在`system/core/libutils/include/utils/RefBase.h`。
 
 > wp的设计过于复杂，具体设计思路参考书籍。
+
+## 进程间的数据载体Parcel
+
+Parcel是一种数据载体，用于承载希望通过IBinder发送的相关信息。Parcel具有解包和打包的能力，接收方和发送方需要使用对应的接口。
+
+Parcel的Java实现在`frameworks/base/core/java/android/os/Parcel.java`，其实只是对native接口的封装。native的实现在`frameworks/base/core/jni/android_os_Parcel.cpp`。
+
+Parcel提供了非常多的接口，分类如下：
+* Parcel对象申请与回收
+  * obtain() 从Parcel池中获取一个Parcel对象
+  * recycle() 回收到Parcel()池
+* Parcel设置相关
+  * dataSize() 当前已存储的数据大小
+  * setDataCapacity() 设置Parcel的空间大小
+  * setDataPosition() 设置读写位置
+  * dataAvail() 当前Parcel中的可读数据大小
+  * dataCapacity()
+  * dataPosition()
+* 原始数据类型
+  * writeLong() / readLong()
+  * writeByte() / readByte()
+  * writeDouble() / readDouble()
+  * writeString() / readString()
+  * ...
+* 原始数据数组
+* Parcelables
+* Bundles
+* Active Objects：对象的特殊标记引用
+  * Binder
+    * writeStrongBinder()
+    * writeStrongInterface()
+    * readStrongBinder()
+  * 文件描述符
+    * writeFileDescriptor()
+    * readFileDescriptor()
+* Untyped Containers：读写标准的任意类型的Java容器
+  * writeArray(Object[]) / readArray(ClassLoader)
+  * writeList(List) / readList(List, ClassLoader)
+
+Parcel的使用示例如下，以`ServiceManagerProxy`的`getService()`为例。
+
+```java
+// frameworks/base/core/java/android/os/ServiceManagerNative.java
+class ServiceManagerProxy implements IServiceManager {
+    public IBinder getService(String name) throws RemoteException {
+        Parcel data = Parcel.obtain();  // 获取Parcel对象
+        Parcel reply = Parcel.obtain();
+        data.writeInterfaceToken(IServiceManager.descriptor);
+        data.writeString(name);         // 写入要发送的数据
+        // 发送数据
+        mRemote.transact(GET_SERVICE_TRANSACTION, data, reply, 0);
+        IBinder binder = reply.readStrongBinder(); // 读取接收端返回的数据
+        reply.recycle();   // 回收Parcel对象
+        data.recycle();
+        return binder;
+    }
+}
+```
