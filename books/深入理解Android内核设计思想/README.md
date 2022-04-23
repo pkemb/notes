@@ -489,3 +489,28 @@ class ServiceManagerProxy implements IServiceManager {
     }
 }
 ```
+
+## Binder驱动
+
+Binder驱动实现了Binder通信机制。[Binder驱动源码阅读](https://pkemb.com/2022/04/binder-driver/)。
+
+## Binder服务端与客户端
+
+* ProcessState 和 IPCThreadState
+* ServiceManager
+* IBinder：对Binder的接口抽象
+  * BpBinder：从IBinder继承而来，p代表proxy，binder driver的代理
+  * BBinder：处理Binder消息。作为BnInterface的父类
+* IServiceManager：对ServiceManager的接口抽象
+  * BpServiceManager：客户端，发送消息到ServiceManager
+  * service manager：纯C写的服务端
+* IMediaPlayerService：媒体播放服务的接口
+  * BpMediaPlayerService：接口的代理，通过代理可以使用服务端提供的服务
+  * BnMediaPlayerService：BBinder的子类，实现onTransact()函数
+  * MediaPlayerService：BnMediaPlayerService的子类，实现服务端的业务逻辑。
+
+实现服务端与客户端：
+* 纯native：可以参考IMediaPlayerService的实现。邓凡平《深入理解Android 卷1》第168页。
+* Java：利用AIDL工具，[Android 接口定义语言 (AIDL)](https://developer.android.google.cn/guide/components/aidl?hl=zh-cn)
+
+匿名服务
