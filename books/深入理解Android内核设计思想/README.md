@@ -514,3 +514,147 @@ Binder驱动实现了Binder通信机制。[Binder驱动源码阅读](https://pke
 * Java：利用AIDL工具，[Android 接口定义语言 (AIDL)](https://developer.android.google.cn/guide/components/aidl?hl=zh-cn)
 
 匿名服务
+
+# 第07章 Android启动过程
+
+## 第一个系统进程init
+
+`init`是第一个用户进程，主要提供了以下两个服务：
+* 通过解析[init.r](#initrc语法)文件来创建其他的服务
+* [属性服务](#属性服务)
+
+### init.rc语法
+
+`init.rc`主要由`actions`和`services`组成。当`action`指定的事件发生时，会执行相应的命令。`service`用于启动一个后台服务进程，每个`service`包含若干个约束选项。
+
+**基本语法规则**
+
+* 注释以`#`开头
+* 关键字和参数用空格分隔
+* 参数中如果包含空格，需要用`\`转义
+* 每个语句以行为单位，行尾的`\`表示续行
+
+**actions**
+
+格式如下，以`on`开头，后接一个`event`，之后每一行都是一个命令，直到遇见`on`或`service`表示`action`结束。
+
+表示当指定的事件发生时，会依次指定指定的命令。注意，不是shell命令，而是`init`预先定义的一些命令，后面会列出。
+
+```
+on <event>
+    command
+    command
+    ...
+
+# 第二个action
+on <event>
+    command
+    command
+```
+
+**event**
+
+`init.rc`支持如下的`event`。
+
+| event | 说明 |
+| - | - |
+| boot | init程序启动后触发的第一个事件 |
+| name=value | 当属性name满足特定value时触发 |
+| device-added-[path]<br>device-removed-[path] | 当设备节点添加/删除时触发此事件 |
+| service-exited-[name] | 当指定的服务name存在时触发 |
+
+**command**
+
+`init.rc`支持下表所示的命令。
+
+| command  | 说明 |
+| - | - |
+| `exec <path> [<argument>]` | fork并执行一个程序。这条命令将阻塞直到该程序运行完毕。 |
+| export name value | 设置环境变量为指定值，全局有效，后续的进程都会继承。 |
+| ifup interface | 启动指定网络接口 |
+| import filename | 导入另外一个rc文件 |
+| hostname name | 设置主机名为name |
+| chdir dir | 更改工作目录 |
+| chmmod mod path | 更改文件的权限 |
+| chown owner group path | 更改文件所有者和所属组 |
+| chroot dir | 更改根目录位置 |
+| class_start class | 启动由类名指定的所有相关服务 |
+| class_stop class | 停止由类名指定的所有相关服务 |
+| domainname name | 设置域名 |
+| insmod path | 安装模块 |
+| mkdir path [mode] [owner] [group] | 新建目录 |
+| mount type device dir [mountoption] | 指定路径上挂载一个设备 |
+| setprop name value  | 设置指定的属性值 |
+| setrlimit resource cur max | 设置一种资源的使用限制 |
+| start serivce | 启动指定服务 |
+| stop service | 停止指定服务 |
+| symlink target path | 创建软链接path，指向target |
+| sysclktz mins_west_of_gmt | 设置基准时间 |
+| trigger event  | 触发一个事件 |
+| write path string [string]* | 在指定文件写入一个或多个字符串 |
+
+**service**
+
+在特定选项的约束下启动指定程序。格式如下，关键字`service`开头，然后是服务的名字和程序的路径，最后是可选的参数。`name`必须全局唯一，可以作为`start`和`stop`命令的参数。
+
+```
+service name path [argument]*
+    option
+    option
+```
+
+**option**
+
+| option | 说明 |
+| - | - |
+| socket name type pem [user [group]] | 创建一个`/dev/socket/name`的UNIX域套接字，并将fd传递给启动的进程。<br>有效的type值包括dgram、stream和seqpacket。<br>user和group的默认值是0。|
+| user username | 切换进程的用户为username，默认是root |
+| group groupname [groupname]* | 切换进程的用户组为groupname |
+| oneshot | 当服务退出时，不要主动重启 |
+| class name | 为该服务指定一个class名。同一个class的所有服务必须同时启动或者停止。默认情况下服务的class名是default。|
+| onrestart | 当此服务重启时，执行某些命令 |
+
+### init.rc示例
+
+`/init`在`system/core/rootdir/init.rc`。
+
+```
+import /init.environ.rc
+import /init.usb.rc
+import /init.${ro.hardware}.rc
+import /vendor/etc/init/hw/init.${ro.hardware}.rc
+import /init.usb.configfs.rc
+import /init.${ro.zygote}.rc
+
+on init
+    sysclktz 0
+
+    # Mix device-specific information into the entropy pool
+    copy /proc/cmdline /dev/urandom
+    copy /default.prop /dev/urandom
+
+    symlink /system/bin /bin
+    symlink /system/etc /etc
+
+service ueventd /sbin/ueventd
+    class core
+    critical
+    seclabel u:r:ueventd:s0
+    shutdown critical
+```
+
+### init.rc解析
+
+分析`init`的源码，略。
+
+### 属性服务
+
+类似于Windows的注册表，可以用于存储key及其对应的value。`getprop`命令用于读取属性值，`setprop`命令用于设置属性值。
+
+```shell
+console:/ # getprop ro.hardware
+sun50iw6p1
+console:/ # setprop myname pk
+console:/ # getprop myname
+pk
+```
