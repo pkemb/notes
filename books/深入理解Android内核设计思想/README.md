@@ -658,3 +658,21 @@ console:/ # setprop myname pk
 console:/ # getprop myname
 pk
 ```
+
+## 系统关键服务的启动
+
+### ServiceManager
+
+### Zygote 孕育新的线程和进程
+
+* zygote的init.rc，启动app_process
+* 解析参数，启动Android虚拟机，加载ZygoteInit或RuntimeInit
+* ZygoteInit 运行在Java环境
+  * 注册一个socket，用于接收消息
+  * 预加载资源，包括Classes、Resources、OpenGL、SharedLibraries等，这一步非常非常非常耗时
+  * 调用forkSystemServer启动SystemServer
+    * 子进程：system_server进程，初始化binder通信、启动各种service，从Binder读取请求并处理
+    * 父进程：zygote进程，从socket中读取消息并创建应用程序。理论上，所有的应用程序都要通过zygote启动。
+
+### vold和external storage存储设备
+
