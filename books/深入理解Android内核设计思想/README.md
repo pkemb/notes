@@ -1015,3 +1015,9 @@ Activity manager (activity) commands:
     [--selector]
     [<URI> | <PACKAGE> | <COMPONENT>]
 ```
+
+# 第09章 GUI系统————SurfaceFlinger
+
+# 第10章 GUI系统之窗口管理员————WMS
+
+# 第11章 View体系
