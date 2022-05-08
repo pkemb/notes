@@ -676,7 +676,7 @@ pk
 
 ### vold和external storage存储设备
 
-# ActivityManagerService(AMS)
+# 第08章 ActivityManagerService(AMS)
 
 AMS是用于管理四大组件运行状态的系统进程，systemServer负责启动AMS。故AMS是运行在systemServer中的一个线程。
 
