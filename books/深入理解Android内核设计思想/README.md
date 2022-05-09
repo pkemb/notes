@@ -1021,3 +1021,124 @@ Activity manager (activity) commands:
 # 第10章 GUI系统之窗口管理员————WMS
 
 # 第11章 View体系
+
+# 第12章 InputManagerService与输入事件
+
+## IMS初始化
+
+`InputManagerService`也是由systemServer启动的，下面是启动代码。可以看出，IMS与WMS密切相关。
+
+```java
+public final class SystemServer {
+    private void startOtherServices() {
+            // ...
+            inputManager = new InputManagerService(context);
+
+            // WMS needs sensor service ready
+            ConcurrentUtils.waitForFutureNoInterrupt(mSensorServiceStart, START_SENSOR_SERVICE);
+            mSensorServiceStart = null;
+            if(SystemProperties.get("ro.product.platform").equals("homlet")){
+                    wm = WindowManagerService.main(context, inputManager,
+                    mFactoryTestMode != FactoryTest.FACTORY_TEST_LOW_LEVEL,
+                    !mFirstBoot, mOnlyCore, new TvWindowManager());
+            }else{
+                    wm = WindowManagerService.main(context, inputManager,
+                    mFactoryTestMode != FactoryTest.FACTORY_TEST_LOW_LEVEL,
+                    !mFirstBoot, mOnlyCore, new PhoneWindowManager());
+            }
+            ServiceManager.addService(Context.WINDOW_SERVICE, wm, /* allowIsolated= */ false,
+                    DUMP_FLAG_PRIORITY_CRITICAL | DUMP_FLAG_PROTO);
+            ServiceManager.addService(Context.INPUT_SERVICE, inputManager,
+                    /* allowIsolated= */ false, DUMP_FLAG_PRIORITY_CRITICAL);
+            // ...
+            inputManager.setWindowManagerCallbacks(wm.getInputMonitor());
+            inputManager.start();
+    }
+}
+
+```
+
+IMS的Java层实现就是一个壳，绝大部分功能都是在native层实现。`nativeStart()`进一步调用了`InputManager`的`start()`函数。
+
+```c++
+// java: frameworks/base/services/core/java/com/android/server/input/InputManagerService.java
+// native: frameworks/base/services/core/jni/com_android_server_input_InputManagerService.cpp
+static void nativeStart(JNIEnv* env, jclass /* clazz */, jlong ptr) {
+    NativeInputManager* im = reinterpret_cast<NativeInputManager*>(ptr);
+    status_t result = im->getInputManager()->start();
+}
+```
+
+IM的start()函数会创建两个线程，一个是InputReader，通过input设备读取事件，传递给InputDispatcher。InputDispatcher根据消息的类型，进行不同的预处理，然后分发。这里和WMS有交互。
+
+```cpp
+// frameworks/native/services/inputflinger/InputManager.cpp
+// Thread 类启动后，会持续调用threadLoop函数
+// Thread 类的实现在system/core/libutils/Threads.cpp
+status_t InputManager::start() {
+    status_t result = mDispatcherThread->run("InputDispatcher", PRIORITY_URGENT_DISPLAY);
+    // frameworks/native/services/inputflinger/InputReader.h
+    result = mReaderThread->run("InputReader", PRIORITY_URGENT_DISPLAY);
+    return OK;
+}
+```
+
+## 事件处理流程
+
+InputReader不直接读取input设备，而是通过EventHub获取事件消息，获取消息后通过`notifyMotion()`、`notifyKey()`、`notifyDeviceReset()`、`notifySwitch()`通知InputDispatcher线程。
+
+`notify*()`将消息压入到队列中，然后唤醒`InputDispatcher::dispatchOnce()`，对消息进行预处理后，根据消息的类型，调用不同的分发函数进行分发。
+* dispatchConfigurationChangedLocked
+* dispatchDeviceResetLocked
+* dispatchKeyLocked
+* dispatchMotionLocked
+
+```c++
+// frameworks/native/services/inputflinger/InputReader.cpp
+// frameworks/native/services/inputflinger/EventHub.cpp
+// frameworks/native/services/inputflinger/InputDispatcher.cpp
+```
+
+## 事件注入
+
+事件一般是用户触发的，但有些时候希望模拟产生事件，例如自动化测试。一般来说有如下方法：
+* InputManager提供的事件注入接口
+  * InputManager::injectKeyEvent()
+* 通过`/system/bin/input`命令
+
+### input命令
+
+通过input命令，可以非常方便的模拟产生事件消息。例如命令`input keyevent VOLUME_UP`表示音量加，更多的按键代码可以参考`KeyEvent.java`。有关input命令的更多用法，可以参考下面的usage。
+
+* input命令：frameworks/base/cmds/input/src/com/android/commands/input/Input.java
+* key代码：frameworks/base/core/java/android/view/KeyEvent.java
+  * public static final int KEYCODE_VOLUME_UP       = 24;
+  * public static final int KEYCODE_VOLUME_DOWN     = 25;
+  * public static final int KEYCODE_POWER           = 26;
+
+
+```shel
+console:/ # input
+Usage: input [<source>] <command> [<arg>...]
+
+The sources are:
+      dpad
+      keyboard
+      mouse
+      touchpad
+      gamepad
+      touchnavigation
+      joystick
+      touchscreen
+      stylus
+      trackball
+
+The commands and default sources are:
+      text <string> (Default: touchscreen)
+      keyevent [--longpress] <key code number or name> ... (Default: keyboard)
+      tap <x> <y> (Default: touchscreen)
+      swipe <x1> <y1> <x2> <y2> [duration(ms)] (Default: touchscreen)
+      draganddrop <x1> <y1> <x2> <y2> [duration(ms)] (Default: touchscreen)
+      press (Default: trackball)
+      roll <dx> <dy> (Default: trackball)
+```
