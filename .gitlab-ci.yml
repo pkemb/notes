@@ -1,0 +1,28 @@
+image: local/modou-ci:3.21-r2
+
+workflow:
+  rules:
+    - if: $CI_COMMIT_REF_NAME == "master"
+
+stages:
+  - deploy
+
+before_script:
+  - mkdir -p ~/.ssh
+  - chmod 700 ~/.ssh
+  - cp "$SSH_PRIVATE_KEY" ~/.ssh/id_rsa
+  - chmod 400 ~/.ssh/id_rsa
+  - ssh-keyscan -p 5122 pk.inc >> ~/.ssh/known_hosts
+
+deploy:
+  stage: deploy
+  tags:
+    - docker
+  script:
+    - hexo generate
+    - upx --auth "${UPX_AUTH}" sync . / -v
+    # -a：归档模式（保留权限、递归同步、包含隐藏文件）。
+    # --delete：删除目标目录中多余的文件（保持严格同步）。
+    # ./ 末尾的 / 表示同步目录内容（不含父目录）。
+    - rsync -avz --delete --exclude='.git' -e "ssh -p 5122" ./ www@pk.inc:/www/wwwroot/notes.pk.inc
+
