@@ -19,7 +19,6 @@ deploy:
   tags:
     - docker
   script:
-    - hexo generate
     - upx --auth "${UPX_AUTH}" sync . / -v
     # -a：归档模式（保留权限、递归同步、包含隐藏文件）。
     # --delete：删除目标目录中多余的文件（保持严格同步）。
