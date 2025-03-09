@@ -19,9 +19,9 @@ deploy:
   tags:
     - docker
   script:
-    - upx --auth "${UPX_AUTH}" sync . / -v
+    - |
+      file_list="books media _navbar.md _sidebar.md index.html README.md"
+      for file in ${file_list}; do upx "${UPX_AUTH}" sync "$file" / -v; done
+      for file in ${file_list}; do rsync -avz --delete -e "ssh -p 5122" "$file" www@pk.inc:/www/wwwroot/notes.pk.inc; done
     # -a：归档模式（保留权限、递归同步、包含隐藏文件）。
     # --delete：删除目标目录中多余的文件（保持严格同步）。
-    # ./ 末尾的 / 表示同步目录内容（不含父目录）。
-    - rsync -avz --delete --exclude='.git' -e "ssh -p 5122" ./ www@pk.inc:/www/wwwroot/notes.pk.inc
-
