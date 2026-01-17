@@ -38,4 +38,6 @@ jobs:
           done
       - name: deploy notes
         run: |
-          rsync -avz --delete -e ssh public/ deploy:${{ env.DEPLOY_DIR }}
+          echo "${{ env.DEPLOY_DIR }}"
+          echo "${{ vars.DEPLOY_DIR }}"
+          # rsync -avz --delete -e ssh public/ deploy:${{ env.DEPLOY_DIR }}
