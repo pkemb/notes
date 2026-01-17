@@ -12,35 +12,20 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4
-      - name: set up private key
-        run: |
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-          echo "${{ secrets.PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 400 ~/.ssh/id_rsa
-      - name: set up ssh config
-        run: |
-          echo "Host deploy"                      >> ~/.ssh/config
-          echo "HostName ${{ secrets.SSH_HOST }}" >> ~/.ssh/config
-          echo "User ${{ secrets.SSH_USER }}"     >> ~/.ssh/config
-          echo "ForwardAgent yes"                 >> ~/.ssh/config
-          echo "IdentityFile ~/.ssh/id_rsa"       >> ~/.ssh/config
-          echo "Port ${{ secrets.SSH_PORT }}"     >> ~/.ssh/config
-      - name: ssh keyscan
-        run: |
-          ssh-keyscan -p "${{ secrets.SSH_PORT }}" "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
       - name: build
+        run: ./build.sh
+      - name: Validate DEPLOY_DIR
+        if: ${{ !vars.DEPLOY_DIR }}
         run: |
-          ./build.sh
+          echo "::error::DEPLOY_DIR is not configured"
+          exit 1
       - name: deploy notes
-        env:
-          DEPLOY_DIR: ${{ vars.DEPLOY_DIR }}
-        run: |
-          if [ -n "$DEPLOY_DIR" ]; then
-            echo "deploy to $DEPLOY_DIR"
-            rsync -avz --delete -e ssh public/ deploy:${DEPLOY_DIR}
-          else
-            echo "vars.DEPLOY_DIR is empty"
-            exit 1
-          fi
-
+        uses: actions/ssh-deploy@main
+        with:
+          SSH_PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+          ARGS: "-avz --delete"
+          SOURCE: "public/"
+          REMOTE_HOST: ${{ secrets.SSH_HOST }}
+          REMOTE_USER: ${{ secrets.SSH_USER }}
+          REMOTE_PORT: ${{ secrets.SSH_PORT }}
+          TARGET: ${{ vars.DEPLOY_DIR }}
