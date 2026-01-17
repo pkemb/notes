@@ -1,0 +1,41 @@
+name: deploy notes
+
+on:
+  workflow_dispatch:
+  push:
+    branchs:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+      - name: set up private key
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          echo "${{ secrets.PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 400 ~/.ssh/id_rsa
+      - name: set up ssh config
+        run: |
+          echo "Host deploy"                      >> ~/.ssh/config
+          echo "HostName ${{ secrets.SSH_HOST }}" >> ~/.ssh/config
+          echo "User ${{ secrets.SSH_USER }}"     >> ~/.ssh/config
+          echo "ForwardAgent yes"                 >> ~/.ssh/config
+          echo "IdentityFile ~/.ssh/id_rsa"       >> ~/.ssh/config
+          echo "Port ${{ secrets.SSH_PORT }}"     >> ~/.ssh/config
+      - name: ssh keyscan
+        run: |
+          ssh-keyscan -p "${{ secrets.SSH_PORT }}" "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+      - name: generate public
+        run: |
+          mkdir -p public
+          for file in books media _navbar.md _sidebar.md index.html README.md
+          do
+            cp -r $file public
+          done
+      - name: deploy notes
+        run: |
+          rsync -avz --delete -e ssh public/ deploy:${{ env.DEPLOY_DIR }}
