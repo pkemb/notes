@@ -29,13 +29,9 @@ jobs:
       - name: ssh keyscan
         run: |
           ssh-keyscan -p "${{ secrets.SSH_PORT }}" "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
-      - name: generate public
+      - name: build
         run: |
-          mkdir -p public
-          for file in books media _navbar.md _sidebar.md index.html README.md
-          do
-            cp -r $file public
-          done
+          ./build.sh
       - name: deploy notes
         env:
           DEPLOY_DIR: ${{ vars.DEPLOY_DIR }}
@@ -47,17 +43,4 @@ jobs:
             echo "vars.DEPLOY_DIR is empty"
             exit 1
           fi
-      - name: setup rclone config
-        env:
-          KEY: ${{ secrets.CF_ACCESS_KEY }}
-          SECRET_KEY: ${{ secrets.CF_SECRET_ACCESS_KEY }}
-          ENDPOINT: ${{ secrets.CF_ENDPOINT }}
-        run: |
-          rclone config create cf s3 provider Cloudflare region auto \
-            no_check_bucket true \
-            access_key_id ${KEY} \
-            secret_access_key ${SECRET_KEY} \
-            endpoint ${ENDPOINT}
-      - name: deploy Cloudflare
-        run: |
-          rclone sync public/ cf:notes -v
+
