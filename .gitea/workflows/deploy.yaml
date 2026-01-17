@@ -37,7 +37,13 @@ jobs:
             cp -r $file public
           done
       - name: deploy notes
+        env:
+          DEPLOY_DIR: ${{ vars.DEPLOY_DIR }}
         run: |
-          echo "${{ env.DEPLOY_DIR }}"
-          echo "${{ vars.DEPLOY_DIR }}"
-          # rsync -avz --delete -e ssh public/ deploy:${{ env.DEPLOY_DIR }}
+          if [ -n "$DEPLOY_DIR" ]; then
+            echo "deploy to $DEPLOY_DIR"
+            rsync -avz --delete -e ssh public/ deploy:${DEPLOY_DIR}
+          else
+            echo "vars.DEPLOY_DIR is empty"
+            exit 1
+          fi
